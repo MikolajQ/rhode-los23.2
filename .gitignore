@@ -1,0 +1,5 @@
+*.zip
+*.apk
+*.img
+answers.json
+__pycache__/

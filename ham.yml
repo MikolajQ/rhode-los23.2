@@ -1,0 +1,65 @@
+title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
+version: "0.1.0"
+
+# Serwer: HAM tworzy CCX33 (8 vCPU / 32 GB) + wolumen 400 GB na /ham-build, Ubuntu 24.04,
+# ccache 50 GB, repo i platform-tools zainstalowane. Katalog przepisu jest w /ham-recipe.
+# Uruchamiać: ham get MikolajQ@gh/rhode-los23.2 -k -t -b
+
+args:
+  - id: gh_token
+    prompt: "GitHub token z prawem repo (release w MikolajQ/rhode_releases)"
+    type: secret
+    required: true
+  - id: gapps_extras_zip
+    prompt: "Zip z product/priv-app/{GmsSupervision,Gearhead} + product/etc/permissions (patrz README)"
+    type: file
+    required: true
+  - id: keys_zip
+    prompt: "Klucze podpisu (zip z vendor/lineage-priv/keys); puste = test-keys"
+    type: file
+
+build:
+  - name: Python domyślny
+    run: apt-get install -y -qq python-is-python3 gh
+
+  - name: repo init + local manifest
+    run: |
+      cd /ham-build
+      repo init -u https://github.com/tomoms/android -b 16.2 --git-lfs --depth=1 --no-clone-bundle
+      mkdir -p .repo/local_manifests
+      cp /ham-recipe/rhode.xml .repo/local_manifests/rhode.xml
+
+  - name: repo sync
+    run: |
+      cd /ham-build
+      repo sync -c -j8 --no-clone-bundle --no-tags --optimized-fetch --force-sync
+      test -f external/chromium-webview/Android.bp
+      test -f vendor/gapps/arm64/arm64-vendor.mk
+
+  - name: Patche vendor/gapps (cięcie listy pakietów)
+    run: /ham-recipe/scripts/apply-patches.sh /ham-build
+
+  - name: GApps extras (GmsSupervision, Gearhead)
+    run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
+
+  - name: Klucze podpisu
+    run: |
+      if [ -n "${KEYS_ZIP:-}" ] && [ -s "$KEYS_ZIP" ]; then
+        mkdir -p /ham-build/vendor/lineage-priv/keys
+        unzip -o -q "$KEYS_ZIP" -d /ham-build/vendor/lineage-priv/keys
+      fi
+
+  - name: Weryfikacja allowlist priv-app
+    run: python3 /ham-recipe/scripts/check-privapp.py /ham-build vendor/gapps/common/proprietary vendor/gapps/arm64/proprietary vendor/gapps-extras
+
+  - name: Build
+    run: |
+      cd /ham-build
+      export TMPDIR=/ham-build/tmp && mkdir -p "$TMPDIR"
+      export WITH_GMS=true
+      source build/envsetup.sh
+      breakfast rhode
+      mka bacon -j8
+
+post_build:
+  - /ham-recipe/scripts/upload.sh /ham-build
