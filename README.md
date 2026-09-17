@@ -12,7 +12,7 @@ Różnice względem buildów Tomoms:
 - **F-Droid** z repozytoriami IzzyOnDroid, NewPipe, IronFox (same adresy, bez APK w obrazie)
 - **WebView: Cromite** (`org.cromite.webview`, de-Google + adblock) zamiast prebuiltu LineageOS; APK pobierany przy buildzie
 - **Bloker w obrazie**: `/system/etc/hosts` (adult + social + komunikatory poza WhatsApp/Signal) + domyślny Private DNS AdGuard Family; na telefonie AdAway (root)
-- **Telefon dziecka**: manager KernelSU-Next nie w obrazie, podpis managera przypięty do własnego builda (`KSU_NEXT_MANAGER_SIZE/HASH`)
+- **Telefon dziecka**: oryginalny manager KernelSU-Next w obrazie, ukryty/za PIN-em; blokada nieznanych źródeł w Family Link
 - bez Bellis i LogViewer; własne OTA z [rhode_releases](https://github.com/MikolajQ/rhode_releases)
 
 ## Uruchomienie
