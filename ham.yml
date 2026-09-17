@@ -1,9 +1,10 @@
 title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
-version: "0.1.0"
+version: "0.1.1"
 
 # Serwer: HAM tworzy CCX33 (8 vCPU / 32 GB) + wolumen 400 GB na /ham-build, Ubuntu 24.04,
 # ccache 50 GB, repo i platform-tools zainstalowane. Katalog przepisu jest w /ham-recipe.
-# Uruchamiać: ham get MikolajQ@gh/rhode-los23.2 -k -t -b
+# Uruchamiać (bezobsługowo): ~/bin/rhode/ham get MikolajQ@gh/rhode-los23.2 -t -b -n -a ~/.ham-answers-rhode.json -e ~/bin/rhode/ham-build
+# HAM wpisuje linie do pty — każde interaktywne pytanie (np. repo init o kolory) zjada następną linię przepisu.
 
 args:
   - id: gh_token
@@ -25,7 +26,8 @@ build:
   - name: "repo init + local manifest"
     run: |
       cd /ham-build
-      repo init -u https://github.com/tomoms/android -b 16.2 --git-lfs --depth=1 --no-clone-bundle
+      git config --global color.ui false
+      repo init -u https://github.com/tomoms/android -b 16.2 --git-lfs --depth=1 --no-clone-bundle < /dev/null
       mkdir -p .repo/local_manifests
       cp /ham-recipe/rhode.xml .repo/local_manifests/rhode.xml
 
