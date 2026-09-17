@@ -1,0 +1,57 @@
+diff --git a/arm64/arm64-vendor.mk b/arm64/arm64-vendor.mk
+index af0154a..d1ccdb3 100644
+--- a/arm64/arm64-vendor.mk
++++ b/arm64/arm64-vendor.mk
+@@ -6,16 +6,11 @@ PRODUCT_SOONG_NAMESPACES += \
+ 
+ PRODUCT_PACKAGES += \
+     GmsCore \
+-    Phonesky \
+-    libjni_latinimegoogle
++    Phonesky
+ 
+ ifeq ($(TARGET_IS_GROUPER),)
+ PRODUCT_PACKAGES += \
+-    MarkupGoogle_v2 \
+-    SetupWizard \
+-    SpeechServicesByGoogle \
+-    Velvet \
+-    talkback
++    SetupWizard
+ endif
+ 
+ ifneq ($(filter %tangorpro,$(TARGET_PRODUCT)),)
+diff --git a/common/common-vendor.mk b/common/common-vendor.mk
+index ba808c9..c74ff67 100644
+--- a/common/common-vendor.mk
++++ b/common/common-vendor.mk
+@@ -5,15 +5,10 @@ PRODUCT_SOONG_NAMESPACES += \
+     $(LOCAL_PATH)
+ 
+ PRODUCT_PACKAGES += \
+-    AndroidAutoStub \
+     GoogleCalendarSyncAdapter \
+     GoogleContactsSyncAdapter \
+-    GoogleFeedback \
+     GooglePartnerSetup \
+     GoogleServicesFramework \
+-    PrebuiltExchange3Google \
+-    com.google.android.dialer.support \
+-    com.google.android.dialer.support.xml \
+     d2d_cable_migration_feature.xml \
+     default-permissions-google.xml \
+     default-permissions-mtg.xml \
+@@ -26,13 +21,6 @@ PRODUCT_PACKAGES += \
+     privapp-permissions-mtg.xml \
+     sysconfig-mtg.xml
+ 
+-ifeq ($(TARGET_IS_GROUPER),)
+-PRODUCT_PACKAGES += \
+-    GoogleRestore \
+-    Wellbeing \
+-    wellbeing.xml
+-endif
+-
+ PRODUCT_SOONG_NAMESPACES += \
+     vendor/gapps/overlay
+ 

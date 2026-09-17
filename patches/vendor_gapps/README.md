@@ -1,17 +1,19 @@
 # Patche na MindTheGapps (gałąź baklava)
 
 Nakładane przez `scripts/apply-patches.sh` po `repo sync`, `git apply` na `vendor/gapps`.
-Generować z realnego drzewa: `git -C vendor/gapps diff > 0001-prune-to-core.patch`.
+Wygenerowane z realnego drzewa `baklava` @f8cdcff (2026-06-12); po zmianach upstreamu: `git apply --check`,
+w razie konfliktu wygenerować na nowo (`git diff` na sklonowanym MTG).
 
-Do wycięcia (zestaw ma odpowiadać NikGapps core + Android Auto):
+## 0001-prune-to-core.patch — zestaw jak NikGapps core + Android Auto
 
-- `arm64/arm64-vendor.mk`: `MarkupGoogle_v2`, `SpeechServicesByGoogle`, `Velvet`, `talkback`, `libjni_latinimegoogle`
-  (zostają: `GmsCore`, `Phonesky`; `SetupWizard` — decyzja: zostawić na czas dodawania konta dziecka, potem można wyciąć)
-- `common/common-vendor.mk`: `AndroidAutoStub` (zastępuje go pełny Gearhead z gapps-extras), `GoogleCalendarSyncAdapter`,
-  `GoogleContactsSyncAdapter`, `GoogleFeedback`, `PrebuiltExchange3Google`, `com.google.android.dialer.support*`,
-  `GoogleRestore`, `Wellbeing`, `wellbeing.xml`
-- zostają w całości: `GoogleServicesFramework`, `GooglePartnerSetup`, wszystkie `*.xml` (permissions, sysconfig,
-  default-permissions, hiddenapi), `gapps.rc`, `gms_fsverity_cert.der`, overlaye `Gms*Overlay`
+Wycięte (~385 MB): `Velvet` (242 MB), `SpeechServicesByGoogle` (66), `talkback` (34), `Wellbeing` + `wellbeing.xml` (22),
+`GoogleRestore` (15), `MarkupGoogle_v2` (6), `AndroidAutoStub` (pełny Gearhead przychodzi z gapps-extras),
+`GoogleFeedback`, `PrebuiltExchange3Google`, `com.google.android.dialer.support(.xml)`, `libjni_latinimegoogle`.
 
-Uwaga: `privapp-permissions-google-product.xml` zawiera blok `com.google.android.gms.supervision` —
-nie ruszać, to allowlist dla GmsSupervision z gapps-extras.
+Zostają: `GmsCore`, `Phonesky`, `GoogleServicesFramework`, `GooglePartnerSetup`, `SetupWizard` (na czas dodawania konta
+dziecka; można wyciąć później), `GoogleCalendarSyncAdapter` + `GoogleContactsSyncAdapter` (3 MB, synchronizacja kontaktów
+konta Google — WhatsApp z nich korzysta), wszystkie XML-e (permissions, sysconfig, default-permissions, hiddenapi),
+`gapps.rc`, `gms_fsverity_cert.der`, overlaye `Gms*Overlay`.
+
+`privapp-permissions-google-product.xml` zawiera blok `com.google.android.gms.supervision` — allowlist dla
+GmsSupervision z gapps-extras; nie ruszać.

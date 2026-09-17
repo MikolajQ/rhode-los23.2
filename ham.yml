@@ -20,7 +20,7 @@ args:
 
 build:
   - name: Python domyślny
-    run: apt-get install -y -qq python-is-python3 gh
+    run: apt-get install -y -qq python-is-python3 gh git-lfs && git lfs install --skip-repo
 
   - name: repo init + local manifest
     run: |
