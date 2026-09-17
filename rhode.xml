@@ -28,11 +28,11 @@
   <project path="external/F-Droid"                         name="Tomoms/android_external_F-Droid" remote="github" revision="master" clone-depth="1" />
   <project path="packages/apps/F-DroidPrivilegedExtension" name="fdroid/privileged-extension"    remote="gitlab" revision="master" clone-depth="1" />
 
-  <!-- WebView: Cromite/AOSmium (Tomoms) zamiast prebuiltu LineageOS -->
+  <!-- WebView: Cromite (scripts/fetch-webview.sh) zamiast prebuiltu LineageOS.
+       Repo Tomoms android_external_chromium-webview ma tylko Android.bp bez APK, więc go nie używamy. -->
   <remove-project name="LineageOS/android_external_chromium-webview_patches" />
   <remove-project name="LineageOS/android_external_chromium-webview_prebuilt_arm" />
   <remove-project name="LineageOS/android_external_chromium-webview_prebuilt_arm64" />
   <remove-project name="LineageOS/android_external_chromium-webview_prebuilt_x86" />
   <remove-project name="LineageOS/android_external_chromium-webview_prebuilt_x86_64" />
-  <project path="external/chromium-webview" name="Tomoms/android_external_chromium-webview" remote="github" revision="master" clone-depth="1" />
 </manifest>

@@ -10,6 +10,7 @@ Różnice względem buildów Tomoms:
 - **GApps w obrazie**: MindTheGapps (`baklava`) przycięte do zestawu NikGapps core + pełny Android Auto
   + `GmsSupervision` jako priv-app w `product` (Family Link — patrz nikgapps/config#15760)
 - **F-Droid** z repozytoriami IzzyOnDroid, NewPipe, IronFox (same adresy, bez APK w obrazie)
+- **WebView: Cromite** (`org.cromite.webview`, de-Google + adblock) zamiast prebuiltu LineageOS; APK pobierany przy buildzie
 - bez Bellis i LogViewer; własne OTA z [rhode_releases](https://github.com/MikolajQ/rhode_releases)
 
 ## Uruchomienie
@@ -36,6 +37,8 @@ Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.
 ham.yml                      przepis
 rhode.xml                    .repo/local_manifests
 patches/vendor_gapps/        cięcia listy pakietów MTG (git apply)
+patches/vendor_lineage/      bez prywatnych Trichrome* z vendor/lineage Tomoms
+scripts/fetch-webview.sh     Cromite SystemWebView z release'u, przypięty tag + SHA-256
 scripts/apply-patches.sh
 scripts/gapps-extras.sh      zip -> vendor/gapps-extras (kopiuje vendor/extra/product.mk)
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka

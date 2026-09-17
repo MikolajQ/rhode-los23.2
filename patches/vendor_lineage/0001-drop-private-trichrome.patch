@@ -1,0 +1,14 @@
+--- a/config/common.mk	2026-09-17 08:03:04.561816663 +0200
++++ b/config/common.mk	2026-09-17 08:03:04.577752285 +0200
+@@ -187,10 +187,7 @@
+ ifeq ($(PRODUCT_IS_ATV),)
+ PRODUCT_PACKAGES += \
+     ExactCalculator \
+-    Jelly \
+-    TrichromeLibrary \
+-    TrichromeWebView \
+-    TrichromeChrome
++    Jelly
+ endif
+ 
+ ifeq ($(PRODUCT_IS_AUTOMOTIVE),)

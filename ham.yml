@@ -33,11 +33,14 @@ build:
     run: |
       cd /ham-build
       repo sync -c -j8 --no-clone-bundle --no-tags --optimized-fetch --force-sync
-      test -f external/chromium-webview/Android.bp
+      test ! -e external/chromium-webview/Android.bp   # linkfile z prebuiltu LOS ma zniknąć (remove-project)
       test -f vendor/gapps/arm64/arm64-vendor.mk
 
-  - name: Patche vendor/gapps (cięcie listy pakietów)
+  - name: Patche (vendor/gapps: cięcie pakietów; vendor/lineage: bez prywatnych Trichrome*)
     run: /ham-recipe/scripts/apply-patches.sh /ham-build
+
+  - name: WebView (Cromite, przypięty release + SHA-256)
+    run: /ham-recipe/scripts/fetch-webview.sh /ham-build
 
   - name: GApps extras (GmsSupervision, Gearhead)
     run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
