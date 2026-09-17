@@ -48,4 +48,5 @@ scripts/gapps-extras.sh      zip -> vendor/gapps-extras (kopiuje vendor/extra/pr
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka
 scripts/upload.sh            post_build: release + rhode.json
 scripts/staleness.sh         lokalnie przed ham get: o ile forki Tomoms odstają od LineageOS
+scripts/inspect-zip.sh       lokalnie po pobraniu zipa: kontrola obrazu przed flashem (debugfs, bez roota)
 ```
