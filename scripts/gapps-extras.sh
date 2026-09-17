@@ -7,8 +7,9 @@
 #
 # Wymagania wobec zipa:
 #   product/priv-app/GmsSupervision/<jeden plik>.apk   — JEDEN APK (nodpi/universal); android_app_import nie zna splitów
-#   product/priv-app/Gearhead/<jeden plik>.apk          — Android Auto z NikGapps Addon-AndroidAuto
-#   product/etc/permissions/privapp-permissions-gearhead.xml (i inne XML-e uprawnień/sysconfig z addonu)
+#   product/etc/permissions/com.google.android.projection.gearhead.xml — pełna allowlist Android Auto z NikGapps
+#       (71 uprawnień vs 19 w MTG); sam stub AndroidAutoStub i overlay roli automotive projection daje MindTheGapps,
+#       pełny Android Auto doinstalowuje Play i dziedziczy uprawnienia. Allowlisty z wielu plików są sumowane.
 # Allowlist gms.supervision jest już w MindTheGapps (privapp-permissions-google-product.xml).
 set -euo pipefail
 ROOT=${1:?korzeń drzewa}
@@ -67,5 +68,5 @@ done
   for m in "${mods[@]}"; do echo "    $m \\"; done
   echo
 } > "$mk"
-for req in GmsSupervision Gearhead; do printf '%s\n' "${mods[@]}" | grep -qx "$req" || { echo "BŁĄD: brak product/priv-app/$req"; exit 1; }; done
+for req in GmsSupervision; do printf '%s\n' "${mods[@]}" | grep -qx "$req" || { echo "BŁĄD: brak product/priv-app/$req"; exit 1; }; done
 echo "gapps-extras: ${#mods[@]} modułów:"; printf '  %s\n' "${mods[@]}"

@@ -7,10 +7,11 @@ w razie konfliktu wygenerować na nowo (`git diff` na sklonowanym MTG).
 ## 0001-prune-to-core.patch — zestaw jak NikGapps core + Android Auto
 
 Wycięte (~385 MB): `Velvet` (242 MB), `SpeechServicesByGoogle` (66), `talkback` (34), `Wellbeing` + `wellbeing.xml` (22),
-`GoogleRestore` (15), `MarkupGoogle_v2` (6), `AndroidAutoStub` (pełny Gearhead przychodzi z gapps-extras),
+`GoogleRestore` (15), `MarkupGoogle_v2` (6),
 `GoogleFeedback`, `PrebuiltExchange3Google`, `com.google.android.dialer.support(.xml)`, `libjni_latinimegoogle`.
 
-Zostają: `GmsCore`, `Phonesky`, `GoogleServicesFramework`, `GooglePartnerSetup`, `SetupWizard` (na czas dodawania konta
+Zostają: `GmsCore`, `Phonesky`, `GoogleServicesFramework`, `GooglePartnerSetup`, `AndroidAutoStub` (stub Android Auto —
+NikGapps robi identycznie; pełną apkę doinstalowuje Play, pełna allowlist z NikGapps idzie przez gapps-extras), `SetupWizard` (na czas dodawania konta
 dziecka; można wyciąć później), `GoogleCalendarSyncAdapter` + `GoogleContactsSyncAdapter` (3 MB, synchronizacja kontaktów
 konta Google — WhatsApp z nich korzysta), wszystkie XML-e (permissions, sysconfig, default-permissions, hiddenapi),
 `gapps.rc`, `gms_fsverity_cert.der`, overlaye `Gms*Overlay`.

@@ -49,12 +49,12 @@ echo "== system_ext"
 dcat system_ext.img /etc/build.prop | grep -q 'lineage.updater.uri=.*MikolajQ/rhode_releases' && ok "OTA wskazuje na rhode_releases" || bad "lineage.updater.uri nie wskazuje na MikolajQ/rhode_releases (Updater podsunąłby buildy Tomoms)"
 
 echo "== product: GApps i dodatki"
-for d in GmsCore Phonesky GmsSupervision Gearhead; do dls product.img /priv-app | grep -qx "$d" && ok "priv-app/$d" || bad "brak priv-app/$d"; done
+for d in GmsCore Phonesky GmsSupervision AndroidAutoStub; do dls product.img /priv-app | grep -qx "$d" && ok "priv-app/$d" || bad "brak priv-app/$d"; done
 n=$(dls product.img /priv-app/GmsSupervision | grep -c '\.apk$'); [ "$n" -eq 1 ] && ok "GmsSupervision: jeden APK (nodpi)" || bad "GmsSupervision: $n plików .apk (oczekiwany 1)"
-for d in Velvet VelvetTitan AndroidAutoStub GoogleRestore Wellbeing; do dls product.img /priv-app | grep -qx "$d" && bad "priv-app/$d — miało być wycięte patchem MTG" || ok "brak $d (wycięte)"; done
+for d in Velvet VelvetTitan GoogleRestore Wellbeing SpeechServicesByGoogle talkback; do dls product.img /priv-app | grep -qx "$d" && bad "priv-app/$d — miało być wycięte patchem MTG" || ok "brak $d (wycięte)"; done
 for d in Bellis LogViewer; do { dls product.img /app; dls product.img /priv-app; dls system.img /system/app; dls system.img /system/priv-app; } | grep -qx "$d" && bad "$d w obrazie" || ok "brak $d"; done
 dcat product.img /etc/permissions/privapp-permissions-google-product.xml | grep -q 'com.google.android.gms.supervision' && ok "allowlist gms.supervision" || bad "brak bloku gms.supervision w privapp-permissions-google-product.xml"
-dls product.img /etc/permissions | grep -qi gearhead && ok "allowlist Gearhead" || bad "brak privapp-permissions dla Gearhead"
+dcat product.img /etc/permissions/com.google.android.projection.gearhead.xml | grep -q 'TOGGLE_AUTOMOTIVE_PROJECTION' && ok "allowlist Android Auto z NikGapps (71 uprawnień)" || warn "brak pełnej allowlisty gearhead z NikGapps (zostaje 19 z MTG)"
 dls product.img /etc/sysconfig | grep -q 'google.xml' && ok "sysconfig google.xml (allow-in-power-save dla GMS)" || bad "brak sysconfig/google.xml — push i Family Link umrą w Doze"
 { dls product.img /app; dls product.img /priv-app; } | grep -qiE 'webview|cromite' && ok "WebView w product: $({ dls product.img /app; dls product.img /priv-app; } | grep -iE 'webview|cromite' | tr '\n' ' ')" || bad "brak modułu WebView w product"
 { dls product.img /app; dls system.img /system/app; } | grep -qx 'F-Droid' && ok "F-Droid" || warn "brak F-Droid w app/"

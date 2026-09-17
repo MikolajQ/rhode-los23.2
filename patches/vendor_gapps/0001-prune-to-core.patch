@@ -22,14 +22,11 @@ index af0154a..d1ccdb3 100644
  
  ifneq ($(filter %tangorpro,$(TARGET_PRODUCT)),)
 diff --git a/common/common-vendor.mk b/common/common-vendor.mk
-index ba808c9..c74ff67 100644
+index ba808c9..45fe24a 100644
 --- a/common/common-vendor.mk
 +++ b/common/common-vendor.mk
-@@ -5,15 +5,10 @@ PRODUCT_SOONG_NAMESPACES += \
-     $(LOCAL_PATH)
- 
- PRODUCT_PACKAGES += \
--    AndroidAutoStub \
+@@ -8,12 +8,8 @@ PRODUCT_PACKAGES += \
+     AndroidAutoStub \
      GoogleCalendarSyncAdapter \
      GoogleContactsSyncAdapter \
 -    GoogleFeedback \
@@ -41,7 +38,7 @@ index ba808c9..c74ff67 100644
      d2d_cable_migration_feature.xml \
      default-permissions-google.xml \
      default-permissions-mtg.xml \
-@@ -26,13 +21,6 @@ PRODUCT_PACKAGES += \
+@@ -26,13 +22,6 @@ PRODUCT_PACKAGES += \
      privapp-permissions-mtg.xml \
      sysconfig-mtg.xml
  
