@@ -11,6 +11,8 @@ Różnice względem buildów Tomoms:
   + `GmsSupervision` jako priv-app w `product` (Family Link — patrz nikgapps/config#15760)
 - **F-Droid** z repozytoriami IzzyOnDroid, NewPipe, IronFox (same adresy, bez APK w obrazie)
 - **WebView: Cromite** (`org.cromite.webview`, de-Google + adblock) zamiast prebuiltu LineageOS; APK pobierany przy buildzie
+- **Bloker w obrazie**: `/system/etc/hosts` (adult + social + komunikatory poza WhatsApp/Signal) + domyślny Private DNS AdGuard Family; na telefonie AdAway (root)
+- **Telefon dziecka**: manager KernelSU-Next nie w obrazie, podpis managera przypięty do własnego builda (`KSU_NEXT_MANAGER_SIZE/HASH`)
 - bez Bellis i LogViewer; własne OTA z [rhode_releases](https://github.com/MikolajQ/rhode_releases)
 
 ## Uruchomienie
@@ -39,6 +41,8 @@ rhode.xml                    .repo/local_manifests
 patches/vendor_gapps/        cięcia listy pakietów MTG (git apply)
 patches/vendor_lineage/      bez prywatnych Trichrome* z vendor/lineage Tomoms
 scripts/fetch-webview.sh     Cromite SystemWebView z release'u, przypięty tag + SHA-256
+scripts/fetch-hosts.sh       /system/etc/hosts: StevenBlack porn+social (przypięty commit) + lists/, minus WhatsApp/Signal
+lists/                       communicators-block.txt (Telegram, Discord, Viber…), allow.txt (WhatsApp, Signal)
 scripts/apply-patches.sh
 scripts/gapps-extras.sh      zip -> vendor/gapps-extras (kopiuje vendor/extra/product.mk)
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka

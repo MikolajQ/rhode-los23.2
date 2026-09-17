@@ -1,0 +1,7 @@
+# Wzorce (grep -E) domen, które NIE trafiają do hosts mimo obecności na listach źródłowych.
+whatsapp\.(com|net)$
+signal\.org$
+signal\.art$
+sfu\.voip\.signal\.org$
+^whatsapp[-.].*\.fbcdn\.net$
+^whatsapp[-.].*\.whatsapp\.net$

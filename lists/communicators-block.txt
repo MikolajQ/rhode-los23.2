@@ -1,0 +1,30 @@
+# Komunikatory do zablokowania (poza WhatsApp i Signal). Jeden host na linię — hosts nie zna wildcardów,
+# więc każda subdomena osobno. Uwaga: aplikacja Telegram łączy się po IP (MTProto), hosts jej nie zatrzyma —
+# blokuje tylko web/t.me; pełna blokada Telegrama wymaga firewalla, czyli procesu (poza zakresem "lekkiego").
+telegram.org
+web.telegram.org
+api.telegram.org
+core.telegram.org
+desktop.telegram.org
+telegram.me
+t.me
+discord.com
+discordapp.com
+discord.gg
+gateway.discord.gg
+cdn.discordapp.com
+media.discordapp.net
+status.discord.com
+viber.com
+api.viber.com
+content.cdn.viber.com
+skype.com
+web.skype.com
+api.skype.com
+kik.com
+line.me
+wechat.com
+weixin.qq.com
+messenger.com
+www.messenger.com
+m.me

@@ -42,6 +42,9 @@ build:
   - name: WebView (Cromite, przypięty release + SHA-256)
     run: /ham-recipe/scripts/fetch-webview.sh /ham-build
 
+  - name: hosts do obrazu (adult + social + komunikatory, bez WhatsApp/Signal)
+    run: /ham-recipe/scripts/fetch-hosts.sh /ham-build
+
   - name: GApps extras (GmsSupervision, Gearhead)
     run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
 
