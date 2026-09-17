@@ -30,7 +30,7 @@ Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.
 | id | typ | co |
 |---|---|---|
 | `gh_token` | secret | token GitHub z `repo` — `upload.sh` tworzy release i aktualizuje `23.x/rhode.json` |
-| `gapps_extras_zip` | file | zip: `product/priv-app/GmsSupervision/base.apk` + `split_config.xxhdpi.apk` (z modułu Magiska) + `product/etc/permissions/com.google.android.projection.gearhead.xml` (pełna allowlist AA z NikGapps); Android Auto = stub z MTG + Play; skrypt generuje `Android.bp` (jeden APK → `android_app_import`), `splits/Android.mk` (splity → prebuilty ETC do `priv-app/`) i `extras.mk` |
+| `gapps_extras_zip` | file | zip: `product/priv-app/GmsSupervision/GmsSupervision.apk` (stub Google 0.1.453788429 z APKMirror „System parental controls" — Play nadpisze pełną wersją z flagą PRIVILEGED) + `product/etc/permissions/com.google.android.projection.gearhead.xml` (pełna allowlist AA z NikGapps); skrypt generuje `Android.bp` (jeden APK → `android_app_import`), `splits/Android.mk` (gdyby były splity → prebuilty ETC) i `extras.mk` |
 | `keys_zip` | file | opcjonalnie: `vendor/lineage-priv/keys` |
 
 ## Układ

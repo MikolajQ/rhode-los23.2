@@ -9,7 +9,9 @@
 # Dlaczego nie PRODUCT_COPY_FILES: build/make odrzuca .apk ("use BUILD_PREBUILT instead") — i to właśnie robimy.
 #
 # Zip:
-#   product/priv-app/GmsSupervision/base.apk + split_config.xxhdpi.apk   (z modułu Magiska / z telefonu: pm path)
+#   product/priv-app/GmsSupervision/GmsSupervision.apk — STUB Google 0.1.453788429 (APKMirror "System parental controls",
+#       41 KB, nodpi): placeholder w priv-app, Play nadpisuje go pełną wersją, która dziedziczy flagę PRIVILEGED
+#       (ten sam mechanizm, co AndroidAutoStub). Alternatywnie base.apk + split_config.* z modułu — wtedy prebuilty ETC.
 #   product/etc/permissions/com.google.android.projection.gearhead.xml  (pełna allowlist AA z NikGapps)
 # Allowlist gms.supervision jest w MindTheGapps (privapp-permissions-google-product.xml).
 set -euo pipefail
