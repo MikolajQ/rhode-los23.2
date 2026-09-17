@@ -30,7 +30,7 @@ Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.
 | id | typ | co |
 |---|---|---|
 | `gh_token` | secret | token GitHub z `repo` — `upload.sh` tworzy release i aktualizuje `23.x/rhode.json` |
-| `gapps_extras_zip` | file | zip ze strukturą `product/priv-app/{GmsSupervision,Gearhead}` + `product/etc/permissions/privapp-permissions-gearhead.xml` |
+| `gapps_extras_zip` | file | zip: `product/priv-app/GmsSupervision/<jeden>.apk` (**nodpi**, bez splitów), `product/priv-app/Gearhead/<jeden>.apk`, `product/etc/permissions/*.xml` z addonu; skrypt generuje z tego `Android.bp` + `extras.mk` |
 | `keys_zip` | file | opcjonalnie: `vendor/lineage-priv/keys` |
 
 ## Układ
@@ -44,7 +44,7 @@ scripts/fetch-webview.sh     Cromite SystemWebView z release'u, przypięty tag +
 scripts/fetch-hosts.sh       /system/etc/hosts: StevenBlack porn+social (przypięty commit) + lists/, minus WhatsApp/Signal
 lists/                       communicators-block.txt (Telegram, Discord, Viber…), allow.txt (WhatsApp, Signal)
 scripts/apply-patches.sh
-scripts/gapps-extras.sh      zip -> vendor/gapps-extras (kopiuje vendor/extra/product.mk)
+scripts/gapps-extras.sh      zip -> vendor/gapps-extras + wygenerowane Android.bp/extras.mk (android_app_import; .apk nie może iść przez PRODUCT_COPY_FILES)
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka
 scripts/upload.sh            post_build: release + rhode.json
 scripts/staleness.sh         lokalnie przed ham get: o ile forki Tomoms odstają od LineageOS
