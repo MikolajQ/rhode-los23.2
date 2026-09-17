@@ -6,7 +6,7 @@
 # Na telefonie tę samą warstwę rozwija AdAway (root z KernelSU-Next).
 set -euo pipefail
 ROOT=${1:?korzeń drzewa}
-OUT="$ROOT/vendor/extra/hosts"
+OUT="$ROOT/system/core/rootdir/etc/hosts"   # źródło modułu etc_hosts (AOSP); własny moduł dawał duplikat reguły w kati
 RECIPE=$(cd "$(dirname "$0")/.." && pwd)
 SB_COMMIT="b681eceec05a747aa409377d1b3aac0327916cff"   # StevenBlack/hosts, przypięty; podbijać razem z buildem
 BASE="https://raw.githubusercontent.com/StevenBlack/hosts/$SB_COMMIT"
