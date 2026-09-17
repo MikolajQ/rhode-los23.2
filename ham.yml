@@ -1,5 +1,5 @@
 title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
-version: "0.1.5"
+version: "0.1.6"
 
 # Serwer: HAM tworzy CCX33 (8 vCPU / 32 GB) + wolumen 400 GB na /ham-build, Ubuntu 24.04,
 # ccache 50 GB, repo i platform-tools zainstalowane. Katalog przepisu jest w /ham-recipe.
@@ -46,6 +46,13 @@ build:
 
   - name: "hosts do obrazu (adult + social + komunikatory, bez WhatsApp/Signal)"
     run: /ham-recipe/scripts/fetch-hosts.sh /ham-build
+
+  - name: "Repozytoria F-Droid (XML) w miejsce listy Tomoms w vendor/lineage"
+    run: |
+      cd /ham-build
+      test -f vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
+      cp vendor/extra/fdroid/additional_repos.xml vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
+      grep -c izzysoft vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
 
   - name: "GApps extras (GmsSupervision, Gearhead)"
     run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
