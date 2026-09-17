@@ -30,7 +30,7 @@ Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.
 | id | typ | co |
 |---|---|---|
 | `gh_token` | secret | token GitHub z `repo` — `upload.sh` tworzy release i aktualizuje `23.x/rhode.json` |
-| `gapps_extras_zip` | file | zip: `product/priv-app/GmsSupervision/<jeden>.apk` (**nodpi**, bez splitów) + `product/etc/permissions/com.google.android.projection.gearhead.xml` (pełna allowlist AA z NikGapps); Android Auto sam = stub z MTG + Play; skrypt generuje `Android.bp` + `extras.mk` |
+| `gapps_extras_zip` | file | zip: `product/priv-app/GmsSupervision/base.apk` + `split_config.xxhdpi.apk` (z modułu Magiska) + `product/etc/permissions/com.google.android.projection.gearhead.xml` (pełna allowlist AA z NikGapps); Android Auto = stub z MTG + Play; skrypt generuje `Android.bp` (jeden APK → `android_app_import`), `splits/Android.mk` (splity → prebuilty ETC do `priv-app/`) i `extras.mk` |
 | `keys_zip` | file | opcjonalnie: `vendor/lineage-priv/keys` |
 
 ## Układ
@@ -44,7 +44,7 @@ scripts/fetch-webview.sh     Cromite SystemWebView z release'u, przypięty tag +
 scripts/fetch-hosts.sh       /system/etc/hosts: StevenBlack porn+social (przypięty commit) + lists/, minus WhatsApp/Signal
 lists/                       communicators-block.txt (Telegram, Discord, Viber…), allow.txt (WhatsApp, Signal)
 scripts/apply-patches.sh
-scripts/gapps-extras.sh      zip -> vendor/gapps-extras + wygenerowane Android.bp/extras.mk (android_app_import; .apk nie może iść przez PRODUCT_COPY_FILES)
+scripts/gapps-extras.sh      zip -> vendor/gapps-extras + Android.bp / splits/Android.mk / extras.mk (splity jako prebuilty ETC; .apk nie może iść przez PRODUCT_COPY_FILES)
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka
 scripts/upload.sh            post_build: release + rhode.json
 scripts/staleness.sh         lokalnie przed ham get: o ile forki Tomoms odstają od LineageOS

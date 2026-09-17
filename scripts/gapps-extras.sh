@@ -1,34 +1,36 @@
 #!/usr/bin/env bash
 # Rozpakowuje zip z dodatkami GApps do vendor/gapps-extras i GENERUJE moduły builda:
-#   Android.bp  — android_app_import (privileged, product) dla każdego product/priv-app/<Nazwa>/<jeden>.apk
-#                 oraz prebuilt_etc dla product/etc/permissions/*.xml i product/etc/sysconfig/*.xml
-#   extras.mk   — PRODUCT_PACKAGES z tymi modułami; vendor/extra/product.mk robi inherit-product-if-exists
-# Dlaczego nie PRODUCT_COPY_FILES: build/make odrzuca .apk w PRODUCT_COPY_FILES ("use BUILD_PREBUILT instead").
+#   Android.bp         — android_app_import (privileged, product) dla katalogu product/priv-app/<Nazwa>/ z JEDNYM .apk
+#                        oraz prebuilt_etc dla product/etc/{permissions,sysconfig,default-permissions}/*.xml
+#   splits/Android.mk  — dla katalogu z WIELOMA .apk (base.apk + split_config.*.apk): prebuilty klasy ETC
+#                        z LOCAL_MODULE_PATH do priv-app/<Nazwa>/ — surowe pliki, podpis Google nietknięty,
+#                        PackageManager czyta katalog klastrowy tak samo jak po module Magiska
+#   extras.mk          — PRODUCT_PACKAGES; vendor/extra/product.mk robi inherit-product-if-exists
+# Dlaczego nie PRODUCT_COPY_FILES: build/make odrzuca .apk ("use BUILD_PREBUILT instead") — i to właśnie robimy.
 #
-# Wymagania wobec zipa:
-#   product/priv-app/GmsSupervision/<jeden plik>.apk   — JEDEN APK (nodpi/universal); android_app_import nie zna splitów
-#   product/etc/permissions/com.google.android.projection.gearhead.xml — pełna allowlist Android Auto z NikGapps
-#       (71 uprawnień vs 19 w MTG); sam stub AndroidAutoStub i overlay roli automotive projection daje MindTheGapps,
-#       pełny Android Auto doinstalowuje Play i dziedziczy uprawnienia. Allowlisty z wielu plików są sumowane.
-# Allowlist gms.supervision jest już w MindTheGapps (privapp-permissions-google-product.xml).
+# Zip:
+#   product/priv-app/GmsSupervision/base.apk + split_config.xxhdpi.apk   (z modułu Magiska / z telefonu: pm path)
+#   product/etc/permissions/com.google.android.projection.gearhead.xml  (pełna allowlist AA z NikGapps)
+# Allowlist gms.supervision jest w MindTheGapps (privapp-permissions-google-product.xml).
 set -euo pipefail
 ROOT=${1:?korzeń drzewa}
 ZIP=${2:?zip z dodatkami}
 DEST="$ROOT/vendor/gapps-extras"
-rm -rf "$DEST" && mkdir -p "$DEST"
+rm -rf "$DEST" && mkdir -p "$DEST/splits"
 unzip -o -q "$ZIP" -d "$DEST"
 [ -d "$DEST/product/priv-app" ] || { echo "brak product/priv-app w zipie"; exit 1; }
 
-bp="$DEST/Android.bp"; mk="$DEST/extras.mk"; mods=()
+bp="$DEST/Android.bp"; mk="$DEST/splits/Android.mk"; pmk="$DEST/extras.mk"; mods=()
 printf '// Wygenerowane przez rhode-los23.2/scripts/gapps-extras.sh — nie edytować ręcznie.\nsoong_namespace {}\n' > "$bp"
+printf '# Wygenerowane przez rhode-los23.2/scripts/gapps-extras.sh — prebuilty ETC dla katalogów ze splitami.\nLOCAL_PATH := $(call my-dir)/..\n' > "$mk"
+
 for dir in "$DEST"/product/priv-app/*/; do
   name=$(basename "$dir")
   mapfile -t apks < <(find "$dir" -maxdepth 1 -name '*.apk' | sort)
-  if [ ${#apks[@]} -ne 1 ]; then
-    echo "BŁĄD: $name ma ${#apks[@]} plików .apk — potrzebny dokładnie jeden (splity: wziąć wariant nodpi/universal tej samej wersji)"; exit 1
-  fi
-  apk=${apks[0]}; rel=${apk#$DEST/}
-  cat >> "$bp" <<BP
+  [ ${#apks[@]} -ge 1 ] || { echo "BŁĄD: $name bez .apk"; exit 1; }
+  if [ ${#apks[@]} -eq 1 ]; then
+    rel=${apks[0]#$DEST/}
+    cat >> "$bp" <<BP
 
 android_app_import {
     name: "$name",
@@ -42,7 +44,28 @@ android_app_import {
     },
 }
 BP
-  mods+=("$name")
+    mods+=("$name")
+  else
+    [ -e "$dir/base.apk" ] || { echo "BŁĄD: $name ma ${#apks[@]} .apk, ale bez base.apk"; exit 1; }
+    for apk in "${apks[@]}"; do
+      f=$(basename "$apk"); m="${name}-${f%.apk}"; m=${m//[^A-Za-z0-9_.-]/_}
+      cat >> "$mk" <<MK
+
+include \$(CLEAR_VARS)
+LOCAL_MODULE := $m
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := gapps
+LOCAL_SRC_FILES := product/priv-app/$name/$f
+LOCAL_MODULE_STEM := $f
+LOCAL_PRODUCT_MODULE := true
+LOCAL_MODULE_PATH := \$(TARGET_OUT_PRODUCT)/priv-app/$name
+include \$(BUILD_PREBUILT)
+MK
+      mods+=("$m")
+    done
+    echo "gapps-extras: $name jako ${#apks[@]} splitów (prebuilty ETC): $(printf '%s ' "${apks[@]##*/}")"
+  fi
 done
 for sub in permissions sysconfig default-permissions; do
   for xml in "$DEST"/product/etc/$sub/*.xml; do
@@ -67,6 +90,6 @@ done
   echo "PRODUCT_PACKAGES += \\"
   for m in "${mods[@]}"; do echo "    $m \\"; done
   echo
-} > "$mk"
-for req in GmsSupervision; do printf '%s\n' "${mods[@]}" | grep -qx "$req" || { echo "BŁĄD: brak product/priv-app/$req"; exit 1; }; done
+} > "$pmk"
+printf '%s\n' "${mods[@]}" | grep -q '^GmsSupervision' || { echo "BŁĄD: brak product/priv-app/GmsSupervision"; exit 1; }
 echo "gapps-extras: ${#mods[@]} modułów:"; printf '  %s\n' "${mods[@]}"

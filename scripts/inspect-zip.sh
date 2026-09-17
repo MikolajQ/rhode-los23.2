@@ -50,7 +50,8 @@ dcat system_ext.img /etc/build.prop | grep -q 'lineage.updater.uri=.*MikolajQ/rh
 
 echo "== product: GApps i dodatki"
 for d in GmsCore Phonesky GmsSupervision AndroidAutoStub; do dls product.img /priv-app | grep -qx "$d" && ok "priv-app/$d" || bad "brak priv-app/$d"; done
-n=$(dls product.img /priv-app/GmsSupervision | grep -c '\.apk$'); [ "$n" -eq 1 ] && ok "GmsSupervision: jeden APK (nodpi)" || bad "GmsSupervision: $n plików .apk (oczekiwany 1)"
+dhas product.img /priv-app/GmsSupervision/base.apk && ok "GmsSupervision: base.apk" || bad "GmsSupervision: brak base.apk"
+dls product.img /priv-app/GmsSupervision | grep -q '^split_config' && ok "GmsSupervision: split obecny ($(dls product.img /priv-app/GmsSupervision | grep '^split_' | tr '\n' ' '))" || warn "GmsSupervision: bez splitu (OK tylko, jeśli base to wariant universal)"
 for d in Velvet VelvetTitan GoogleRestore Wellbeing SpeechServicesByGoogle talkback; do dls product.img /priv-app | grep -qx "$d" && bad "priv-app/$d — miało być wycięte patchem MTG" || ok "brak $d (wycięte)"; done
 for d in Bellis LogViewer; do { dls product.img /app; dls product.img /priv-app; dls system.img /system/app; dls system.img /system/priv-app; } | grep -qx "$d" && bad "$d w obrazie" || ok "brak $d"; done
 dcat product.img /etc/permissions/privapp-permissions-google-product.xml | grep -q 'com.google.android.gms.supervision' && ok "allowlist gms.supervision" || bad "brak bloku gms.supervision w privapp-permissions-google-product.xml"
