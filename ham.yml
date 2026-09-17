@@ -19,36 +19,36 @@ args:
     type: file
 
 build:
-  - name: Python domyślny
+  - name: "Python domyślny"
     run: apt-get install -y -qq python-is-python3 gh git-lfs && git lfs install --skip-repo
 
-  - name: repo init + local manifest
+  - name: "repo init + local manifest"
     run: |
       cd /ham-build
       repo init -u https://github.com/tomoms/android -b 16.2 --git-lfs --depth=1 --no-clone-bundle
       mkdir -p .repo/local_manifests
       cp /ham-recipe/rhode.xml .repo/local_manifests/rhode.xml
 
-  - name: repo sync
+  - name: "repo sync"
     run: |
       cd /ham-build
       repo sync -c -j8 --no-clone-bundle --no-tags --optimized-fetch --force-sync
       test ! -e external/chromium-webview/Android.bp   # linkfile z prebuiltu LOS ma zniknąć (remove-project)
       test -f vendor/gapps/arm64/arm64-vendor.mk
 
-  - name: Patche (vendor/gapps: cięcie pakietów; vendor/lineage: bez prywatnych Trichrome*)
+  - name: "Patche (vendor/gapps: cięcie pakietów; vendor/lineage: bez prywatnych Trichrome*)"
     run: /ham-recipe/scripts/apply-patches.sh /ham-build
 
-  - name: WebView (Cromite, przypięty release + SHA-256)
+  - name: "WebView (Cromite, przypięty release + SHA-256)"
     run: /ham-recipe/scripts/fetch-webview.sh /ham-build
 
-  - name: hosts do obrazu (adult + social + komunikatory, bez WhatsApp/Signal)
+  - name: "hosts do obrazu (adult + social + komunikatory, bez WhatsApp/Signal)"
     run: /ham-recipe/scripts/fetch-hosts.sh /ham-build
 
-  - name: GApps extras (GmsSupervision, Gearhead)
+  - name: "GApps extras (GmsSupervision, Gearhead)"
     run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
 
-  - name: Klucze podpisu (do /root/.android-certs; podpisywanie po buildzie, jak w wiki LineageOS)
+  - name: "Klucze podpisu (do /root/.android-certs; podpisywanie po buildzie, jak w wiki LineageOS)"
     run: |
       if [ -n "${KEYS_ZIP:-}" ] && [ -s "$KEYS_ZIP" ]; then
         rm -rf /root/.android-certs && mkdir -p /root/.android-certs && chmod 700 /root/.android-certs
@@ -56,10 +56,10 @@ build:
         test -s /root/.android-certs/releasekey.pk8
       fi
 
-  - name: Weryfikacja allowlist priv-app
+  - name: "Weryfikacja allowlist priv-app"
     run: python3 /ham-recipe/scripts/check-privapp.py /ham-build vendor/gapps/common/proprietary vendor/gapps/arm64/proprietary vendor/gapps-extras
 
-  - name: Build
+  - name: "Build"
     run: |
       cd /ham-build
       export TMPDIR=/ham-build/tmp && mkdir -p "$TMPDIR"
