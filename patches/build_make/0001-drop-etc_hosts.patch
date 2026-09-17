@@ -1,0 +1,12 @@
+diff --git a/target/product/base_system.mk b/target/product/base_system.mk
+index 4bae34d..3c77e24 100644
+--- a/target/product/base_system.mk
++++ b/target/product/base_system.mk
+@@ -511,7 +511,6 @@ endif
+ 
+ PRODUCT_PACKAGES += init.usb.rc init.usb.configfs.rc
+ 
+-PRODUCT_PACKAGES += etc_hosts
+ 
+ PRODUCT_PACKAGES += init.zygote32.rc
+ 
