@@ -15,7 +15,7 @@ args:
     type: file
     required: true
   - id: keys_zip
-    prompt: "Klucze podpisu (zip z vendor/lineage-priv/keys); puste = test-keys"
+    prompt: "Klucze podpisu: ~/.android-certs-rhode.zip (pk8 + pem); puste = test-keys"
     type: file
 
 build:
@@ -48,11 +48,12 @@ build:
   - name: GApps extras (GmsSupervision, Gearhead)
     run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
 
-  - name: Klucze podpisu
+  - name: Klucze podpisu (do /root/.android-certs; podpisywanie po buildzie, jak w wiki LineageOS)
     run: |
       if [ -n "${KEYS_ZIP:-}" ] && [ -s "$KEYS_ZIP" ]; then
-        mkdir -p /ham-build/vendor/lineage-priv/keys
-        unzip -o -q "$KEYS_ZIP" -d /ham-build/vendor/lineage-priv/keys
+        rm -rf /root/.android-certs && mkdir -p /root/.android-certs && chmod 700 /root/.android-certs
+        unzip -o -q "$KEYS_ZIP" -d /root/.android-certs
+        test -s /root/.android-certs/releasekey.pk8
       fi
 
   - name: Weryfikacja allowlist priv-app
@@ -65,7 +66,12 @@ build:
       export WITH_GMS=true
       source build/envsetup.sh
       breakfast rhode
-      mka bacon -j8
+      if [ -s /root/.android-certs/releasekey.pk8 ]; then
+        mka target-files-package otatools -j8
+        /ham-recipe/scripts/sign.sh /ham-build /root/.android-certs
+      else
+        mka bacon -j8
+      fi
 
 post_build:
   - /ham-recipe/scripts/upload.sh /ham-build
