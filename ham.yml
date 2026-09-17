@@ -1,5 +1,5 @@
 title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
-version: "0.1.1"
+version: "0.1.2"
 
 # Serwer: HAM tworzy CCX33 (8 vCPU / 32 GB) + wolumen 400 GB na /ham-build, Ubuntu 24.04,
 # ccache 50 GB, repo i platform-tools zainstalowane. Katalog przepisu jest w /ham-recipe.
