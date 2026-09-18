@@ -15,7 +15,16 @@ TAG=$(echo "$NAME" | grep -oE '[0-9]{8}' | head -1)
 UTC=$(grep -m1 '^ro.build.date.utc=' "$OUT/system/build.prop" | cut -d= -f2)
 
 assets=("$ZIP")
-for img in boot dtbo vendor_boot; do [ -s "$OUT/$img.img" ] && assets+=("$OUT/$img.img"); done
+# mka target-files-package otatools (nasza ścieżka) nie kopiuje boot/dtbo/vendor_boot do $OUT jak pełne
+# mka bacon — szukamy też w target_files_intermediates/IMAGES, skąd je bierze ota_from_target_files.
+TFI=$(ls -d "$OUT"/obj/PACKAGING/target_files_intermediates/*-target_files 2>/dev/null | head -1)
+for img in boot dtbo vendor_boot; do
+  if [ -s "$OUT/$img.img" ]; then
+    assets+=("$OUT/$img.img")
+  elif [ -n "$TFI" ] && [ -s "$TFI/IMAGES/$img.img" ]; then
+    assets+=("$TFI/IMAGES/$img.img")
+  fi
+done
 
 gh release create "$TAG" --repo "$REL_REPO" --title "lineage-23.2 $TAG rhode" \
   --notes "Build z manifestu Tomoms 16.2 z $(date -u +%F). boot/dtbo/vendor_boot do wejścia w recovery przy pierwszej instalacji." \
