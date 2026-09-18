@@ -27,8 +27,8 @@ done
 echo "== sign_target_files_apks ($(basename "$TF"))"
 sign_target_files_apks -o -d "$CERTS" "${args[@]}" "$TF" "$OUT/signed-target_files.zip"
 
-VER=$(grep -m1 '^ro.lineage.version=' "$OUT/system/build.prop" | cut -d= -f2)   # np. 23.2-20260917-UNOFFICIAL-rhode
-ZIP="$OUT/lineage-${VER}-signed.zip"
+DATE=$(date -u +%Y%m%d)
+ZIP="$OUT/lineage-23.2-${DATE}-UNOFFICIAL-rhode-signed.zip"   # ro.lineage.version nie istnieje w tym drzewie - wlasna nazwa
 echo "== ota_from_target_files -> $(basename "$ZIP")"
 ota_from_target_files -k "$CERTS/releasekey" --block --backup=true "$OUT/signed-target_files.zip" "$ZIP"
 ls -la "$ZIP" | awk '{print $5" B", $9}'
