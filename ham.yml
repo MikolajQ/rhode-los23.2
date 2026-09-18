@@ -1,5 +1,5 @@
 title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
-version: "0.1.7"
+version: "0.1.8"
 
 # Serwer: HAM tworzy CCX33 (8 vCPU / 32 GB) + wolumen 400 GB na /ham-build, Ubuntu 24.04,
 # ccache 50 GB, repo i platform-tools zainstalowane. Katalog przepisu jest w /ham-recipe.
@@ -81,7 +81,10 @@ build:
     run: |
       cd /ham-build
       export TMPDIR=/ham-build/tmp && mkdir -p "$TMPDIR"
-      export WITH_GMS=true
+      export WITH_GMS=true USE_CCACHE=1 CCACHE_EXEC=/usr/bin/ccache
+      # bootstrap HAM czasem zostawia /root/.cache/ccache jako zwykły plik zamiast katalogu -> "ccache: error: Not a directory"
+      [ -f /root/.cache/ccache ] && rm -f /root/.cache/ccache
+      mkdir -p /root/.cache/ccache
       source build/envsetup.sh
       breakfast rhode
       if [ -s /root/.android-certs/releasekey.pk8 ]; then
