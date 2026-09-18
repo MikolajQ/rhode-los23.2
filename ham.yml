@@ -1,5 +1,5 @@
 title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
-version: "0.1.8"
+version: "0.1.9"
 
 # Serwer: HAM tworzy CCX33 (8 vCPU / 32 GB) + wolumen 400 GB na /ham-build, Ubuntu 24.04,
 # ccache 50 GB, repo i platform-tools zainstalowane. Katalog przepisu jest w /ham-recipe.
@@ -82,6 +82,9 @@ build:
       cd /ham-build
       export TMPDIR=/ham-build/tmp && mkdir -p "$TMPDIR"
       export WITH_GMS=true USE_CCACHE=1 CCACHE_EXEC=/usr/bin/ccache
+      # dex2oatd (ART debug, domyslny dla dex_bootjars: "help find bugs") SIGSEGV deterministycznie
+      # w RegTypeCache::FromClass przy weryfikacji boot jarow na tym drzewie -> release'owy dex2oat
+      export USE_DEX2OAT_DEBUG=false
       # bootstrap HAM czasem zostawia /root/.cache/ccache jako zwykły plik zamiast katalogu -> "ccache: error: Not a directory"
       [ -f /root/.cache/ccache ] && rm -f /root/.cache/ccache
       mkdir -p /root/.cache/ccache
