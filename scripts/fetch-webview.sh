@@ -20,7 +20,7 @@ android_app_import {
     product_specific: true,
     presigned: true,
     preprocessed: true,
-    optional_uses_libs: ["android.test.base", "androidx.window.extensions", "android.ext.adservices"],
+    optional_uses_libs: ["android.test.base", "androidx.window.extensions"],  # bez android.ext.adservices - manifest Cromite go nie deklaruje
     overrides: ["webview"],
     arch: {
         arm64: {
