@@ -3,7 +3,7 @@
 #   mka target-files-package otatools  ->  sign_target_files_apks  ->  ota_from_target_files
 # Klucze: /root/.android-certs (rozpakowane z keys_zip przez ham.yml): <nazwa>.pk8 + .x509.pem dla APK,
 # <apex>.pk8 + .x509.pem (RSA 4096) + <apex>.pem (PKCS8) dla APEX-ów. Listy apexapks/apexes = wiki, stan 2026-09-17.
-set -euo pipefail
+set -eo pipefail
 ROOT=${1:?korzeń drzewa}
 CERTS=${2:-/root/.android-certs}
 cd "$ROOT"
