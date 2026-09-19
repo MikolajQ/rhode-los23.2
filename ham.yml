@@ -55,6 +55,13 @@ build:
       cp vendor/extra/fdroid/additional_repos.xml vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
       grep -c izzysoft vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
 
+  - name: "Identyfikator builda: miq zamiast Tom (TARGET_UNOFFICIAL_BUILD_ID w drzewie urządzenia Tomoms)"
+    run: |
+      cd /ham-build
+      grep -q '^TARGET_UNOFFICIAL_BUILD_ID := Tom$' device/motorola/rhode/lineage_rhode.mk
+      sed -i 's/^TARGET_UNOFFICIAL_BUILD_ID := Tom$/TARGET_UNOFFICIAL_BUILD_ID := miq/' device/motorola/rhode/lineage_rhode.mk
+      grep -q '^TARGET_UNOFFICIAL_BUILD_ID := miq$' device/motorola/rhode/lineage_rhode.mk
+
   - name: "GApps extras (GmsSupervision, Gearhead)"
     run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
 
