@@ -32,4 +32,14 @@ ZIP="$OUT/lineage-23.2-${DATE}-UNOFFICIAL-rhode-signed.zip"   # ro.lineage.versi
 echo "== ota_from_target_files -> $(basename "$ZIP")"
 ota_from_target_files -k "$CERTS/releasekey" --block --backup=true "$OUT/signed-target_files.zip" "$ZIP"
 ls -la "$ZIP" | awk '{print $5" B", $9}'
-for img in boot dtbo vendor_boot; do [ -s "$OUT/$img.img" ] && echo "  $img.img: $(stat -c %s "$OUT/$img.img") B"; done
+
+# boot/dtbo/vendor_boot do release'u WYŁĄCZNIE z podpisanego target-files: sign_target_files_apks
+# podmienia otacerts w ramdisku i przebudowuje IMAGES/, a ota_from_target_files pakuje do payload.bin
+# właśnie te obrazy. Wersje z target_files_intermediates (sprzed podpisu) mają stare otacerts -
+# recovery z takiego boot.img odrzuca nasz zip ("signature verification failed"), tak było w 20260918.
+rm -rf "$OUT/signed-images"; mkdir -p "$OUT/signed-images"
+unzip -q -o -j "$OUT/signed-target_files.zip" IMAGES/boot.img IMAGES/dtbo.img IMAGES/vendor_boot.img -d "$OUT/signed-images"
+for img in boot dtbo vendor_boot; do
+  [ -s "$OUT/signed-images/$img.img" ] || { echo "brak IMAGES/$img.img w signed-target_files.zip"; exit 1; }
+  echo "  signed-images/$img.img: $(stat -c %s "$OUT/signed-images/$img.img") B"
+done

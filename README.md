@@ -10,10 +10,23 @@ Różnice względem buildów Tomoms:
 - **GApps w obrazie**: MindTheGapps (`baklava`) przycięte do zestawu NikGapps core + pełny Android Auto
   + `GmsSupervision` jako priv-app w `product` (Family Link — patrz nikgapps/config#15760)
 - **F-Droid** z repozytoriami IzzyOnDroid, NewPipe, IronFox (same adresy, bez APK w obrazie)
-- **WebView: Cromite** (`org.cromite.webview`, de-Google + adblock) zamiast prebuiltu LineageOS; APK pobierany przy buildzie
+- **WebView: Cromite** (pakiet `com.android.webview`, de-Google + adblock) zamiast prebuiltu LineageOS; APK pobierany przy buildzie
 - **Bloker w obrazie**: `/system/etc/hosts` (adult + social + komunikatory poza WhatsApp/Signal) + domyślny Private DNS AdGuard Family; na telefonie AdAway (root)
-- **Telefon dziecka**: oryginalny manager KernelSU-Next w obrazie, ukryty/za PIN-em; blokada nieznanych źródeł w Family Link
+- **Telefon dziecka**: manager KernelSU-Next instalowany po flashu z oryginalnego APK (nie da się go wbudować bez złamania podpisu — patrz vendor/extra `product.mk`), potem ukryty/za PIN-em; blokada nieznanych źródeł w Family Link
 - bez Bellis i LogViewer; własne OTA z [rhode_releases](https://github.com/MikolajQ/rhode_releases)
+
+## Instalacja na telefonie (Virtual A/B — kolejność ma znaczenie)
+
+1. `fastboot boot boot.img` (obraz z release'u = ten z `payload.bin`, z naszymi otacerts) → recovery.
+2. **Factory Reset → Format data / factory reset** — *przed* sideloadem. Format po sideloadzie kasuje `/metadata/ota`
+   (stan snapshotów Virtual A/B) i nadmiar COW w `/data`: nowy slot zostaje z surowymi, starymi partycjami i wpada w recovery.
+3. Apply Update → Apply from ADB → `adb -d sideload lineage-…-signed.zip`. Dodatki: No. Potem **Reboot system now**, nic więcej.
+4. Pierwszy rozruch: logo → animacja (snapshoty scalają się w tle po udanym starcie). Manager KernelSU-Next: zainstalować ręcznie.
+
+Pułapki z 2026-09-19: bootloader Motoroli blokuje `erase`/`flash` na `misc`, `persist`, `frp` (bit 5 atrybutów GPT);
+`slot-successful`/`retry-count` to bity 48–55 atrybutów GPT partycji `boot_*` na LUN-ach 3 (a) i 5 (b) — **nie edytować
+sgdisk-iem** (bootloader zgubił slot; ratunek: `fastboot flash partition gpt.bin` ze stockowego firmware'u, MD5 z `flashfile.xml`).
+`ro.debuggable=0` (build user): `adb root` nie działa; logi startu: `adb logcat -b all -d` w oknie animacji, zanim padnie.
 
 ## Uruchomienie
 
@@ -46,7 +59,7 @@ lists/                       communicators-block.txt (Telegram, Discord, Viber�
 scripts/apply-patches.sh
 scripts/gapps-extras.sh      zip -> vendor/gapps-extras + Android.bp / splits/Android.mk / extras.mk (splity jako prebuilty ETC; .apk nie może iść przez PRODUCT_COPY_FILES)
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka
-scripts/sign.sh              sign_target_files_apks + ota_from_target_files z /root/.android-certs (listy APEX z wiki)
+scripts/sign.sh              sign_target_files_apks + ota_from_target_files z /root/.android-certs (listy APEX z wiki); boot/dtbo/vendor_boot -> $OUT/signed-images
 scripts/upload.sh            post_build: release + rhode.json
 scripts/staleness.sh         lokalnie przed ham get: o ile forki Tomoms odstają od LineageOS
 scripts/inspect-zip.sh       lokalnie po pobraniu zipa: kontrola obrazu przed flashem (debugfs, bez roota)

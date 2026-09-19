@@ -15,19 +15,20 @@ TAG=$(echo "$NAME" | grep -oE '[0-9]{8}' | head -1)
 UTC=$(grep -m1 '^ro.build.date.utc=' "$OUT/system/build.prop" | cut -d= -f2)
 
 assets=("$ZIP")
-# mka target-files-package otatools (nasza ścieżka) nie kopiuje boot/dtbo/vendor_boot do $OUT jak pełne
-# mka bacon — szukamy też w target_files_intermediates/IMAGES, skąd je bierze ota_from_target_files.
-TFI=$(ls -d "$OUT"/obj/PACKAGING/target_files_intermediates/*-target_files 2>/dev/null | head -1)
+# Build podpisany (sign.sh): obrazy z $OUT/signed-images - spójne z payload.bin. Build test-keys (mka bacon):
+# $OUT/*.img. NIGDY z target_files_intermediates - to obrazy sprzed podpisu (stare otacerts, patrz sign.sh).
 for img in boot dtbo vendor_boot; do
-  if [ -s "$OUT/$img.img" ]; then
+  if [ -s "$OUT/signed-images/$img.img" ]; then
+    assets+=("$OUT/signed-images/$img.img")
+  elif [ -s "$OUT/$img.img" ] && [ ! -s "$OUT/signed-target_files.zip" ]; then
     assets+=("$OUT/$img.img")
-  elif [ -n "$TFI" ] && [ -s "$TFI/IMAGES/$img.img" ]; then
-    assets+=("$TFI/IMAGES/$img.img")
+  else
+    echo "brak spójnego $img.img (signed-images/) - nie publikuję niespójnych obrazów"; exit 1
   fi
 done
 
 gh release create "$TAG" --repo "$REL_REPO" --title "lineage-23.2 $TAG rhode" \
-  --notes "Build z manifestu Tomoms 16.2 z $(date -u +%F). boot/dtbo/vendor_boot do wejścia w recovery przy pierwszej instalacji." \
+  --notes "Build z manifestu Tomoms 16.2 z $(date -u +%F). boot/dtbo/vendor_boot = obrazy z payload.bin (po podpisaniu): fastboot boot boot.img -> recovery -> Format data -> sideload." \
   "${assets[@]}"
 
 # JSON dla Updatera (format jak Tomoms/ota_provider); datetime = ro.build.date.utc, bo Updater

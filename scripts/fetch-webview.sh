@@ -3,7 +3,8 @@
 # więc nie trzymamy go w gicie — pobieramy z release'u Cromite z przypiętym tagiem i SHA-256.
 # Aktualizacja: podmienić TAG i SHA256 (digest jest w API GitHuba: releases/latest -> assets[].digest).
 # Wymaga w vendor/extra: PRODUCT_PACKAGES += CromiteWebView oraz overlay config_webview_packages.xml
-# z packageName="org.cromite.webview" (Cromite buduje webview pod tą nazwą, nie com.android.webview).
+# z packageName="com.android.webview" - Cromite SystemWebView zachowuje standardową nazwę pakietu
+# (sprawdzone na urządzeniu; "org.cromite.webview" w nakładce = brak dostawcy WebView = bootloop system_server).
 set -euo pipefail
 ROOT=${1:?korzeń drzewa}
 TAG="v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a"
@@ -14,7 +15,7 @@ mkdir -p "$DEST"
 [ -s "$DEST/webview64.apk" ] || curl -fL --retry 3 -o "$DEST/webview64.apk" "$URL"
 echo "$SHA256  $DEST/webview64.apk" | sha256sum -c -
 cat > "$DEST/Android.bp" <<'BP'
-// Cromite SystemWebView (org.cromite.webview), pobierany przez scripts/fetch-webview.sh.
+// Cromite SystemWebView (pakiet com.android.webview), pobierany przez scripts/fetch-webview.sh.
 android_app_import {
     name: "CromiteWebView",
     product_specific: true,
