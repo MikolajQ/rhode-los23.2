@@ -1,0 +1,54 @@
+diff --git a/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2.cpp b/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2.cpp
+index b773393..d440f2e 100644
+--- a/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2.cpp
++++ b/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2.cpp
+@@ -1045,6 +1045,15 @@ OMX_ERRORTYPE venc_dev::venc_get_supported_profile_level(OMX_VIDEO_PARAM_PROFILE
+         /* handle HEVC high tier */
+         profileLevelType->eLevel <<= 1;
+     }
++    /* Advertise the full level range. ACodec rejects the whole configuration when an app asks for a
++     * level above the one reported here (bengal: AVC 5.0 / HEVC 5, while camera apps ask for 5.1+ even
++     * at 1080p30). The requested level is clamped to the driver maximum in venc_set_level(), so the
++     * encoded stream still carries a level the hardware supports. */
++    if (m_sVenc_cfg.codectype == V4L2_PIX_FMT_H264) {
++        profileLevelType->eLevel = OMX_VIDEO_AVCLevel62;
++    } else if (m_sVenc_cfg.codectype == V4L2_PIX_FMT_HEVC) {
++        profileLevelType->eLevel = OMX_VIDEO_HEVCHighTierLevel62;
++    }
+ 
+     /* For given profile index get corresponding profile that needs to be supported */
+     if (profileLevelType->nPortIndex != 1) {
+@@ -1109,7 +1118,8 @@ OMX_ERRORTYPE venc_dev::venc_get_supported_profile_level(OMX_VIDEO_PARAM_PROFILE
+                 profileLevelType->eProfile == OMX_VIDEO_HEVCProfileMain10HDR10 ||
+                 profileLevelType->eProfile == OMX_VIDEO_HEVCProfileMain10HDR10Plus) {
+                 DEBUG_PRINT_LOW("%s: HDR profile unsupported", __FUNCTION__);
+-                return OMX_ErrorHardware;
++                /* OMX_ErrorHardware aborts ACodec's whole profile enumeration; NoMore just ends it. */
++                return OMX_ErrorNoMore;
+             }
+         }
+     }
+diff --git a/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp b/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp
+index 3bfcd98..cb29ff4 100644
+--- a/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp
++++ b/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp
+@@ -1359,6 +1359,19 @@ bool venc_dev::venc_set_level(OMX_U32 eLevel)
+         return false;
+     }
+ 
++    /* venc_get_supported_profile_level() advertises the full level range; clamp what the app asked
++     * for to what the driver can actually do (bengal: AVC 5.0 / HEVC 5). */
++    {
++        struct v4l2_queryctrl level_cap;
++        memset(&level_cap, 0, sizeof(level_cap));
++        level_cap.id = control.id;
++        if (!ioctl(m_nDriver_fd, VIDIOC_QUERYCTRL, &level_cap) && control.value > level_cap.maximum) {
++            DEBUG_PRINT_HIGH("Requested level %d above driver maximum %d, clamping",
++                             control.value, level_cap.maximum);
++            control.value = level_cap.maximum;
++        }
++    }
++
+     DEBUG_PRINT_LOW("Calling IOCTL set control for id=%d, val=%d",
+                             control.id, control.value);
+     rc = ioctl(m_nDriver_fd, VIDIOC_S_CTRL, &control);
