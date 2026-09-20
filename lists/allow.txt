@@ -5,3 +5,6 @@ signal\.art$
 sfu\.voip\.signal\.org$
 ^whatsapp[-.].*\.fbcdn\.net$
 ^whatsapp[-.].*\.whatsapp\.net$
+# Pinterest (19.09 - prośba użytkownika; lista social StevenBlack blokuje 129 domen, w tym pinimg.com z obrazkami)
+pinterest\.(com|net)$
+pinimg\.com$
