@@ -43,7 +43,7 @@ dcat system.img "$HOSTS" | grep -qE ' www\.instagram\.com$' && ok "hosts: Instag
 BP=$(sysp /build.prop); dcat system.img "$BP" | grep -E '^ro\.build\.(version\.release|version\.security_patch|date\.utc|version\.incremental)=' | sed 's/^/     /'
 dcat system.img "$BP" | grep -q '^ro.build.version.release=16' && ok "Android 16" || bad "to nie Android 16"
 FDR=$(sysp /etc/org.fdroid.fdroid/additional_repos.xml)
-dcat system.img "$FDR" | grep -q 'izzysoft' && ok "F-Droid additional_repos.xml (IzzyOnDroid)" || warn "brak additional_repos.xml z IzzyOnDroid (ścieżka $FDR)"
+dcat system.img "$FDR" | grep -q 'izzysoft' && ok "additional_repos.xml (IzzyOnDroid) — czytane przez Droid-ify" || warn "brak additional_repos.xml z IzzyOnDroid (ścieżka $FDR)"
 
 echo "== system_ext"
 dcat system_ext.img /etc/build.prop | grep -q 'lineage.updater.uri=.*MikolajQ/rhode_releases' && ok "OTA wskazuje na rhode_releases" || bad "lineage.updater.uri nie wskazuje na MikolajQ/rhode_releases (Updater podsunąłby buildy Tomoms)"
@@ -57,7 +57,7 @@ dcat product.img /etc/permissions/privapp-permissions-google-product.xml | grep 
 dcat product.img /etc/permissions/com.google.android.projection.gearhead.xml | grep -q 'TOGGLE_AUTOMOTIVE_PROJECTION' && ok "allowlist Android Auto z NikGapps (71 uprawnień)" || warn "brak pełnej allowlisty gearhead z NikGapps (zostaje 19 z MTG)"
 dls product.img /etc/sysconfig | grep -q 'google.xml' && ok "sysconfig google.xml (allow-in-power-save dla GMS)" || bad "brak sysconfig/google.xml — push i Family Link umrą w Doze"
 { dls product.img /app; dls product.img /priv-app; } | grep -qiE 'webview|cromite' && ok "WebView w product: $({ dls product.img /app; dls product.img /priv-app; } | grep -iE 'webview|cromite' | tr '\n' ' ')" || bad "brak modułu WebView w product"
-{ dls product.img /app; dls system.img /system/app; } | grep -qx 'F-Droid' && ok "F-Droid" || warn "brak F-Droid w app/"
+{ dls product.img /app; dls system.img /system/app; } | grep -qx 'Droidify' && ok "Droid-ify" || warn "brak Droidify w app/"
 
 echo "== boot.img"
 if strings boot.img | grep -q 'KernelSU'; then ok "boot.img: ślady KernelSU w jądrze"; else warn "boot.img: brak stringów KernelSU (Image.gz? sprawdź: unpack + strings)"; fi

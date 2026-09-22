@@ -45,7 +45,10 @@ build:
   - name: "hosts do obrazu (adult + social + komunikatory, bez WhatsApp/Signal)"
     run: /ham-recipe/scripts/fetch-hosts.sh /ham-build
 
-  - name: "Repozytoria F-Droid (XML) w miejsce listy Tomoms w vendor/lineage"
+  - name: "Droid-ify (przypięty release + SHA-256)"
+    run: /ham-recipe/scripts/fetch-droidify.sh /ham-build
+
+  - name: "Repozytoria klienta F-Droid (XML) w miejsce listy Tomoms w vendor/lineage — czyta je też Droid-ify"
     run: |
       cd /ham-build
       test -f vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml

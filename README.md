@@ -9,7 +9,8 @@ Różnice względem buildów Tomoms:
 - **KernelSU-Next** (manual hooks) w [forku kernela](https://github.com/MikolajQ/android_kernel_motorola_sm6225/tree/16.2-ksun)
 - **GApps w obrazie**: MindTheGapps (`baklava`) przycięte do zestawu NikGapps core + pełny Android Auto
   + `GmsSupervision` jako priv-app w `product` (Family Link — patrz nikgapps/config#15760)
-- **F-Droid** z repozytoriami IzzyOnDroid, NewPipe, IronFox (same adresy, bez APK w obrazie)
+- **Droid-ify** (zamiast F-Droida — ciężki, toporny) z repozytoriami IzzyOnDroid, NewPipe, IronFox; bez Privileged
+  Extension (Droid-ify jej nie obsługuje) — instalacja aktualizacji przez root KSU-Next
 - **WebView: prebuilt oficjalny LineageOS** (pakiet `com.android.webview`); do 22.09 był tu Cromite (de-Google + adblock) —
   zamieniony po [uazo/cromite#3085](https://github.com/uazo/cromite/issues/3085): patch Cromite wymuszający partycjonowanie
   połączeń wywalał SIGTRAP-em każdą apkę wołającą WebView preconnect z pustym kluczem (m.in. Google Mobile Ads SDK)
@@ -59,6 +60,7 @@ patches/vendor_gapps/        cięcia listy pakietów MTG (git apply)
 patches/vendor_lineage/      bez prywatnych Trichrome* z vendor/lineage Tomoms
 patches/hardware_qcom-caf_sm8250_media/  enkoder wideo: pełny zakres poziomów + clamp (wideo w GCam/LMC 8.4)
 scripts/fetch-hosts.sh       /system/etc/hosts: StevenBlack porn+social (przypięty commit) + lists/, minus WhatsApp/Signal
+scripts/fetch-droidify.sh    Droid-ify z release'u, przypięty tag + SHA-256
 lists/                       communicators-block.txt (Telegram, Discord, Viber…), allow.txt (WhatsApp, Signal)
 scripts/apply-patches.sh
 scripts/gapps-extras.sh      zip -> vendor/gapps-extras + Android.bp / splits/Android.mk / extras.mk (splity jako prebuilty ETC; .apk nie może iść przez PRODUCT_COPY_FILES)
