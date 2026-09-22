@@ -76,3 +76,23 @@ SHA=$(gh api "repos/$REL_REPO/contents/23.x/rhode.json" -q .sha 2>/dev/null || t
 gh api -X PUT "repos/$REL_REPO/contents/23.x/rhode.json" \
   -f message="rhode: $TAG" -f content="$(printf '%s\n' "$JSON" | base64 -w0)" ${SHA:+-f sha="$SHA"} >/dev/null
 echo "release: https://github.com/$REL_REPO/releases/tag/$TAG"
+
+# Samokasowanie serwera (22.09): HAM kasuje serwer wyłącznie przez `defer` w LOKALNYM procesie klienta
+# (internal/cmd/get/get.go deferDeleteServer, internal/cmd/build/build.go destroyCurrentServer — autor
+# wprost: "as long it's not killed") — zero mechanizmu po stronie serwera. Jeśli lokalny klient padnie
+# (koniec sesji, restart maszyny lokalnej — a build trwa 5-7h, komputer bywa wyłączany w tym czasie),
+# serwer żyje dalej i kosztuje aż do twardego limitu 24h. Woła się dopiero TUTAJ, po udanym uploadzie —
+# jeśli cokolwiek wcześniej w tym skrypcie padnie (set -euo pipefail), do tej linii nigdy nie dojdzie i
+# serwer zostaje żywy do debugowania, dokładnie jak przy fladze -t/-b.
+if [ -n "${HETZNER_TOKEN:-}" ]; then
+  INSTANCE_ID=$(curl -s --max-time 10 http://169.254.169.254/hetzner/v1/metadata/instance-id || true)
+  if [ -n "$INSTANCE_ID" ]; then
+    echo "samokasowanie: serwer $INSTANCE_ID (po udanym uploadzie)"
+    curl -s --max-time 20 -X DELETE -H "Authorization: Bearer $HETZNER_TOKEN" \
+      "https://api.hetzner.cloud/v1/servers/$INSTANCE_ID" || echo "samokasowanie nieudane (nieistotne — lokalny klient/watchdog i tak posprząta)"
+  else
+    echo "samokasowanie pominięte: brak instance-id z serwisu metadanych"
+  fi
+else
+  echo "samokasowanie pominięte: brak argumentu hetzner_token"
+fi

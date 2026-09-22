@@ -11,6 +11,9 @@ args:
     prompt: "GitHub token z prawem repo (release w MikolajQ/rhode_releases)"
     type: secret
     required: true
+  - id: hetzner_token
+    prompt: "Token API Hetznera (Read & Write) - do samokasowania serwera po udanym uploadzie; puste = tylko lokalny klient/watchdog kasuje"
+    type: secret
   - id: gapps_extras_zip
     prompt: "Zip z product/priv-app/{GmsSupervision,Gearhead} + product/etc/permissions (patrz README)"
     type: file

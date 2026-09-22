@@ -45,13 +45,19 @@ sgdisk-iem** (bootloader zgubił slot; ratunek: `fastboot flash partition gpt.bi
 terminala blokuje nawet ekran potwierdzenia ceny, zanim dojdzie do sprawdzenia flagi `-n`). Odpalać pod
 `script`: `script -qec "~/bin/rhode/ham get ..." log.txt`.
 
-**Serwer kasuje się WYŁĄCZNIE przez lokalny proces klienta** (`defer` w `ham get`/`ham build`, sam HAM: "as
-long it's not killed" — zero mechanizmu po stronie serwera). Jeśli lokalny proces padnie (koniec sesji,
-restart maszyny), zdalny build i tak się dokończy i wyśle wynik (autonomiczny demon PPID=1 na serwerze), ale
-**serwer zostaje żywy i płatny** aż do twardego limitu 24h. Zabezpieczenie: `~/bin/rhode/watchdog-cleanup.sh`
-jako systemd user timer (`~/.config/systemd/user/rhode-watchdog.{service,timer}`, co 15 min, `loginctl
-enable-linger` włączony) — sprawdza przez SSH, czy zdalny `ham build` jeszcze żyje; jeśli nie i serwer ma
-&gt;10 min, sam woła `ham clean`.
+**Sam HAM kasuje serwer WYŁĄCZNIE przez lokalny proces klienta** (`defer` w `ham get`/`ham build`, autor wprost:
+"as long it's not killed" — zero mechanizmu po stronie serwera). Build trwa 5–7h, a komputer bywa wyłączany
+w tym czasie — więc **samokasowanie przeniesione na serwer**: `scripts/upload.sh` na końcu, dopiero po udanym
+uploadzie, sam woła Hetzner API i się kasuje (`instance-id` z serwisu metadanych `169.254.169.254`, argument
+`hetzner_token`). Działa niezależnie od tego, czy ten komputer jest w ogóle włączony. Jeśli `upload.sh` padnie
+wcześniej (`set -euo pipefail`) — do samokasowania nigdy nie dojdzie, serwer zostaje żywy do debugowania,
+dokładnie jak przy fladze `-t`/`-b`.
+
+Odległa siatka bezpieczeństwa na wypadek, gdyby i to zawiodło (np. serwer akurat bez sieci do API Hetznera):
+`~/bin/rhode/watchdog-cleanup.sh` jako systemd user timer (`~/.config/systemd/user/rhode-watchdog.{service,timer}`,
+co 15 min, `loginctl enable-linger` włączony — działa nawet bez zalogowanej sesji) — sprawdza przez SSH, czy
+zdalny `ham build` jeszcze żyje; kasuje tylko serwery starsze niż 8h (dłużej niż typowy build — czas na
+debugowanie porażki, zanim watchdog posprząta).
 
 ## Uruchomienie
 
@@ -68,6 +74,7 @@ Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.
 | id | typ | co |
 |---|---|---|
 | `gh_token` | secret | token GitHub z `repo` — `upload.sh` tworzy release i aktualizuje `23.x/rhode.json` |
+| `hetzner_token` | secret | token API Hetznera (Read & Write, ten sam co w `~/.ham.json`) — `upload.sh` kasuje nim serwer po udanym uploadzie; puste = tylko lokalny klient/watchdog kasuje |
 | `gapps_extras_zip` | file | zip: `product/priv-app/GmsSupervision/GmsSupervision.apk` (stub Google 0.1.453788429 z APKMirror „System parental controls" — Play nadpisze pełną wersją z flagą PRIVILEGED) + `product/etc/permissions/com.google.android.projection.gearhead.xml` (pełna allowlist AA z NikGapps); skrypt generuje `Android.bp` (jeden APK → `android_app_import`), `splits/Android.mk` (gdyby były splity → prebuilty ETC) i `extras.mk` |
 | `motocam_zip` | file | opcjonalny; zip z Moto Camera stockowej w płaskim układzie partycji (nie module Magiska): `product/priv-app/MotCamera4/`, `product/app/MotCamera3AI/`, `product/etc/{permissions,sysconfig}/*`, `system/app/{MotoSignatureApp,MotoSignature2App}/`, `system/etc/permissions/*.xml`, `system/framework/*.jar`; skrypt generuje `Android.bp` (`android_app_import`/`prebuilt_etc`/`java_import`) i `extras.mk`; gotowy zip: `~/Pulpit/Rhode/motocam/motocam-gapps-extras.zip`; puste = bez Moto Camera |
 | `keys_zip` | file | własne klucze (`*.pk8`, `*.x509.pem`, `<apex>.pem`); z nimi build idzie przez `mka target-files-package otatools` + `scripts/sign.sh` (wiki LineageOS „Signing builds"); puste = test-keys i `mka bacon` |
