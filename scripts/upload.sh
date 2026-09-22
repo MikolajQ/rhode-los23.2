@@ -31,20 +31,45 @@ gh release create "$TAG" --repo "$REL_REPO" --title "lineage-23.2 $TAG rhode" \
   --notes "Build z manifestu Tomoms 16.2 z $(date -u +%F). boot/dtbo/vendor_boot = obrazy z payload.bin (po podpisaniu): fastboot boot boot.img -> recovery -> Format data -> sideload." \
   "${assets[@]}"
 
-# JSON dla Updatera (format jak Tomoms/ota_provider); datetime = ro.build.date.utc, bo Updater
-# porównuje go z bieżącym buildem.
-JSON=$(python3 - "$ZIP" "$TAG" "$REL_REPO" "$UTC" <<'PY'
+# JSON dla Updatera — format opisany w README android_packages_apps_Updater (NetworkUpdate.kt):
+# tablica (NIE {"response":[...]})  obiektów {datetime, files:[{filename,os_patch_level,os_sdk_level,
+# ota_property_files,sha256,size,url}], type, version}. "type" porównywane z ro.lineage.releasetype,
+# "version" z ro.lineage.build.version. 22.09: poprzedni format ({"response":[...]}, "romtype", "id"
+# zamiast "sha256", brak files[]/os_sdk_level/ota_property_files) był ze STAREGO API Updatera — obecna
+# apka (kotlinx.serialization) parsuje to inaczej i cicho nic nie pokazywała. os_sdk_level brakujące =
+# domyślnie 0 w apce, co ZAWSZE odrzuca aktualizację (0 < bieżący SDK) - nie jest naprawdę opcjonalne
+# mimo README. ota_property_files bierzemy z META-INF/com/android/metadata WEWNĄTRZ zipa (klucz
+# ota-property-files=...) - to samo źródło, z którego bierzemy os_sdk_level/os_patch_level
+# (post-sdk-level/post-security-patch-level), żeby nie mogły się rozjechać z prawdziwym payloadem.
+METADATA=$(unzip -p "$ZIP" META-INF/com/android/metadata)
+OTA_PROP_FILES=$(echo "$METADATA" | grep -m1 '^ota-property-files=' | cut -d= -f2- | sed 's/[[:space:]]*$//')
+OS_SDK_LEVEL=$(echo "$METADATA" | grep -m1 '^post-sdk-level=' | cut -d= -f2)
+OS_PATCH_LEVEL=$(echo "$METADATA" | grep -m1 '^post-security-patch-level=' | cut -d= -f2)
+[ -n "$OTA_PROP_FILES" ] || { echo "brak ota-property-files w METADATA zipa"; exit 1; }
+[ -n "$OS_SDK_LEVEL" ] || { echo "brak post-sdk-level w METADATA zipa"; exit 1; }
+
+JSON=$(python3 - "$ZIP" "$TAG" "$REL_REPO" "$UTC" "$OTA_PROP_FILES" "$OS_SDK_LEVEL" "$OS_PATCH_LEVEL" <<'PY'
 import hashlib, json, os, sys
-zip_, tag, repo, utc = sys.argv[1:5]
+zip_, tag, repo, utc, ota_prop_files, os_sdk_level, os_patch_level = sys.argv[1:8]
 name = os.path.basename(zip_)
-h = hashlib.sha1()
+h = hashlib.sha256()
 with open(zip_, "rb") as f:
     for chunk in iter(lambda: f.read(1 << 20), b""):
         h.update(chunk)
-print(json.dumps({"response": [{
-    "datetime": int(utc), "filename": name, "id": h.hexdigest(), "romtype": "UNOFFICIAL",
-    "size": os.path.getsize(zip_),
-    "url": f"https://github.com/{repo}/releases/download/{tag}/{name}", "version": "23.2"}]}, indent=2))
+print(json.dumps([{
+    "datetime": int(utc),
+    "files": [{
+        "filename": name,
+        "os_patch_level": os_patch_level,
+        "os_sdk_level": int(os_sdk_level),
+        "ota_property_files": ota_prop_files,
+        "sha256": h.hexdigest(),
+        "size": os.path.getsize(zip_),
+        "url": f"https://github.com/{repo}/releases/download/{tag}/{name}",
+    }],
+    "type": "UNOFFICIAL",
+    "version": "23.2",
+}], indent=2))
 PY
 )
 SHA=$(gh api "repos/$REL_REPO/contents/23.x/rhode.json" -q .sha 2>/dev/null || true)
