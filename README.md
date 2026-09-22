@@ -39,6 +39,20 @@ Pułapki z 2026-09-19: bootloader Motoroli blokuje `erase`/`flash` na `misc`, `p
 sgdisk-iem** (bootloader zgubił slot; ratunek: `fastboot flash partition gpt.bin` ze stockowego firmware'u, MD5 z `flashfile.xml`).
 `ro.debuggable=0` (build user): `adb root` nie działa; logi startu: `adb logcat -b all -d` w oknie animacji, zanim padnie.
 
+## Uruchomienie i sprzątanie serwera
+
+**`ham get`/`ham clean` potrzebują prawdziwego pty** — pod gołym `nohup ... &` w tle wiszą bez śladu (brak
+terminala blokuje nawet ekran potwierdzenia ceny, zanim dojdzie do sprawdzenia flagi `-n`). Odpalać pod
+`script`: `script -qec "~/bin/rhode/ham get ..." log.txt`.
+
+**Serwer kasuje się WYŁĄCZNIE przez lokalny proces klienta** (`defer` w `ham get`/`ham build`, sam HAM: "as
+long it's not killed" — zero mechanizmu po stronie serwera). Jeśli lokalny proces padnie (koniec sesji,
+restart maszyny), zdalny build i tak się dokończy i wyśle wynik (autonomiczny demon PPID=1 na serwerze), ale
+**serwer zostaje żywy i płatny** aż do twardego limitu 24h. Zabezpieczenie: `~/bin/rhode/watchdog-cleanup.sh`
+jako systemd user timer (`~/.config/systemd/user/rhode-watchdog.{service,timer}`, co 15 min, `loginctl
+enable-linger` włączony) — sprawdza przez SSH, czy zdalny `ham build` jeszcze żyje; jeśli nie i serwer ma
+&gt;10 min, sam woła `ham clean`.
+
 ## Uruchomienie
 
 ```
