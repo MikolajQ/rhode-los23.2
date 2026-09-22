@@ -17,6 +17,12 @@ Różnice względem buildów Tomoms:
 - **Bloker w obrazie**: `/system/etc/hosts` (adult + social + komunikatory poza WhatsApp/Signal) + domyślny Private DNS AdGuard Family; na telefonie AdAway (root)
 - **Telefon dziecka**: manager KernelSU-Next instalowany po flashu z oryginalnego APK (nie da się go wbudować bez złamania podpisu — patrz vendor/extra `product.mk`), potem ukryty/za PIN-em; blokada nieznanych źródeł w Family Link
 - **HAL wideo**: `libOmxVenc` deklaruje pełny zakres poziomów H.264/HEVC i przycina żądany do maksimum sterownika (bengal: 5.0/5) — bez tego GCam LMC 8.4 nie nagrywa (patrz `patches/hardware_qcom-caf_sm8250_media/`)
+- **Moto Camera stockowa** (MotCamera4, MotCamera3AI, MotoSignature) obok Aperture — przetestowana 21.09 na telefonie
+  modułem KSU-Next (wszystkie obiektywy, portret, noc, wideo HEVC; bez Ultra-Res 50 MP — brak w LineageOS mechanizmu
+  `ro.camera.cfa.packagelist` z cameraservice Motoroli, świadomie bez łatki). Weryfikacja 9.0.85.32 jako ostatniej
+  wersji dla rhode: bajt w bajt identyczna w firmware z 05.2025, więc nie ma nowszej do zdobycia. Opcjonalna (`motocam_zip`)
+- **Play Integrity**: świeży, nie-beta fingerprint Pixela 10 Pro w `persist.sys.pihooks_*` (poprzedni, beta, przestał
+  przechodzić nawet DEVICE integrity — patrz `android_vendor_extra` `product.mk`)
 - bez Bellis i LogViewer; własne OTA z [rhode_releases](https://github.com/MikolajQ/rhode_releases)
 - wersja `23.2-DATA-UNOFFICIAL-miq-rhode` (`TARGET_UNOFFICIAL_BUILD_ID` podmieniany w `ham.yml`; w drzewie Tomoms jest `Tom`)
 
@@ -49,6 +55,7 @@ Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.
 |---|---|---|
 | `gh_token` | secret | token GitHub z `repo` — `upload.sh` tworzy release i aktualizuje `23.x/rhode.json` |
 | `gapps_extras_zip` | file | zip: `product/priv-app/GmsSupervision/GmsSupervision.apk` (stub Google 0.1.453788429 z APKMirror „System parental controls" — Play nadpisze pełną wersją z flagą PRIVILEGED) + `product/etc/permissions/com.google.android.projection.gearhead.xml` (pełna allowlist AA z NikGapps); skrypt generuje `Android.bp` (jeden APK → `android_app_import`), `splits/Android.mk` (gdyby były splity → prebuilty ETC) i `extras.mk` |
+| `motocam_zip` | file | opcjonalny; zip z Moto Camera stockowej w płaskim układzie partycji (nie module Magiska): `product/priv-app/MotCamera4/`, `product/app/MotCamera3AI/`, `product/etc/{permissions,sysconfig}/*`, `system/app/{MotoSignatureApp,MotoSignature2App}/`, `system/etc/permissions/*.xml`, `system/framework/*.jar`; skrypt generuje `Android.bp` (`android_app_import`/`prebuilt_etc`/`java_import`) i `extras.mk`; gotowy zip: `~/Pulpit/Rhode/motocam/motocam-gapps-extras.zip`; puste = bez Moto Camera |
 | `keys_zip` | file | własne klucze (`*.pk8`, `*.x509.pem`, `<apex>.pem`); z nimi build idzie przez `mka target-files-package otatools` + `scripts/sign.sh` (wiki LineageOS „Signing builds"); puste = test-keys i `mka bacon` |
 
 ## Układ
@@ -64,6 +71,7 @@ scripts/fetch-droidify.sh    Droid-ify z release'u, przypięty tag + SHA-256
 lists/                       communicators-block.txt (Telegram, Discord, Viber…), allow.txt (WhatsApp, Signal)
 scripts/apply-patches.sh
 scripts/gapps-extras.sh      zip -> vendor/gapps-extras + Android.bp / splits/Android.mk / extras.mk (splity jako prebuilty ETC; .apk nie może iść przez PRODUCT_COPY_FILES)
+scripts/motocam-extras.sh    zip -> vendor/motocam-extras + Android.bp / extras.mk (Moto Camera stockowa, opcjonalne)
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka
 scripts/sign.sh              sign_target_files_apks + ota_from_target_files z /root/.android-certs (listy APEX z wiki); boot/dtbo/vendor_boot -> $OUT/signed-images
 scripts/upload.sh            post_build: release + rhode.json

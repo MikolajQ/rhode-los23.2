@@ -15,6 +15,9 @@ args:
     prompt: "Zip z product/priv-app/{GmsSupervision,Gearhead} + product/etc/permissions (patrz README)"
     type: file
     required: true
+  - id: motocam_zip
+    prompt: "Zip z Moto Camera stockowa (product/+system/, patrz README); puste = bez Moto Camera, sam Aperture"
+    type: file
   - id: keys_zip
     prompt: "Klucze podpisu: ~/.android-certs-rhode.zip (pk8 + pem); puste = test-keys"
     type: file
@@ -65,6 +68,14 @@ build:
   - name: "GApps extras (GmsSupervision, Gearhead)"
     run: /ham-recipe/scripts/gapps-extras.sh /ham-build "$GAPPS_EXTRAS_ZIP"
 
+  - name: "Moto Camera stockowa (MotCamera4, MotCamera3AI, MotoSignature) — opcjonalna"
+    run: |
+      if [ -n "${MOTOCAM_ZIP:-}" ] && [ -s "$MOTOCAM_ZIP" ]; then
+        /ham-recipe/scripts/motocam-extras.sh /ham-build "$MOTOCAM_ZIP"
+      else
+        echo "motocam_zip nie podany — bez Moto Camera, zostaje sam Aperture"
+      fi
+
   - name: "Klucze podpisu (do /root/.android-certs; podpisywanie po buildzie, jak w wiki LineageOS)"
     run: |
       if [ -n "${KEYS_ZIP:-}" ] && [ -s "$KEYS_ZIP" ]; then
@@ -74,7 +85,7 @@ build:
       fi
 
   - name: "Weryfikacja allowlist priv-app"
-    run: python3 /ham-recipe/scripts/check-privapp.py /ham-build vendor/gapps/common/proprietary vendor/gapps/arm64/proprietary vendor/gapps-extras
+    run: python3 /ham-recipe/scripts/check-privapp.py /ham-build vendor/gapps/common/proprietary vendor/gapps/arm64/proprietary vendor/gapps-extras vendor/motocam-extras
 
   - name: "Swap 48 GB na wolumenie (soong_build bierze ~30 GB RAM przy analizie 993 projektów; CCX33 ma 32 GB)"
     run: |
