@@ -20,7 +20,7 @@ done
 
 echo
 echo "== 2) KernelSU-Next (legacy) — nasz pin vs upstream"
-PINNED=$(gh api repos/MikolajQ/android_kernel_motorola_sm6225/commits/7108db17f --jq '.commit.message' 2>/dev/null | grep -oE '[0-9a-f]{10}' | head -1 || echo "")
+PINNED=$(gh api repos/MikolajQ/android_kernel_motorola_sm6225/commits/b2f4adb57 --jq '.commit.message' 2>/dev/null | head -1 | grep -oE 'legacy [0-9a-f]+' | awk '{print $2}' || echo "")
 if [ -n "$PINNED" ]; then
   UPSTREAM=$(gh api repos/KernelSU-Next/KernelSU-Next/branches/legacy --jq '.commit.sha[0:10]')
   N=$(gh api "repos/KernelSU-Next/KernelSU-Next/compare/$PINNED...legacy" --jq '.total_commits' 2>/dev/null || echo "?")
