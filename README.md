@@ -67,6 +67,7 @@ scripts/gapps-extras.sh      zip -> vendor/gapps-extras + Android.bp / splits/An
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka
 scripts/sign.sh              sign_target_files_apks + ota_from_target_files z /root/.android-certs (listy APEX z wiki); boot/dtbo/vendor_boot -> $OUT/signed-images
 scripts/upload.sh            post_build: release + rhode.json
-scripts/staleness.sh         lokalnie przed ham get: o ile forki Tomoms odstają od LineageOS
+scripts/staleness.sh         lokalnie przed ham get: forki Tomoms vs LineageOS, KernelSU-Next (legacy) vs pin,
+                              Droid-ify vs latest release, ham fork vs upstream — tylko raportuje, nic nie merguje
 scripts/inspect-zip.sh       lokalnie po pobraniu zipa: kontrola obrazu przed flashem (debugfs, bez roota)
 ```
