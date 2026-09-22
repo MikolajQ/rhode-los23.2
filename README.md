@@ -10,7 +10,9 @@ Różnice względem buildów Tomoms:
 - **GApps w obrazie**: MindTheGapps (`baklava`) przycięte do zestawu NikGapps core + pełny Android Auto
   + `GmsSupervision` jako priv-app w `product` (Family Link — patrz nikgapps/config#15760)
 - **F-Droid** z repozytoriami IzzyOnDroid, NewPipe, IronFox (same adresy, bez APK w obrazie)
-- **WebView: Cromite** (pakiet `com.android.webview`, de-Google + adblock) zamiast prebuiltu LineageOS; APK pobierany przy buildzie
+- **WebView: prebuilt oficjalny LineageOS** (pakiet `com.android.webview`); do 22.09 był tu Cromite (de-Google + adblock) —
+  zamieniony po [uazo/cromite#3085](https://github.com/uazo/cromite/issues/3085): patch Cromite wymuszający partycjonowanie
+  połączeń wywalał SIGTRAP-em każdą apkę wołającą WebView preconnect z pustym kluczem (m.in. Google Mobile Ads SDK)
 - **Bloker w obrazie**: `/system/etc/hosts` (adult + social + komunikatory poza WhatsApp/Signal) + domyślny Private DNS AdGuard Family; na telefonie AdAway (root)
 - **Telefon dziecka**: manager KernelSU-Next instalowany po flashu z oryginalnego APK (nie da się go wbudować bez złamania podpisu — patrz vendor/extra `product.mk`), potem ukryty/za PIN-em; blokada nieznanych źródeł w Family Link
 - **HAL wideo**: `libOmxVenc` deklaruje pełny zakres poziomów H.264/HEVC i przycina żądany do maksimum sterownika (bengal: 5.0/5) — bez tego GCam LMC 8.4 nie nagrywa (patrz `patches/hardware_qcom-caf_sm8250_media/`)
@@ -56,7 +58,6 @@ rhode.xml                    .repo/local_manifests
 patches/vendor_gapps/        cięcia listy pakietów MTG (git apply)
 patches/vendor_lineage/      bez prywatnych Trichrome* z vendor/lineage Tomoms
 patches/hardware_qcom-caf_sm8250_media/  enkoder wideo: pełny zakres poziomów + clamp (wideo w GCam/LMC 8.4)
-scripts/fetch-webview.sh     Cromite SystemWebView z release'u, przypięty tag + SHA-256
 scripts/fetch-hosts.sh       /system/etc/hosts: StevenBlack porn+social (przypięty commit) + lists/, minus WhatsApp/Signal
 lists/                       communicators-block.txt (Telegram, Discord, Viber…), allow.txt (WhatsApp, Signal)
 scripts/apply-patches.sh

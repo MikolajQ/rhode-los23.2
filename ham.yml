@@ -36,14 +36,11 @@ build:
       cd /ham-build
       for i in 1 2 3 4 5; do repo sync -c -j8 --no-clone-bundle --no-tags --optimized-fetch --force-sync && break; echo "repo sync: próba $i nieudana (limit android.googlesource.com?), czekam 3 min"; sleep 180; done
       repo sync -c -j2 --no-clone-bundle --no-tags --force-sync
-      test ! -e external/chromium-webview/Android.bp   # linkfile z prebuiltu LOS ma zniknąć (remove-project)
+      test -f external/chromium-webview/Android.bp   # linkfile z prebuiltu LOS (moduł "webview") ma istnieć
       test -f vendor/gapps/arm64/arm64-vendor.mk
 
   - name: "Patche (vendor/gapps: cięcie pakietów; vendor/lineage: bez prywatnych Trichrome*)"
     run: /ham-recipe/scripts/apply-patches.sh /ham-build
-
-  - name: "WebView (Cromite, przypięty release + SHA-256)"
-    run: /ham-recipe/scripts/fetch-webview.sh /ham-build
 
   - name: "hosts do obrazu (adult + social + komunikatory, bez WhatsApp/Signal)"
     run: /ham-recipe/scripts/fetch-hosts.sh /ham-build
