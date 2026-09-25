@@ -31,6 +31,11 @@ build:
   - name: "ham-build z forka MikolajQ/ham"
     run: grep -aq 'Self Destroy Failed' /usr/bin/ham || { echo "/usr/bin/ham to nie ham-build z forka MikolajQ/ham — uruchamiaj ~/bin/rhode/ham"; false; }
 
+  # Pamięć i CPU co minutę przez cały build (CPX62: 16 zadań na 32 GB RAM — ile swapu, czy mieli). Po sukcesie
+  # upload.sh dokłada log do release'u (serwer się kasuje); po porażce zostaje na zachowanym serwerze.
+  - name: "vmstat w tle"
+    run: ( setsid nohup vmstat -t -w -S M 60 >> /ham-build/vmstat.log 2>&1 < /dev/null & )
+
   - name: "Python domyślny"
     run: apt-get install -y -qq python-is-python3 gh git-lfs && git lfs install --skip-repo
 

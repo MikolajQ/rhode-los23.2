@@ -27,6 +27,12 @@ for img in boot dtbo vendor_boot; do
   fi
 done
 
+# Zapis vmstat z całego builda (krok „vmstat w tle” w ham.yml) — jedyna kopia, serwer zaraz się kasuje.
+if [ -s "$ROOT/vmstat.log" ]; then
+  cp "$ROOT/vmstat.log" "$ROOT/vmstat-$TAG.log"
+  assets+=("$ROOT/vmstat-$TAG.log")
+fi
+
 gh release create "$TAG" --repo "$REL_REPO" --title "lineage-23.2 $TAG rhode" \
   --notes "Build z manifestu Tomoms 16.2 z $(date -u +%F). boot/dtbo/vendor_boot = obrazy z payload.bin (po podpisaniu): fastboot boot boot.img -> recovery -> Format data -> sideload." \
   "${assets[@]}"
