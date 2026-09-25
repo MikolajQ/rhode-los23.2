@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Loukious <24696530+Loukious@users.noreply.github.com>
+Date: Sat, 1 Aug 2026 08:18:18 +0100
+Subject: [PATCH 224/226] CachedAppOptimizer: Fix FULL memcg compaction
+ validation
+
+Compaction flags are used as a bitmask, with FILE set to 1 and
+ANON set to 2. FULL therefore has the value 3.
+
+compactionFlagsValidForMemcg() uses the flags directly as an index,
+but its cache only has three entries, causing FULL compaction to be
+rejected as invalid and crash system_server.
+
+Size the cache from the maximum valid flag combination so all valid
+values from NONE through FULL can be cached.
+
+Fixes: 4ec6b89b0741 ("CachedAppOptimizer: Fallback to process_madvise when memcg doesn't support compaction")
+---
+ .../core/jni/com_android_server_am_CachedAppOptimizer.cpp     | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp b/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp
+index bea833d232..f726500ef0 100644
+--- a/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp
++++ b/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp
+@@ -544,7 +544,9 @@ static void com_android_server_am_CachedAppOptimizer_compactNativeProcess(JNIEnv
+ 
+ static jboolean com_android_server_am_CachedAppOptimizer_compactionFlagsValidForMemcg(
+         JNIEnv* env, jobject, jint compactionFlags) {
+-    static std::array<std::optional<bool>, 3> valid;
++    static constexpr int kMaxCompactionFlags =
++            COMPACT_ACTION_FILE_FLAG | COMPACT_ACTION_ANON_FLAG;
++    static std::array<std::optional<bool>, kMaxCompactionFlags + 1> valid;
+ 
+     if (compactionFlags >= valid.size() || compactionFlags < 0) {
+         jniThrowException(env, "java/lang/IllegalArgumentException", "Invalid compaction flags");

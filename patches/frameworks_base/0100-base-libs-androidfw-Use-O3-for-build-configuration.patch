@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akane Beneckendorff <akane@akanework.org>
+Date: Mon, 23 Oct 2023 20:54:35 +0800
+Subject: [PATCH 100/226] base: libs: androidfw: Use '-O3' for build
+ configuration
+
+Signed-off-by: Akane Beneckendorff <akane@akanework.org>
+---
+ libs/androidfw/Android.bp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/libs/androidfw/Android.bp b/libs/androidfw/Android.bp
+index 889d85fb16..05f79a5a17 100644
+--- a/libs/androidfw/Android.bp
++++ b/libs/androidfw/Android.bp
+@@ -41,6 +41,7 @@ cc_defaults {
+     name: "libandroidfw_defaults",
+     cpp_std: "gnu++2b",
+     cflags: [
++        "-O3",
+         "-Werror",
+         "-Wunreachable-code",
+     ],
+@@ -50,10 +51,10 @@ cc_defaults {
+     target: {
+         windows: {
+             // The Windows compiler warns incorrectly for value initialization with {}.
+-            cppflags: ["-Wno-missing-field-initializers"],
++            cppflags: ["-O3", "-Wno-missing-field-initializers"],
+         },
+         host: {
+-            cflags: ["-DSTATIC_ANDROIDFW_FOR_TOOLS"],
++            cflags: ["-O3", "-DSTATIC_ANDROIDFW_FOR_TOOLS"],
+         },
+     },
+ }
+@@ -193,6 +194,7 @@ cc_test {
+     host_supported: true,
+     defaults: ["libandroidfw_defaults"],
+     cppflags: [
++        "-O3",
+         // This is to suppress warnings/errors from gtest
+         "-Wno-unnamed-type-template-args",
+     ],

@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Han Wang <416810799@qq.com>
+Date: Fri, 13 Sep 2019 14:20:10 +0200
+Subject: [PATCH 045/226] KernelCpuUidTimeReader: Decrease log level on non-eng
+ builds
+
+ * It is normal that kernel does not fully support this. Don't panic
+   users on non-eng build.
+
+Change-Id: I5004d2b7d4031e924dcca7fd481a1b1788cb7dba
+Signed-off-by: Pranav <npv12@iitbbs.ac.in>
+---
+ .../com/android/internal/os/KernelCpuUidTimeReader.java    | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/os/KernelCpuUidTimeReader.java b/core/java/com/android/internal/os/KernelCpuUidTimeReader.java
+index b0b9c2cfdd..a7e260d0a9 100644
+--- a/core/java/com/android/internal/os/KernelCpuUidTimeReader.java
++++ b/core/java/com/android/internal/os/KernelCpuUidTimeReader.java
+@@ -18,6 +18,7 @@ package com.android.internal.os;
+ import static com.android.internal.os.KernelCpuProcStringReader.asLongs;
+ 
+ import android.annotation.Nullable;
++import android.os.Build;
+ import android.os.StrictMode;
+ import android.util.IntArray;
+ import android.util.Slog;
+@@ -485,7 +486,11 @@ public abstract class KernelCpuUidTimeReader<T> {
+                 CharBuffer buf;
+                 while ((buf = iter.nextLine()) != null) {
+                     if (asLongs(buf, mBuffer) != mBuffer.length) {
+-                        Slog.wtf(mTag, "Invalid line: " + buf.toString());
++                        if (Build.IS_ENG) {
++                            Slog.wtf(mTag, "Invalid line: " + buf.toString());
++                        } else {
++                            Slog.w(mTag, "Invalid line: " + buf.toString());
++                        }
+                         continue;
+                     }
+                     processUidDelta(cb);

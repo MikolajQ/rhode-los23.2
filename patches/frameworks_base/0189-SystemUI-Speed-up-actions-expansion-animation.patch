@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Danny Lin <danny@kdrag0n.dev>
+Date: Tue, 5 Oct 2021 19:49:52 -0700
+Subject: [PATCH 189/226] SystemUI: Speed up actions expansion animation
+
+400 ms feels too long for this, especially when the actions already take
+so long to show up due to how long saving the screenshot takes.
+
+Change-Id: I67a874adeb42cbde31e9b4f7bddc59481dc2f69f
+---
+ .../android/systemui/screenshot/MessageContainerController.kt   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/MessageContainerController.kt b/packages/SystemUI/src/com/android/systemui/screenshot/MessageContainerController.kt
+index 28bff51dc0..e99ee8bd94 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/MessageContainerController.kt
++++ b/packages/SystemUI/src/com/android/systemui/screenshot/MessageContainerController.kt
+@@ -123,6 +123,6 @@ constructor(
+     }
+ 
+     companion object {
+-        const val MESSAGE_EXPANSION_DURATION_MS: Long = 400
++        const val MESSAGE_EXPANSION_DURATION_MS: Long = 300
+     }
+ }

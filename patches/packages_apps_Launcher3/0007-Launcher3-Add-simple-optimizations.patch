@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Mon, 18 May 2026 12:42:15 -0400
+Subject: [PATCH 07/13] Launcher3: Add simple optimizations
+
+ - SpringAnimation: replace Math.pow with Math.exp
+ - SpringAnimation: cache parameters
+ - FirstFrameAnimator: use animation clock directly
+ - Inline mapRange in MultiValueUpdateListener
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../util/MultiValueUpdateListener.java        |  4 +---
+ .../launcher3/FirstFrameAnimatorHelper.java   |  3 ++-
+ .../WorkspaceStateTransitionAnimation.java    | 20 ++++++++++++-------
+ .../anim/SpringAnimationBuilder.java          |  2 +-
+ 4 files changed, 17 insertions(+), 12 deletions(-)
+
+diff --git a/quickstep/src/com/android/quickstep/util/MultiValueUpdateListener.java b/quickstep/src/com/android/quickstep/util/MultiValueUpdateListener.java
+index 72fc2a67b..9bc1b90df 100644
+--- a/quickstep/src/com/android/quickstep/util/MultiValueUpdateListener.java
++++ b/quickstep/src/com/android/quickstep/util/MultiValueUpdateListener.java
+@@ -18,8 +18,6 @@ package com.android.quickstep.util;
+ import android.animation.ValueAnimator;
+ import android.view.animation.Interpolator;
+ 
+-import com.android.launcher3.Utilities;
+-
+ import java.util.ArrayList;
+ 
+ /**
+@@ -37,7 +35,7 @@ public abstract class MultiValueUpdateListener implements ValueAnimator.Animator
+         for (int i = mAllProperties.size() - 1; i >= 0; i--) {
+             FloatProp prop = mAllProperties.get(i);
+             float interpolatedPercent = prop.mInterpolator.getInterpolation(percent);
+-            prop.value = Utilities.mapRange(interpolatedPercent, prop.mStart, prop.mEnd);
++            prop.value = prop.mStart + interpolatedPercent * (prop.mEnd - prop.mStart);
+         }
+         onUpdate(percent, false /* initOnly */);
+     }
+diff --git a/src/com/android/launcher3/FirstFrameAnimatorHelper.java b/src/com/android/launcher3/FirstFrameAnimatorHelper.java
+index fdf0101e6..931ea9739 100644
+--- a/src/com/android/launcher3/FirstFrameAnimatorHelper.java
++++ b/src/com/android/launcher3/FirstFrameAnimatorHelper.java
+@@ -23,6 +23,7 @@ import android.util.Log;
+ import android.view.View;
+ import android.view.View.OnAttachStateChangeListener;
+ import android.view.ViewTreeObserver.OnDrawListener;
++import android.view.animation.AnimationUtils;
+ 
+ /*
+  *  This is a helper class that listens to updates from the corresponding animation.
+@@ -78,7 +79,7 @@ public class FirstFrameAnimatorHelper implements OnDrawListener, OnAttachStateCh
+ 
+         @Override
+         public void onAnimationUpdate(final ValueAnimator animation) {
+-            final long currentTime = System.currentTimeMillis();
++            final long currentTime = AnimationUtils.currentAnimationTimeMillis();
+             if (mStartTime == -1) {
+                 mStartFrame = mGlobalFrameCount;
+                 mStartTime = currentTime;
+diff --git a/src/com/android/launcher3/WorkspaceStateTransitionAnimation.java b/src/com/android/launcher3/WorkspaceStateTransitionAnimation.java
+index cb36e7e01..1843c0d52 100644
+--- a/src/com/android/launcher3/WorkspaceStateTransitionAnimation.java
++++ b/src/com/android/launcher3/WorkspaceStateTransitionAnimation.java
+@@ -74,6 +74,10 @@ public class WorkspaceStateTransitionAnimation {
+ 
+     private static final float FIRST_PAGE_PINNED_WIDGET_DISABLED_ALPHA = 0.3f;
+ 
++    private static float sCachedHintScaleDamping = -1;
++    private static float sCachedHintScaleStiffness = -1;
++    private static float sCachedHintScaleVelocity = -1;
++
+     private static final FloatProperty<Workspace<?>> WORKSPACE_SCALE_PROPERTY =
+             WORKSPACE_SCALE_PROPERTY_FACTORY.get(SCALE_INDEX_WORKSPACE_STATE);
+ 
+@@ -254,18 +258,20 @@ public class WorkspaceStateTransitionAnimation {
+      */
+     public static <T extends View> ValueAnimator getSpringScaleAnimator(Launcher launcher, T v,
+             float scale, FloatProperty<T> property) {
+-        ResourceProvider rp = DynamicResource.provider(launcher);
+-        float damping = rp.getFloat(R.dimen.hint_scale_damping_ratio);
+-        float stiffness = rp.getFloat(R.dimen.hint_scale_stiffness);
+-        float velocityPxPerS = rp.getDimension(R.dimen.hint_scale_velocity_dp_per_s);
++        if (sCachedHintScaleDamping < 0) {
++            ResourceProvider rp = DynamicResource.provider(launcher);
++            sCachedHintScaleDamping = rp.getFloat(R.dimen.hint_scale_damping_ratio);
++            sCachedHintScaleStiffness = rp.getFloat(R.dimen.hint_scale_stiffness);
++            sCachedHintScaleVelocity = rp.getDimension(R.dimen.hint_scale_velocity_dp_per_s);
++        }
+ 
+         return new SpringAnimationBuilder(v.getContext())
+-                .setStiffness(stiffness)
+-                .setDampingRatio(damping)
++                .setStiffness(sCachedHintScaleStiffness)
++                .setDampingRatio(sCachedHintScaleDamping)
+                 .setMinimumVisibleChange(MIN_VISIBLE_CHANGE_SCALE)
+                 .setEndValue(scale)
+                 .setStartValue(property.get(v))
+-                .setStartVelocity(velocityPxPerS)
++                .setStartVelocity(sCachedHintScaleVelocity)
+                 .build(v, property);
+ 
+     }
+diff --git a/src/com/android/launcher3/anim/SpringAnimationBuilder.java b/src/com/android/launcher3/anim/SpringAnimationBuilder.java
+index df9f97919..5ddc63cca 100644
+--- a/src/com/android/launcher3/anim/SpringAnimationBuilder.java
++++ b/src/com/android/launcher3/anim/SpringAnimationBuilder.java
+@@ -221,7 +221,7 @@ public class SpringAnimationBuilder {
+     }
+ 
+     private double exponentialComponent(double t) {
+-        return Math.pow(Math.E, - beta * t / 2);
++        return Math.exp(- beta * t / 2);
+     }
+ 
+     private double cosSinX(double t) {

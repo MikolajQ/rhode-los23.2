@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sat, 10 May 2025 00:42:03 +0800
+Subject: [PATCH 180/226] AbsListView: Clear scroll cache before removing clear
+ cache callbacks
+
+Change-Id: I36895fcc4e1456582a561550e5f8ad4046aaf194
+---
+ core/java/android/widget/AbsListView.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/core/java/android/widget/AbsListView.java b/core/java/android/widget/AbsListView.java
+index 49c1c2f353..7938511ac4 100644
+--- a/core/java/android/widget/AbsListView.java
++++ b/core/java/android/widget/AbsListView.java
+@@ -3166,6 +3166,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
+         }
+ 
+         if (mClearScrollingCache != null) {
++            clearScrollingCache();
+             removeCallbacks(mClearScrollingCache);
+         }
+ 

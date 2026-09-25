@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Sun, 29 Dec 2024 22:31:17 +0200
+Subject: [PATCH 05/21] raise concurrency from 1 to 2 for pre-reboot and
+ background dexopt
+
+---
+ .../service/java/com/android/server/art/ReasonMapping.java    | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/libartservice/service/java/com/android/server/art/ReasonMapping.java b/libartservice/service/java/com/android/server/art/ReasonMapping.java
+index f27c518..86a248b 100644
+--- a/libartservice/service/java/com/android/server/art/ReasonMapping.java
++++ b/libartservice/service/java/com/android/server/art/ReasonMapping.java
+@@ -222,6 +222,10 @@ public class ReasonMapping {
+      * @hide
+      */
+     public static int getConcurrencyForReason(@NonNull @BatchDexoptReason String reason) {
++        if (REASON_BG_DEXOPT.equals(reason) || REASON_PRE_REBOOT_DEXOPT.equals(reason)) {
++            return SystemProperties.getInt("pm.dexopt." + reason + ".concurrency", 2 /* def */);
++        }
++
+         // TODO(jiakaiz): Revisit the concurrency for non-boot reasons.
+         int defaultValue = 1;
+         if (BOOT_REASONS.contains(reason)) {

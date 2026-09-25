@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: dkati <dkatikaridis@gmail.com>
+Date: Sun, 27 Jan 2019 23:25:48 +0200
+Subject: [PATCH 25/34] libm: Support -ffp-contract=fast
+
+Change-Id: I50d62cde33201c80837e6a97ce3708c96ed09021
+Signed-off-by: HanyanI <yuhan@rsyhan.me>
+Signed-off-by: Akash Srivastava <akashniki@gmail.com>
+Signed-off-by: DennySPb <dennyspb@gmail.com>
+Signed-off-by: Adithya R <gh0strider.2k18.reborn@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libm/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libm/Android.bp b/libm/Android.bp
+index a406b18..e4636a8 100644
+--- a/libm/Android.bp
++++ b/libm/Android.bp
+@@ -442,6 +442,7 @@ cc_defaults {
+         "-Wno-unknown-pragmas",
+         "-Wno-unused-const-variable",
+         "-Wno-unused-variable",
++        "-ffp-contract=fast",
+     ],
+ 
+     ldflags: [

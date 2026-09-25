@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Sun, 29 Dec 2024 22:30:10 +0200
+Subject: [PATCH 06/21] use speed-profile compilerFilter for pre-reboot dexopt
+ of 3rd party apps
+
+---
+ .../service/java/com/android/server/art/ReasonMapping.java    | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/libartservice/service/java/com/android/server/art/ReasonMapping.java b/libartservice/service/java/com/android/server/art/ReasonMapping.java
+index 86a248b..0e5404b 100644
+--- a/libartservice/service/java/com/android/server/art/ReasonMapping.java
++++ b/libartservice/service/java/com/android/server/art/ReasonMapping.java
+@@ -144,6 +144,10 @@ public class ReasonMapping {
+      */
+     @NonNull
+     public static String getCompilerFilterForReason(@NonNull String reason) {
++        if (REASON_PRE_REBOOT_DEXOPT.equals(reason)) {
++            return "speed-profile";
++        }
++
+         String value = SystemProperties.get("pm.dexopt." + reason);
+         if (TextUtils.isEmpty(value)) {
+             if (reason.equals(REASON_POST_UNATTENDED_REBOOT)) {

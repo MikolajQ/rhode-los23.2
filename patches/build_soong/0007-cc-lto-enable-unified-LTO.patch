@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Wed, 3 Jan 2024 12:00:01 -0500
+Subject: [PATCH 07/23] cc/lto: enable unified LTO
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ cc/lto.go      | 4 ++++
+ cc/sanitize.go | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/cc/lto.go b/cc/lto.go
+index e144e8d4..24bfa2b8 100644
+--- a/cc/lto.go
++++ b/cc/lto.go
+@@ -119,6 +119,10 @@ func (lto *lto) flags(ctx ModuleContext, flags Flags) Flags {
+ 			ltoCOnlyFlags = append(ltoCOnlyFlags, "-O3")
+ 		}
+ 
++		// Utilize unified LTO for greater optimization than ThinLTO with a
++		// lesser compile time hit than full lto
++		ltoCFlags = append(ltoCFlags, "-funified-lto")
++
+ 		if Bool(lto.Properties.Whole_program_vtables) {
+ 			ltoCFlags = append(ltoCFlags, "-fwhole-program-vtables")
+ 		}
+diff --git a/cc/sanitize.go b/cc/sanitize.go
+index ad843457..d7bd21a8 100644
+--- a/cc/sanitize.go
++++ b/cc/sanitize.go
+@@ -66,7 +66,7 @@ var (
+ 	cfiBlocklistFilename = "cfi_blocklist.txt"
+ 	cfiEnableFlag        = "-fsanitize=cfi"
+ 	cfiCrossDsoFlag      = "-fsanitize-cfi-cross-dso"
+-	cfiCflags            = []string{"-flto", cfiCrossDsoFlag,
++	cfiCflags            = []string{"-flto", "-funified-lto", cfiCrossDsoFlag,
+ 		sanitizeIgnorelistPrefix + cfiBlocklistPath + "/" + cfiBlocklistFilename}
+ 	// -flto and -fvisibility are required by clang when -fsanitize=cfi is
+ 	// used, but have no effect on assembly files

@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Fri, 1 Nov 2024 13:00:56 +0800
+Subject: [PATCH 114/226] PackageUtils: Reduce buffer size bytes
+
+---
+ core/java/android/util/PackageUtils.java | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/core/java/android/util/PackageUtils.java b/core/java/android/util/PackageUtils.java
+index c1ed19fef0..4f8a1e3a78 100644
+--- a/core/java/android/util/PackageUtils.java
++++ b/core/java/android/util/PackageUtils.java
+@@ -178,8 +178,7 @@ public final class PackageUtils {
+      *          device, otherwise a byte array of size {@link #HIGH_RAM_BUFFER_SIZE_BYTES}
+      */
+     public static @NonNull byte[] createLargeFileBuffer() {
+-        int bufferSize = ActivityManager.isLowRamDeviceStatic()
+-                ? LOW_RAM_BUFFER_SIZE_BYTES : HIGH_RAM_BUFFER_SIZE_BYTES;
++        int bufferSize = LOW_RAM_BUFFER_SIZE_BYTES;
+         return new byte[bufferSize];
+     }
+ 

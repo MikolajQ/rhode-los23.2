@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shailendra Gupta <sgupta96@ford.com>
+Date: Tue, 3 Mar 2026 10:28:17 -0500
+Subject: [PATCH 25/42] system_server LW_EVENT_SYNC_NATIVE_CRASH in
+ InputDispatcher
+
+Root Cause:
+The crash is coming from getHoveringWindowsLocked() in InputDispatcher.cpp:679. It assumes that if a window is
+in both the old and new hover sets for a pointer, the incoming action must be AMOTION_EVENT_ACTION_HOVER_MOVE.
+But the log shows an inconsistent stream (HOVER_ENTER even though the pointer is already considered hovering that window),
+so the LOG(FATAL) aborts. 2026-02-13 15:35:46.030881 -0500 1820 2141 F InputDispatcher: InputDispatcher.cpp:679] Expected
+ACTION_HOVER_MOVE instead of MotionEvent(deviceId=-1, eventTime=313128000000, source=TOUCHSCREEN | STYLUS, displayId=0,
+action=HOVER_ENTER, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE,
+edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (779.0, 92.0)]),
+policyFlags=0x6b000000 deviceId=-1 means it is not a real hardware device.
+
+Resoultion:
+If (entry.isSynthesized()) will check that this event is not from a registered real hardware device.
+I added it as part of additional condition.
+
+Bug: 489353448
+
+Change-Id: Id3fa5a375c4f3257605b9809f2b4d97c1575e5a1
+Signed-off-by: Shailendra Gupta <sgupta96@ford.com>
+---
+ services/inputflinger/dispatcher/InputDispatcher.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/services/inputflinger/dispatcher/InputDispatcher.cpp b/services/inputflinger/dispatcher/InputDispatcher.cpp
+index b8d9807..6551d3c 100644
+--- a/services/inputflinger/dispatcher/InputDispatcher.cpp
++++ b/services/inputflinger/dispatcher/InputDispatcher.cpp
+@@ -700,6 +700,10 @@ std::vector<TouchedWindow> getHoveringWindowsLocked(const TouchState* oldState,
+                     // has known inconsistencies, so log ERROR instead of
+                     // crashing the device with FATAL.
+                     severity = android::base::LogSeverity::ERROR;
++                } else if (entry.isSynthesized()) {
++                    // Synthetic or injected events may produce an inconsistent hover stream
++                    // Downgrade to a warning rather than crashing the system.
++                    severity = android::base::LogSeverity::WARNING;
+                 }
+                 dump();
+                 LOG(severity) << "Expected ACTION_HOVER_MOVE instead of " << entry.getDescription();

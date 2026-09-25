@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Fri, 1 Nov 2024 13:35:05 +0800
+Subject: [PATCH 096/226] hwui: Switch to low ram policy
+
+* it's almost the same as default memory policy, the only difference is all scratch resources are purged when triggering ui hidden
+
+Signed-off-by: minaripenguin <minaripenguin@users.noreply.github.com>
+---
+ libs/hwui/MemoryPolicy.cpp | 21 ++-------------------
+ 1 file changed, 2 insertions(+), 19 deletions(-)
+
+diff --git a/libs/hwui/MemoryPolicy.cpp b/libs/hwui/MemoryPolicy.cpp
+index 21f4ca79b6..26ded32913 100644
+--- a/libs/hwui/MemoryPolicy.cpp
++++ b/libs/hwui/MemoryPolicy.cpp
+@@ -49,24 +49,7 @@ constexpr static MemoryPolicy sExtremeLowRam{
+ };
+ 
+ const MemoryPolicy& loadMemoryPolicy() {
+-    if (Properties::isSystemOrPersistent) {
+-        return sPersistentOrSystemPolicy;
+-    }
+-    std::string memoryPolicy = base::GetProperty(PROPERTY_MEMORY_POLICY, "");
+-    if (memoryPolicy == "default") {
+-        return sDefaultMemoryPolicy;
+-    }
+-    if (memoryPolicy == "lowram") {
+-        return sLowRamPolicy;
+-    }
+-    if (memoryPolicy == "extremelowram") {
+-        return sExtremeLowRam;
+-    }
+-
+-    if (Properties::isLowRam) {
+-        return sLowRamPolicy;
+-    }
+-    return sDefaultMemoryPolicy;
++    return sLowRamPolicy;
+ }
+ 
+-}  // namespace android::uirenderer
+\ No newline at end of file
++}  // namespace android::uirenderer

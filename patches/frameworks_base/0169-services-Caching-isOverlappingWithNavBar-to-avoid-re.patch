@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Thu, 23 Apr 2026 18:19:37 +0800
+Subject: [PATCH 169/226] services: Caching isOverlappingWithNavBar to avoid
+ redundant rectangle math
+
+Change-Id: I8bed376acb56131d257c48e4672298144c7440bb
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../java/com/android/server/wm/DisplayPolicy.java  |  6 +++---
+ .../java/com/android/server/wm/WindowState.java    | 14 ++++++++++++++
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/DisplayPolicy.java b/services/core/java/com/android/server/wm/DisplayPolicy.java
+index 1ffd4a7afd..34108c4921 100644
+--- a/services/core/java/com/android/server/wm/DisplayPolicy.java
++++ b/services/core/java/com/android/server/wm/DisplayPolicy.java
+@@ -1541,7 +1541,7 @@ public class DisplayPolicy {
+ 
+         // Check if the freeform window overlaps with the navigation bar area.
+         if (!mIsFreeformWindowOverlappingWithNavBar && win.inFreeformWindowingMode()
+-                && win.mActivityRecord != null && isOverlappingWithNavBar(win)) {
++                && win.mActivityRecord != null && win.isOverlappingWithNavBar()) {
+             mIsFreeformWindowOverlappingWithNavBar = true;
+         }
+ 
+@@ -1656,7 +1656,7 @@ public class DisplayPolicy {
+             // mode; if it's in gesture navigation mode, the navigation bar will be
+             // NAV_BAR_FORCE_TRANSPARENT and its appearance won't be decided by overlapping
+             // windows.
+-            if (isOverlappingWithNavBar(win)) {
++            if (win.isOverlappingWithNavBar()) {
+                 if (mNavBarColorWindowCandidate == null) {
+                     mNavBarColorWindowCandidate = win;
+                     addSystemBarColorApp(win);
+@@ -1689,7 +1689,7 @@ public class DisplayPolicy {
+                     addSystemBarColorApp(win);
+                 }
+             }
+-            if (isOverlappingWithNavBar(win) && mNavBarColorWindowCandidate == null) {
++            if (win.isOverlappingWithNavBar() && mNavBarColorWindowCandidate == null) {
+                 mNavBarColorWindowCandidate = win;
+                 addSystemBarColorApp(win);
+             }
+diff --git a/services/core/java/com/android/server/wm/WindowState.java b/services/core/java/com/android/server/wm/WindowState.java
+index 3880935546..a130b57508 100644
+--- a/services/core/java/com/android/server/wm/WindowState.java
++++ b/services/core/java/com/android/server/wm/WindowState.java
+@@ -598,6 +598,8 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+ 
+     /** The time when the window was last requested to redraw for orientation change. */
+     private long mOrientationChangeRedrawRequestTime;
++    private int mLastOverlappingWithNavBarSeq = -1;
++    private boolean mIsOverlappingWithNavBar;
+ 
+     /** Is this window now (or just being) removed? */
+     boolean mRemoved;
+@@ -6121,6 +6123,18 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+         return true;
+     }
+ 
++    boolean isOverlappingWithNavBar() {
++        if (!isVisible()) {
++            return false;
++        }
++        if (mLastOverlappingWithNavBarSeq == mDisplayContent.mLayoutSeq) {
++            return mIsOverlappingWithNavBar;
++        }
++        mIsOverlappingWithNavBar = DisplayPolicy.isOverlappingWithNavBar(this);
++        mLastOverlappingWithNavBarSeq = mDisplayContent.mLayoutSeq;
++        return mIsOverlappingWithNavBar;
++    }
++
+     boolean isTrustedOverlay() {
+         WindowState parentWindow = getParentWindow();
+         return isWindowTrustedOverlay() || (parentWindow != null

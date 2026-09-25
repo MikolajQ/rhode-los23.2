@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lijilou <lijilou@xiaomi.corp-partner.google.com>
+Date: Mon, 1 Dec 2025 17:31:57 +0800
+Subject: [PATCH 190/226] core: Minor code optimization for FileObserver
+
+fast return when the observer is null.
+
+Bug: none
+Flag: EXEMPT minor optimization
+Change-Id: Idb81dd09fe71ac80e839af51e63fa1ef950d2d03
+---
+ core/java/android/os/FileObserver.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/core/java/android/os/FileObserver.java b/core/java/android/os/FileObserver.java
+index 9e52075938..9ed6228fb2 100644
+--- a/core/java/android/os/FileObserver.java
++++ b/core/java/android/os/FileObserver.java
+@@ -161,6 +161,7 @@ public abstract class FileObserver {
+                     observer = (FileObserver) weak.get();
+                     if (observer == null) {
+                         mRealObservers.remove(wfd);
++                        return;
+                     }
+                 }
+             }

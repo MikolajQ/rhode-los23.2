@@ -1,0 +1,229 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Wed, 3 Jun 2026 16:17:16 +0800
+Subject: [PATCH 39/42] fixup! fixing dalvik|art|usap tuning regressions
+
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ build/phone-xhdpi-1024-dalvik-heap.mk  | 20 ++++++-------------
+ build/phone-xhdpi-12288-dalvik-heap.mk |  7 +++++--
+ build/phone-xhdpi-16384-dalvik-heap.mk |  7 +++++--
+ build/phone-xhdpi-2048-dalvik-heap.mk  | 21 +++++++-------------
+ build/phone-xhdpi-4096-dalvik-heap.mk  | 27 +++++++++-----------------
+ build/phone-xhdpi-6144-dalvik-heap.mk  | 24 +++++++----------------
+ build/phone-xhdpi-8192-dalvik-heap.mk  | 26 ++++++++-----------------
+ 7 files changed, 47 insertions(+), 85 deletions(-)
+
+diff --git a/build/phone-xhdpi-1024-dalvik-heap.mk b/build/phone-xhdpi-1024-dalvik-heap.mk
+index 504ca55..4bfdc94 100644
+--- a/build/phone-xhdpi-1024-dalvik-heap.mk
++++ b/build/phone-xhdpi-1024-dalvik-heap.mk
+@@ -14,24 +14,16 @@
+ # limitations under the License.
+ #
+ 
+-# Provides overrides to configure the Dalvik heap for a 1GB phone
++# Provides overrides to configure the Dalvik heap for a xhdpi phone
+ 
+ PRODUCT_PRODUCT_PROPERTIES += \
+     dalvik.vm.heapstartsize?=8m \
+     dalvik.vm.heapgrowthlimit?=96m \
+     dalvik.vm.heapsize?=256m \
+     dalvik.vm.heaptargetutilization?=0.75 \
+-    dalvik.vm.heapminfree?=2m \
++    dalvik.vm.heapminfree?=512k \
+     dalvik.vm.heapmaxfree?=8m \
+-    dalvik.vm.usejit?=true \
+-    dalvik.vm.jitmaxsize?=64m \
+-    dalvik.vm.jitinitialsize?=8m \
+-    dalvik.vm.jitthreshold?=20000 \
+-    dalvik.vm.madvise.vdexfile.size?=52428800 \
+-    dalvik.vm.madvise.odexfile.size?=52428800 \
+-    dalvik.vm.usap_pool_enabled?=true \
+-    dalvik.vm.usap_pool_size_min?=1 \
+-    dalvik.vm.usap_pool_size_max?=1 \
+-    dalvik.vm.usap_refill_threshold?=1 \
+-    dalvik.vm.usap_pool_refill_delay_ms?=3000 \
+-    persist.sys.pinner.quota_pct?=5
++    dalvik.vm.madvise.vdexfile.size?=31457280 \
++    dalvik.vm.madvise.odexfile.size?=31457280 \
++    dalvik.vm.madvise.artfile.size?=0 \
++    ro.lmk.medium?=700
+diff --git a/build/phone-xhdpi-12288-dalvik-heap.mk b/build/phone-xhdpi-12288-dalvik-heap.mk
+index de41b18..d7cb5ed 100644
+--- a/build/phone-xhdpi-12288-dalvik-heap.mk
++++ b/build/phone-xhdpi-12288-dalvik-heap.mk
+@@ -29,9 +29,12 @@ PRODUCT_PRODUCT_PROPERTIES += \
+     dalvik.vm.jitmaxsize?=512m \
+     dalvik.vm.jitinitialsize?=64m \
+     dalvik.vm.jitthreshold?=5000 \
++    dalvik.vm.jitwarmupthreshold?=2500 \
++    dalvik.vm.jitpthreadpriority?=8 \
+     dalvik.vm.parallel-image-loading?=true \
+-    dalvik.vm.madvise.vdexfile.size?=209715200 \
+-    dalvik.vm.madvise.odexfile.size?=209715200 \
++    dalvik.vm.madvise.vdexfile.size?=104857600 \
++    dalvik.vm.madvise.odexfile.size?=104857600 \
++    dalvik.vm.madvise.artfile.size?=0 \
+     dalvik.vm.usap_pool_enabled?=true \
+     dalvik.vm.usap_pool_size_min?=1 \
+     dalvik.vm.usap_pool_size_max?=5 \
+diff --git a/build/phone-xhdpi-16384-dalvik-heap.mk b/build/phone-xhdpi-16384-dalvik-heap.mk
+index 0f06577..9ad3de5 100644
+--- a/build/phone-xhdpi-16384-dalvik-heap.mk
++++ b/build/phone-xhdpi-16384-dalvik-heap.mk
+@@ -29,9 +29,12 @@ PRODUCT_PRODUCT_PROPERTIES += \
+     dalvik.vm.jitmaxsize?=512m \
+     dalvik.vm.jitinitialsize?=64m \
+     dalvik.vm.jitthreshold?=5000 \
++    dalvik.vm.jitwarmupthreshold?=2500 \
++    dalvik.vm.jitpthreadpriority?=8 \
+     dalvik.vm.parallel-image-loading?=true \
+-    dalvik.vm.madvise.vdexfile.size?=209715200 \
+-    dalvik.vm.madvise.odexfile.size?=209715200 \
++    dalvik.vm.madvise.vdexfile.size?=104857600 \
++    dalvik.vm.madvise.odexfile.size?=104857600 \
++    dalvik.vm.madvise.artfile.size?=0 \
+     dalvik.vm.usap_pool_enabled?=true \
+     dalvik.vm.usap_pool_size_min?=1 \
+     dalvik.vm.usap_pool_size_max?=5 \
+diff --git a/build/phone-xhdpi-2048-dalvik-heap.mk b/build/phone-xhdpi-2048-dalvik-heap.mk
+index 531c240..6f4346d 100644
+--- a/build/phone-xhdpi-2048-dalvik-heap.mk
++++ b/build/phone-xhdpi-2048-dalvik-heap.mk
+@@ -12,6 +12,7 @@
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
++#
+ 
+ # Provides overrides to configure the Dalvik heap for a 2GB phone
+ # 192m of RAM gives enough space for 5 8 megapixel camera bitmaps in RAM.
+@@ -21,17 +22,9 @@ PRODUCT_PRODUCT_PROPERTIES += \
+     dalvik.vm.heapgrowthlimit?=192m \
+     dalvik.vm.heapsize?=512m \
+     dalvik.vm.heaptargetutilization?=0.75 \
+-    dalvik.vm.heapminfree?=2m \
+-    dalvik.vm.heapmaxfree?=16m \
+-    dalvik.vm.usejit?=true \
+-    dalvik.vm.jitmaxsize?=128m \
+-    dalvik.vm.jitinitialsize?=16m \
+-    dalvik.vm.jitthreshold?=15000 \
+-    dalvik.vm.madvise.vdexfile.size?=83886080 \
+-    dalvik.vm.madvise.odexfile.size?=83886080 \
+-    dalvik.vm.usap_pool_enabled?=true \
+-    dalvik.vm.usap_pool_size_min?=1 \
+-    dalvik.vm.usap_pool_size_max?=2 \
+-    dalvik.vm.usap_refill_threshold?=1 \
+-    dalvik.vm.usap_pool_refill_delay_ms?=3000 \
+-    persist.sys.pinner.quota_pct?=6
++    dalvik.vm.heapminfree?=512k \
++    dalvik.vm.heapmaxfree?=8m \
++    dalvik.vm.madvise.vdexfile.size?=31457280 \
++    dalvik.vm.madvise.odexfile.size?=31457280 \
++    dalvik.vm.madvise.artfile.size?=0 \
++    ro.lmk.medium?=700
+diff --git a/build/phone-xhdpi-4096-dalvik-heap.mk b/build/phone-xhdpi-4096-dalvik-heap.mk
+index 8385d57..7e7f72f 100644
+--- a/build/phone-xhdpi-4096-dalvik-heap.mk
++++ b/build/phone-xhdpi-4096-dalvik-heap.mk
+@@ -17,22 +17,13 @@
+ # Provides overrides to configure the Dalvik heap for a 4GB phone
+ 
+ PRODUCT_PRODUCT_PROPERTIES += \
+-    dalvik.vm.heapstartsize?=12m \
+-    dalvik.vm.heapgrowthlimit?=256m \
++    dalvik.vm.heapstartsize?=8m \
++    dalvik.vm.heapgrowthlimit?=192m \
+     dalvik.vm.heapsize?=512m \
+-    dalvik.vm.heaptargetutilization?=0.75 \
+-    dalvik.vm.heapminfree?=4m \
+-    dalvik.vm.heapmaxfree?=32m \
+-    dalvik.vm.foreground-heap-growth-multiplier?=0.5 \
+-    dalvik.vm.usejit?=true \
+-    dalvik.vm.jitmaxsize?=128m \
+-    dalvik.vm.jitinitialsize?=16m \
+-    dalvik.vm.jitthreshold?=15000 \
+-    dalvik.vm.madvise.vdexfile.size?=104857600 \
+-    dalvik.vm.madvise.odexfile.size?=104857600 \
+-    dalvik.vm.usap_pool_enabled?=true \
+-    dalvik.vm.usap_pool_size_min?=1 \
+-    dalvik.vm.usap_pool_size_max?=2 \
+-    dalvik.vm.usap_refill_threshold?=1 \
+-    dalvik.vm.usap_pool_refill_delay_ms?=3000 \
+-    persist.sys.pinner.quota_pct?=8
++    dalvik.vm.heaptargetutilization?=0.6 \
++    dalvik.vm.heapminfree?=8m \
++    dalvik.vm.heapmaxfree?=16m \
++    dalvik.vm.madvise.vdexfile.size?=31457280 \
++    dalvik.vm.madvise.odexfile.size?=31457280 \
++    dalvik.vm.madvise.artfile.size?=0 \
++    ro.lmk.medium?=700 \
+diff --git a/build/phone-xhdpi-6144-dalvik-heap.mk b/build/phone-xhdpi-6144-dalvik-heap.mk
+index 4a2c3a2..73d5cde 100644
+--- a/build/phone-xhdpi-6144-dalvik-heap.mk
++++ b/build/phone-xhdpi-6144-dalvik-heap.mk
+@@ -20,20 +20,10 @@ PRODUCT_PRODUCT_PROPERTIES += \
+     dalvik.vm.heapstartsize?=16m \
+     dalvik.vm.heapgrowthlimit?=256m \
+     dalvik.vm.heapsize?=512m \
+-    dalvik.vm.heaptargetutilization?=0.75 \
+-    dalvik.vm.heapminfree?=4m \
+-    dalvik.vm.heapmaxfree?=48m \
+-    dalvik.vm.foreground-heap-growth-multiplier?=1.0 \
+-    dalvik.vm.enable_time_based_gc_trigger?=true \
+-    dalvik.vm.usejit?=true \
+-    dalvik.vm.jitmaxsize?=256m \
+-    dalvik.vm.jitinitialsize?=32m \
+-    dalvik.vm.jitthreshold?=10000 \
+-    dalvik.vm.parallel-image-loading?=true \
+-    dalvik.vm.madvise.vdexfile.size?=104857600 \
+-    dalvik.vm.madvise.odexfile.size?=104857600 \
+-    dalvik.vm.usap_pool_enabled?=true \
+-    dalvik.vm.usap_pool_size_min?=1 \
+-    dalvik.vm.usap_pool_size_max?=2 \
+-    dalvik.vm.usap_refill_threshold?=1 \
+-    dalvik.vm.usap_pool_refill_delay_ms?=3000
++    dalvik.vm.heaptargetutilization?=0.5 \
++    dalvik.vm.heapminfree?=8m \
++    dalvik.vm.heapmaxfree?=32m \
++    dalvik.vm.madvise.vdexfile.size?=31457280 \
++    dalvik.vm.madvise.odexfile.size?=31457280 \
++    dalvik.vm.madvise.artfile.size?=0 \
++    ro.lmk.medium?=700
+diff --git a/build/phone-xhdpi-8192-dalvik-heap.mk b/build/phone-xhdpi-8192-dalvik-heap.mk
+index c03f5fe..5a79e27 100644
+--- a/build/phone-xhdpi-8192-dalvik-heap.mk
++++ b/build/phone-xhdpi-8192-dalvik-heap.mk
+@@ -18,22 +18,12 @@
+ 
+ PRODUCT_PRODUCT_PROPERTIES += \
+     dalvik.vm.heapstartsize?=16m \
+-    dalvik.vm.heapgrowthlimit?=384m \
++    dalvik.vm.heapgrowthlimit?=256m \
+     dalvik.vm.heapsize?=512m \
+-    dalvik.vm.heaptargetutilization?=0.75 \
+-    dalvik.vm.heapminfree?=4m \
+-    dalvik.vm.heapmaxfree?=64m \
+-    dalvik.vm.foreground-heap-growth-multiplier?=1.0 \
+-    dalvik.vm.enable_time_based_gc_trigger?=true \
+-    dalvik.vm.usejit?=true \
+-    dalvik.vm.jitmaxsize?=256m \
+-    dalvik.vm.jitinitialsize?=32m \
+-    dalvik.vm.jitthreshold?=10000 \
+-    dalvik.vm.parallel-image-loading?=true \
+-    dalvik.vm.madvise.vdexfile.size?=157286400 \
+-    dalvik.vm.madvise.odexfile.size?=157286400 \
+-    dalvik.vm.usap_pool_enabled?=true \
+-    dalvik.vm.usap_pool_size_min?=1 \
+-    dalvik.vm.usap_pool_size_max?=3 \
+-    dalvik.vm.usap_refill_threshold?=1 \
+-    dalvik.vm.usap_pool_refill_delay_ms?=3000
++    dalvik.vm.heaptargetutilization?=0.5 \
++    dalvik.vm.heapminfree?=8m \
++    dalvik.vm.heapmaxfree?=32m \
++    dalvik.vm.madvise.vdexfile.size?=31457280 \
++    dalvik.vm.madvise.odexfile.size?=31457280 \
++    dalvik.vm.madvise.artfile.size?=0 \
++    ro.lmk.medium?=700

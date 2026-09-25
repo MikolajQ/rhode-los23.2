@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Sun, 24 Dec 2023 10:41:28 +0100
+Subject: [PATCH 04/10] art: Disable minidebuginfo generation
+
+Change-Id: I17c833ff4421933d1fba5d5eefd05d6f004bbc70
+---
+ target/product/runtime_libart.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/target/product/runtime_libart.mk b/target/product/runtime_libart.mk
+index 71138ac..24fc5b8 100644
+--- a/target/product/runtime_libart.mk
++++ b/target/product/runtime_libart.mk
+@@ -155,8 +155,8 @@ PRODUCT_SYSTEM_PROPERTIES += \
+ 
+ # Enable minidebuginfo generation unless overridden.
+ PRODUCT_SYSTEM_PROPERTIES += \
+-    dalvik.vm.minidebuginfo=true \
+-    dalvik.vm.dex2oat-minidebuginfo=true
++    dalvik.vm.minidebuginfo=false \
++    dalvik.vm.dex2oat-minidebuginfo=false
+ 
+ # Enable Madvising of the whole odex and vdex files to MADV_WILLNEED.
+ # The size specified here is the size limit of how much of the file

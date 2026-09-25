@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin37 <alexfinhart@gmail.com>
+Date: Tue, 15 Nov 2022 13:15:54 +0800
+Subject: [PATCH 10/21] art: Kryo785 supports dotprod
+
+Signed-off-by: minaripenguin37 <alexfinhart@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ runtime/arch/arm64/instruction_set_features_arm64.cc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/runtime/arch/arm64/instruction_set_features_arm64.cc b/runtime/arch/arm64/instruction_set_features_arm64.cc
+index 37440cc..bb33fab 100644
+--- a/runtime/arch/arm64/instruction_set_features_arm64.cc
++++ b/runtime/arch/arm64/instruction_set_features_arm64.cc
+@@ -109,6 +109,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromVariant(
+       "cortex-a55",
+       "cortex-a75",
+       "cortex-a76",
++      "kryo785",
+   };
+ 
+   bool needs_a53_835769_fix = FindVariantInArray(arm64_variants_with_a53_835769_bug,

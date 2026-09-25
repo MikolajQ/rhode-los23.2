@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Tue, 26 May 2026 15:32:07 +0200
+Subject: [PATCH 21/21] It is NEVER a debug build
+
+Change-Id: I9453c7c45f9cfac1484dc12d80f48fc25e80ddd4
+---
+ libartbase/base/globals.h | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/libartbase/base/globals.h b/libartbase/base/globals.h
+index 3ecde7d..8dd4e2f 100644
+--- a/libartbase/base/globals.h
++++ b/libartbase/base/globals.h
+@@ -55,11 +55,7 @@ static constexpr size_t kMaxPageSize = kMinPageSize;
+ // this is the value to be used in images files for aligning contents to page size.
+ static constexpr size_t kElfSegmentAlignment = kMaxPageSize;
+ 
+-#if defined(NDEBUG) && !defined(__clang_analyzer__)
+ static constexpr bool kIsDebugBuild = false;
+-#else
+-static constexpr bool kIsDebugBuild = true;
+-#endif
+ 
+ #if defined(ART_PGO_INSTRUMENTATION)
+ static constexpr bool kIsPGOInstrumentation = true;

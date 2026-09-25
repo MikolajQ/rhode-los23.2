@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aaron Kling <webgeek1234@gmail.com>
+Date: Mon, 23 Sep 2024 10:54:34 +0800
+Subject: [PATCH 11/14] config: Disable debug logging on non-eng builds
+
+Debug and verbose logging is typically very chatty to the point of
+slowing down a device. Since Lineage ships userdebug, debug logging
+shouldn't be on by default on userdebug. Setting the persist log tag
+properties can be done at runtime for debugging purposes when needed.
+
+Change-Id: I2e5ec041bb0971b4be160fa889b140aec56dc96f
+---
+ config/common.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/config/common.mk b/config/common.mk
+index 82bdc37..18c834d 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -45,6 +45,9 @@ endif
+ 
+ # Disable extra StrictMode features on all non-engineering builds
+ PRODUCT_PRODUCT_PROPERTIES += persist.sys.strictmode.disable=true
++
++# Disable debug and verbose logging by default
++PRODUCT_PRODUCT_PROPERTIES += log.tag=I
+ endif
+ 
+ # Backup Tool

@@ -1,0 +1,303 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 10 Apr 2026 13:19:52 +0800
+Subject: [PATCH 143/226] hwui: Gating hwui per-frame traces for userdebug
+ builds
+
+simpleperf on userdebug shows RenderThread at 47.9% CPU during scroll, with 2.77% in __vfprintf and 1.05% in __strlen from 11 ATRACE points firing every frame in the render hot path (DrawFrameTask, CanvasContext, RenderNode, SkiaPipeline). on userdebug these are always active. add debug.hwui.trace_each_frame property (default false) with HWUI_FRAME_ATRACE_* conditional macros that short-circuit to a branch-not-taken when disabled
+
+Change-Id: Ia0e81e1f39a6b7b84fd44c588681d9fc5a653996
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libs/hwui/Properties.cpp                      |  4 ++
+ libs/hwui/Properties.h                        |  4 ++
+ libs/hwui/RenderNode.cpp                      |  3 +-
+ .../hwui/pipeline/skia/SkiaOpenGLPipeline.cpp |  3 +-
+ libs/hwui/pipeline/skia/SkiaPipeline.cpp      |  5 +-
+ .../hwui/pipeline/skia/SkiaVulkanPipeline.cpp |  3 +-
+ libs/hwui/renderthread/CanvasContext.cpp      |  7 ++-
+ libs/hwui/renderthread/DrawFrameTask.cpp      |  7 ++-
+ libs/hwui/utils/FrameTraceUtils.h             | 59 +++++++++++++++++++
+ 9 files changed, 84 insertions(+), 11 deletions(-)
+ create mode 100644 libs/hwui/utils/FrameTraceUtils.h
+
+diff --git a/libs/hwui/Properties.cpp b/libs/hwui/Properties.cpp
+index 6d81a0fab9..a7d3c808f1 100644
+--- a/libs/hwui/Properties.cpp
++++ b/libs/hwui/Properties.cpp
+@@ -111,6 +111,8 @@ bool Properties::clipSurfaceViews = false;
+ bool Properties::hdr10bitPlus = false;
+ bool Properties::skipTelemetry = false;
+ 
++bool Properties::traceEachFrame = false;
++
+ int Properties::timeoutMultiplier = 1;
+ 
+ StretchEffectBehavior Properties::stretchEffectBehavior = StretchEffectBehavior::ShaderHWUI;
+@@ -190,6 +192,8 @@ bool Properties::load() {
+     skipTelemetry = base::GetBoolProperty(PROPERTY_SKIP_EGLMANAGER_TELEMETRY,
+                                           hwui_flags::skip_eglmanager_telemetry());
+ 
++    traceEachFrame = base::GetBoolProperty(PROPERTY_TRACE_EACH_FRAME, false);
++
+     return (prevDebugLayersUpdates != debugLayersUpdates) || (prevDebugOverdraw != debugOverdraw);
+ }
+ 
+diff --git a/libs/hwui/Properties.h b/libs/hwui/Properties.h
+index 9b8465fee1..fc9ae13e3b 100644
+--- a/libs/hwui/Properties.h
++++ b/libs/hwui/Properties.h
+@@ -236,6 +236,8 @@ enum DebugLevel {
+ 
+ #define PROPERTY_SKIP_EGLMANAGER_TELEMETRY "debug.hwui.skip_eglmanager_telemetry"
+ 
++#define PROPERTY_TRACE_EACH_FRAME "debug.hwui.trace_each_frame"
++
+ /**
+  * Property for font reading library.
+  */
+@@ -357,6 +359,8 @@ public:
+     static bool hdr10bitPlus;
+     static bool skipTelemetry;
+ 
++    static bool traceEachFrame;
++
+     static int timeoutMultiplier;
+ 
+     static StretchEffectBehavior getStretchEffectBehavior() {
+diff --git a/libs/hwui/RenderNode.cpp b/libs/hwui/RenderNode.cpp
+index 575d47b466..5af6ca7063 100644
+--- a/libs/hwui/RenderNode.cpp
++++ b/libs/hwui/RenderNode.cpp
+@@ -30,6 +30,7 @@
+ #include "FeatureFlags.h"
+ #include "Properties.h"
+ #include "TreeInfo.h"
++#include "utils/FrameTraceUtils.h"
+ #include "VectorDrawable.h"
+ #include "private/hwui/WebViewFunctor.h"
+ #include "renderthread/CanvasContext.h"
+@@ -135,7 +136,7 @@ int RenderNode::getAllocatedSize() {
+ 
+ 
+ void RenderNode::prepareTree(TreeInfo& info) {
+-    ATRACE_CALL();
++    HWUI_FRAME_ATRACE_CALL();
+     LOG_ALWAYS_FATAL_IF(!info.damageAccumulator, "DamageAccumulator missing");
+     MarkAndSweepRemoved observer(&info);
+ 
+diff --git a/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp b/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp
+index 0768f45797..f7069c161f 100644
+--- a/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp
++++ b/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp
+@@ -38,6 +38,7 @@
+ #include "renderthread/EglManager.h"
+ #include "renderthread/Frame.h"
+ #include "renderthread/IRenderPipeline.h"
++#include "utils/FrameTraceUtils.h"
+ #include "utils/GLUtils.h"
+ 
+ using namespace android::uirenderer::renderthread;
+@@ -178,7 +179,7 @@ IRenderPipeline::DrawResult SkiaOpenGLPipeline::draw(
+     }
+ 
+     {
+-        ATRACE_NAME("flush commands");
++        HWUI_FRAME_ATRACE_NAME("flush commands");
+         skgpu::ganesh::FlushAndSubmit(surface);
+     }
+     layerUpdateQueue->clear();
+diff --git a/libs/hwui/pipeline/skia/SkiaPipeline.cpp b/libs/hwui/pipeline/skia/SkiaPipeline.cpp
+index 3c2fcb7dba..bc6fc26e66 100644
+--- a/libs/hwui/pipeline/skia/SkiaPipeline.cpp
++++ b/libs/hwui/pipeline/skia/SkiaPipeline.cpp
+@@ -49,6 +49,7 @@
+ #include "thread/CommonPool.h"
+ #include "tools/SkSharingProc.h"
+ #include "utils/Color.h"
++#include "utils/FrameTraceUtils.h"
+ #include "utils/String8.h"
+ 
+ using namespace android::uirenderer::renderthread;
+@@ -72,7 +73,7 @@ void SkiaPipeline::renderLayers(const LightGeometry& lightGeometry,
+                                 LayerUpdateQueue* layerUpdateQueue, bool opaque,
+                                 const LightInfo& lightInfo) {
+     LightingInfo::updateLighting(lightGeometry, lightInfo);
+-    ATRACE_NAME("draw layers");
++    HWUI_FRAME_ATRACE_NAME("draw layers");
+     renderLayersImpl(*layerUpdateQueue, opaque);
+     layerUpdateQueue->clear();
+ }
+@@ -99,7 +100,7 @@ bool SkiaPipeline::renderLayerImpl(RenderNode* layerNode, const Rect& layerDamag
+         return false;
+     }
+ 
+-    ATRACE_FORMAT("drawLayer [%s] %.1f x %.1f", layerNode->getName(), bounds.width(),
++    HWUI_FRAME_ATRACE_FORMAT("drawLayer [%s] %.1f x %.1f", layerNode->getName(), bounds.width(),
+                   bounds.height());
+ 
+     layerNode->getSkiaLayer()->hasRenderedSinceRepaint = false;
+diff --git a/libs/hwui/pipeline/skia/SkiaVulkanPipeline.cpp b/libs/hwui/pipeline/skia/SkiaVulkanPipeline.cpp
+index 05020abb22..44cd53dd97 100644
+--- a/libs/hwui/pipeline/skia/SkiaVulkanPipeline.cpp
++++ b/libs/hwui/pipeline/skia/SkiaVulkanPipeline.cpp
+@@ -34,6 +34,7 @@
+ #include "pipeline/skia/VkInteropFunctorDrawable.h"
+ #include "renderstate/RenderState.h"
+ #include "renderthread/Frame.h"
++#include "utils/FrameTraceUtils.h"
+ #include "renderthread/IRenderPipeline.h"
+ 
+ using namespace android::uirenderer::renderthread;
+@@ -114,7 +115,7 @@ IRenderPipeline::DrawResult SkiaVulkanPipeline::draw(
+ 
+     VulkanManager::VkDrawResult drawResult;
+     {
+-        ATRACE_NAME("flush commands");
++        HWUI_FRAME_ATRACE_NAME("flush commands");
+         drawResult = vulkanManager().finishFrame(backBuffer.get());
+     }
+     layerUpdateQueue->clear();
+diff --git a/libs/hwui/renderthread/CanvasContext.cpp b/libs/hwui/renderthread/CanvasContext.cpp
+index b24c2cc65b..3a96934596 100644
+--- a/libs/hwui/renderthread/CanvasContext.cpp
++++ b/libs/hwui/renderthread/CanvasContext.cpp
+@@ -35,6 +35,7 @@
+ #include <functional>
+ 
+ #include "../Properties.h"
++#include "../utils/FrameTraceUtils.h"
+ #include "AnimationContext.h"
+ #include "ColorArea.h"
+ #include "FeatureFlags.h"
+@@ -665,7 +666,7 @@ void CanvasContext::draw(bool solelyTextureViewUpdates) {
+ 
+     SkRect windowDirty = computeDirtyRect(frame, &dirty);
+ 
+-    ATRACE_FORMAT("Drawing " RECT_STRING, SK_RECT_ARGS(dirty));
++    HWUI_FRAME_ATRACE_FORMAT("Drawing " RECT_STRING, SK_RECT_ARGS(dirty));
+ 
+     IRenderPipeline::DrawResult drawResult;
+     {
+@@ -686,7 +687,7 @@ void CanvasContext::draw(bool solelyTextureViewUpdates) {
+         if (vsyncId != UiFrameInfoBuilder::INVALID_VSYNC_ID) {
+             const auto inputEventId =
+                     static_cast<int32_t>(mCurrentFrameInfo->get(FrameInfoIndex::InputEventId));
+-            ATRACE_FORMAT(
++            HWUI_FRAME_ATRACE_FORMAT(
+                 "frameTimelineInfo(frameNumber=%llu, vsyncId=%lld, inputEventId=0x%" PRIx32 ")",
+                 frameCompleteNr, vsyncId, inputEventId);
+             const ANativeWindowFrameTimelineInfo ftl = {
+@@ -979,7 +980,7 @@ const SkM44& CanvasContext::getPixelSnapMatrix() const {
+ 
+ void CanvasContext::prepareAndDraw(RenderNode* node) {
+     int64_t vsyncId = mRenderThread.timeLord().lastVsyncId();
+-    ATRACE_FORMAT("%s %" PRId64, __func__, vsyncId);
++    HWUI_FRAME_ATRACE_FORMAT("%s %" PRId64, __func__, vsyncId);
+ 
+     nsecs_t vsync = mRenderThread.timeLord().computeFrameTimeNanos();
+     int64_t frameDeadline = mRenderThread.timeLord().lastFrameDeadline();
+diff --git a/libs/hwui/renderthread/DrawFrameTask.cpp b/libs/hwui/renderthread/DrawFrameTask.cpp
+index 826d00e1f3..37e87060d1 100644
+--- a/libs/hwui/renderthread/DrawFrameTask.cpp
++++ b/libs/hwui/renderthread/DrawFrameTask.cpp
+@@ -24,6 +24,7 @@
+ #include "../DeferredLayerUpdater.h"
+ #include "../DisplayList.h"
+ #include "../Properties.h"
++#include "../utils/FrameTraceUtils.h"
+ #include "../RenderNode.h"
+ #include "CanvasContext.h"
+ #include "HardwareBufferRenderParams.h"
+@@ -80,7 +81,7 @@ int DrawFrameTask::drawFrame() {
+ }
+ 
+ void DrawFrameTask::postAndWait() {
+-    ATRACE_CALL();
++    HWUI_FRAME_ATRACE_CALL();
+     AutoMutex _lock(mLock);
+     mRenderThread->queue().post([this]() { run(); });
+     mSignal.wait(mLock);
+@@ -88,7 +89,7 @@ void DrawFrameTask::postAndWait() {
+ 
+ void DrawFrameTask::run() {
+     const int64_t vsyncId = mFrameInfo[static_cast<int>(FrameInfoIndex::FrameTimelineVsyncId)];
+-    ATRACE_FORMAT("DrawFrames %" PRId64, vsyncId);
++    HWUI_FRAME_ATRACE_FORMAT("DrawFrames %" PRId64, vsyncId);
+ 
+     mContext->setSyncDelayDuration(systemTime(SYSTEM_TIME_MONOTONIC) - mSyncQueued);
+     mContext->setTargetSdrHdrRatio(mRenderSdrHdrRatio);
+@@ -167,7 +168,7 @@ void DrawFrameTask::run() {
+ }
+ 
+ bool DrawFrameTask::syncFrameState(TreeInfo& info) {
+-    ATRACE_CALL();
++    HWUI_FRAME_ATRACE_CALL();
+     int64_t vsync = mFrameInfo[static_cast<int>(FrameInfoIndex::Vsync)];
+     int64_t intendedVsync = mFrameInfo[static_cast<int>(FrameInfoIndex::IntendedVsync)];
+     int64_t vsyncId = mFrameInfo[static_cast<int>(FrameInfoIndex::FrameTimelineVsyncId)];
+diff --git a/libs/hwui/utils/FrameTraceUtils.h b/libs/hwui/utils/FrameTraceUtils.h
+new file mode 100644
+index 0000000000..8f6a9074d9
+--- /dev/null
++++ b/libs/hwui/utils/FrameTraceUtils.h
+@@ -0,0 +1,59 @@
++/*
++ * Copyright 2025-2026 AxionOS
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#include <cutils/compiler.h>
++#include <cutils/trace.h>
++#include <gui/TraceUtils.h>
++#include <utils/Trace.h>
++
++#include "Properties.h"
++
++namespace android {
++namespace uirenderer {
++
++class ConditionalTraceEnder {
++public:
++    inline ConditionalTraceEnder(bool active) : mActive(active) {}
++    inline ~ConditionalTraceEnder() {
++        if (mActive) ATRACE_END();
++    }
++
++private:
++    bool mActive;
++};
++
++}  // namespace uirenderer
++}  // namespace android
++
++#define HWUI_FRAME_ATRACE_CALL() \
++    ::android::ScopedTrace PASTE(___tracer, __LINE__)(                  \
++        CC_UNLIKELY(::android::uirenderer::Properties::traceEachFrame)  \
++            ? ATRACE_TAG : 0,                                           \
++        __FUNCTION__)
++
++#define HWUI_FRAME_ATRACE_NAME(name) \
++    ::android::ScopedTrace PASTE(___tracer, __LINE__)(                  \
++        CC_UNLIKELY(::android::uirenderer::Properties::traceEachFrame)  \
++            ? ATRACE_TAG : 0,                                           \
++        name)
++
++#define HWUI_FRAME_ATRACE_FORMAT(fmt, ...)                                                    \
++    ::android::uirenderer::ConditionalTraceEnder PASTE(___tracer, __LINE__)(                  \
++        CC_UNLIKELY(::android::uirenderer::Properties::traceEachFrame) &&                     \
++            CC_UNLIKELY(ATRACE_ENABLED()) &&                                                  \
++                (::android::TraceUtils::atraceFormatBegin(fmt, ##__VA_ARGS__), true))

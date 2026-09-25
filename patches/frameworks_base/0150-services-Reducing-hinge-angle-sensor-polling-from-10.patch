@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sun, 12 Apr 2026 17:18:29 +0800
+Subject: [PATCH 150/226] services: Reducing hinge angle sensor polling from
+ 1000hz to normal
+
+DisplayRotation.FoldController was registering hinge angle sensor with SENSOR_DELAY_FASTEST (1ms/1000Hz) causing the sensor HAL to poll at maximum rate even while idle. combined with 2 other listeners, this prevented cpu cores from entering deep sleep states contributing to thermal issues. changed to SENSOR_DELAY_NORMAL (200ms) matching FoldableDeviceStateProvider
+
+Change-Id: I51e302c7047547f35a7d86db7e8d4a61731832ab
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ services/core/java/com/android/server/wm/DisplayRotation.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/wm/DisplayRotation.java b/services/core/java/com/android/server/wm/DisplayRotation.java
+index 376fb0501c..6300e4295f 100644
+--- a/services/core/java/com/android/server/wm/DisplayRotation.java
++++ b/services/core/java/com/android/server/wm/DisplayRotation.java
+@@ -1896,7 +1896,7 @@ public class DisplayRotation {
+                         }
+                     };
+                     mSensorManager.registerListener(mHingeAngleSensorEventListener,
+-                            hingeAngleSensor, SensorManager.SENSOR_DELAY_FASTEST, getHandler());
++                            hingeAngleSensor, SensorManager.SENSOR_DELAY_NORMAL, getHandler());
+                 }
+             }
+         }

@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: quh4gko8 <88831734+quh4gko8@users.noreply.github.com>
+Date: Wed, 2 Jul 2025 10:01:28 +0000
+Subject: [PATCH 12/23] always use UTC as the time zone for build dates
+
+---
+ scripts/gen_build_prop.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
+index 560e9611..26eeccde 100644
+--- a/scripts/gen_build_prop.py
++++ b/scripts/gen_build_prop.py
+@@ -105,8 +105,8 @@ def parse_args():
+   config["BuildVersionTags"] = build_version_tags
+ 
+   raw_date = args.date_file.read().strip()
+-  config["Date"] = subprocess.check_output(["date", "-d", f"@{raw_date}"], text=True).strip()
+-  config["DateUtc"] = subprocess.check_output(["date", "-d", f"@{raw_date}", "+%s"], text=True).strip()
++  config["Date"] = subprocess.check_output(["date", "-ud", f"@{raw_date}"], text=True).strip()
++  config["DateUtc"] = subprocess.check_output(["date", "-ud", f"@{raw_date}", "+%s"], text=True).strip()
+ 
+   # build_desc is human readable strings that describe this build. This has the same info as the
+   # build fingerprint.

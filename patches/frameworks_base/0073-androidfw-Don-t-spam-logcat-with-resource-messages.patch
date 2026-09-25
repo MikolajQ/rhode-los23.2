@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: fusionjack <dogfight60-fusionjack@yahoo.de>
+Date: Sat, 31 May 2014 17:53:55 +0200
+Subject: [PATCH 073/226] androidfw: Don't spam logcat with resource messages
+
+Change-Id: I47fee6a90c9c88fe451b4c35182ed8601d6b326d
+Signed-off-by: Jason Edson <jaysonedson@gmail.com>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ libs/androidfw/ResourceTypes.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/androidfw/ResourceTypes.cpp b/libs/androidfw/ResourceTypes.cpp
+index 46e4874fe3..1ce045503a 100644
+--- a/libs/androidfw/ResourceTypes.cpp
++++ b/libs/androidfw/ResourceTypes.cpp
+@@ -4576,7 +4576,7 @@ bool ResTable::getResourceName(uint32_t resID, bool allowUtf8, resource_name* ou
+ 
+     if (p < 0) {
+         if (Res_GETPACKAGE(resID)+1 == 0) {
+-            ALOGV("No package identifier when getting name for resource number 0x%08x", resID);
++            // ALOGV("No package identifier when getting name for resource number 0x%08x", resID);
+         } else {
+ #ifndef STATIC_ANDROIDFW_FOR_TOOLS
+             ALOGW("No known package when getting name for resource number 0x%08x", resID);

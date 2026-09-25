@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Sun, 12 Oct 2025 12:44:23 +0000
+Subject: [PATCH 21/42] hwcomposer: stop spamming about luts
+
+10-12 15:02:16.070  1156  1180 E HWComposer: getLuts: getLuts failed for display 4630946253560767361: UNSUPPORTED (8)
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp b/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp
+index 0ab9a4c..8a1a004 100644
+--- a/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp
++++ b/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp
+@@ -1748,7 +1748,7 @@ Error AidlComposer::getLuts(Display display, const std::vector<sp<GraphicBuffer>
+     const auto status =
+             mAidlComposerClient->getLuts(translate<int64_t>(display), aidlBuffers, luts);
+     if (!status.isOk()) {
+-        ALOGE("getLuts failed %s", status.getDescription().c_str());
++        ALOGD("getLuts failed %s", status.getDescription().c_str());
+         return static_cast<Error>(status.getServiceSpecificError());
+     }
+ 

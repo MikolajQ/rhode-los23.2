@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: cjh1249131356 <cjh1249131356@gmail.com>
+Date: Tue, 9 Jul 2024 00:44:06 +0800
+Subject: [PATCH 194/226] FrameTracker: Silence logspam
+
+Change-Id: I15c3500f069f2bee40b7272f3eaa65cb320de50a
+Signed-off-by: cjh1249131356 <cjh1249131356@gmail.com>
+---
+ core/java/com/android/internal/jank/FrameTracker.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/java/com/android/internal/jank/FrameTracker.java b/core/java/com/android/internal/jank/FrameTracker.java
+index 49f008b465..d78f8af263 100644
+--- a/core/java/com/android/internal/jank/FrameTracker.java
++++ b/core/java/com/android/internal/jank/FrameTracker.java
+@@ -635,7 +635,7 @@ public class FrameTracker implements HardwareRendererObserver.OnFrameMetricsAvai
+                 // to ignore it for now.
+                 if (mObserver != null && !info.hwuiCallbackFired) {
+                     markEvent("FT#MissedHWUICallback", info.frameVsyncId);
+-                    Log.w(TAG, "Missing HWUI jank callback for vsyncId: " + info.frameVsyncId
++                    Log.v(TAG, "Missing HWUI jank callback for vsyncId: " + info.frameVsyncId
+                             + ", CUJ=" + name);
+                 }
+             }
+@@ -643,7 +643,7 @@ public class FrameTracker implements HardwareRendererObserver.OnFrameMetricsAvai
+                 maxFrameTimeNanos = Math.max(info.totalDurationNanos, maxFrameTimeNanos);
+                 if (!info.surfaceControlCallbackFired) {
+                     markEvent("FT#MissedSFCallback", info.frameVsyncId);
+-                    Log.w(TAG, "Missing SF jank callback for vsyncId: " + info.frameVsyncId
++                    Log.v(TAG, "Missing SF jank callback for vsyncId: " + info.frameVsyncId
+                             + ", CUJ=" + name);
+                 }
+             } else if (Flags.useSfFrameDuration() && info.surfaceControlCallbackFired) {

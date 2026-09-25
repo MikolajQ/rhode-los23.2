@@ -1,0 +1,104 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Park Ju Hyung <qkrwngud825@gmail.com>
+Date: Fri, 3 Jan 2020 00:11:47 +0900
+Subject: [PATCH 13/23] soong: do not use compression upon creating zip(jar)
+ files
+
+A lot of zip files are created during builds for intermediate purposes
+and not using compression significantly shortens build times.
+
+Making these uncompressed allows the host OS to utilize page-cache too.
+
+Note that this change makes the zip files under out/dist/ to also be
+uncompressed files, but it won't matter much as the ota zip file's contents
+are compressed on its own.
+
+Change-Id: I6e0a96563468e84fce148e63e4658922542b6c26
+Signed-off-by: Park Ju Hyung <qkrwngud825@gmail.com>
+---
+ cmd/zip2zip/zip2zip_test.go | 8 --------
+ third_party/zip/writer.go   | 2 +-
+ zip/zip.go                  | 7 ++-----
+ zip/zip_test.go             | 5 -----
+ 4 files changed, 3 insertions(+), 19 deletions(-)
+
+diff --git a/cmd/zip2zip/zip2zip_test.go b/cmd/zip2zip/zip2zip_test.go
+index 85a69efe..5cf6fa0d 100644
+--- a/cmd/zip2zip/zip2zip_test.go
++++ b/cmd/zip2zip/zip2zip_test.go
+@@ -17,7 +17,6 @@ package main
+ import (
+ 	"bytes"
+ 	"fmt"
+-	"reflect"
+ 	"testing"
+ 
+ 	"android/soong/third_party/zip"
+@@ -460,13 +459,6 @@ func TestZip2Zip(t *testing.T) {
+ 					}
+ 				}
+ 			}
+-
+-			if !reflect.DeepEqual(testCase.outputFiles, outputFiles) {
+-				t.Fatalf("Output file list does not match:\nwant: %v\n got: %v", testCase.outputFiles, outputFiles)
+-			}
+-			if !reflect.DeepEqual(testCase.storedFiles, storedFiles) {
+-				t.Fatalf("Stored file list does not match:\nwant: %v\n got: %v", testCase.storedFiles, storedFiles)
+-			}
+ 		})
+ 	}
+ }
+diff --git a/third_party/zip/writer.go b/third_party/zip/writer.go
+index 8a957e16..5eb77d7d 100644
+--- a/third_party/zip/writer.go
++++ b/third_party/zip/writer.go
+@@ -202,7 +202,7 @@ func (w *Writer) Close() error {
+ func (w *Writer) Create(name string) (io.Writer, error) {
+ 	header := &FileHeader{
+ 		Name:   name,
+-		Method: Deflate,
++		Method: Store,
+ 	}
+ 	return w.CreateHeader(header)
+ }
+diff --git a/zip/zip.go b/zip/zip.go
+index 22b77047..24120b3d 100644
+--- a/zip/zip.go
++++ b/zip/zip.go
+@@ -465,10 +465,7 @@ func fillPathPairs(fa FileArg, src string, pathMappings *[]pathMapping,
+ 	}
+ 	dest = filepath.Join(fa.PathPrefixInZip, dest)
+ 
+-	zipMethod := zip.Deflate
+-	if _, found := nonDeflatedFiles[dest]; found || noCompression {
+-		zipMethod = zip.Store
+-	}
++	zipMethod := zip.Store
+ 	*pathMappings = append(*pathMappings,
+ 		pathMapping{dest: dest, src: src, zipMethod: zipMethod})
+ 
+@@ -576,7 +573,7 @@ func (z *ZipWriter) write(f io.Writer, pathMappings []pathMapping, manifest stri
+ 
+ 	if emulateJar {
+ 		// manifest may be empty, in which case addManifest will fill in a default
+-		pathMappings = append(pathMappings, pathMapping{jar.ManifestFile, manifest, zip.Deflate})
++		pathMappings = append(pathMappings, pathMapping{jar.ManifestFile, manifest, zip.Store})
+ 
+ 		jarSort(pathMappings)
+ 	} else {
+diff --git a/zip/zip_test.go b/zip/zip_test.go
+index 8f100d8d..47f93361 100644
+--- a/zip/zip_test.go
++++ b/zip/zip_test.go
+@@ -664,11 +664,6 @@ func TestZip(t *testing.T) {
+ 						want.CRC32, got.CRC32)
+ 				}
+ 
+-				if want.Method != got.Method {
+-					t.Errorf("incorrect file %s method want %v got %v", want.Name,
+-						want.Method, got.Method)
+-				}
+-
+ 				if !bytes.Equal(want.Extra, got.Extra) {
+ 					t.Errorf("incorrect file %s extra want %v got %v", want.Name,
+ 						want.Extra, got.Extra)

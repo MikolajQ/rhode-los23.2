@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Mon, 22 Sep 2025 16:54:33 +0000
+Subject: [PATCH 200/226] SceneTransitionLayoutState: Downgrade log spam to
+ debug
+
+09-22 19:49:33.319  2578  2578 I SceneTransitionLayoutState: startTransition(transition=ChangeScene(fromScene=SceneKey(debugName=QuickQuickSettingsScene), toScene=SceneKey(debugName=QuickSettingsScene)), chain=true)
+09-22 19:49:33.713  2578  2578 I SceneTransitionLayoutState: finishTransition(transition=ChangeScene(fromScene=SceneKey(debugName=QuickQuickSettingsScene), toScene=SceneKey(debugName=QuickSettingsScene)))
+09-22 19:49:33.713  2578  2578 I SceneTransitionLayoutState: all transitions finished. idle=Idle(currentScene=SceneKey(debugName=QuickQuickSettingsScene), currentOverlays=[])
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../compose/animation/scene/SceneTransitionLayoutState.kt   | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/packages/SystemUI/compose/scene/src/com/android/compose/animation/scene/SceneTransitionLayoutState.kt b/packages/SystemUI/compose/scene/src/com/android/compose/animation/scene/SceneTransitionLayoutState.kt
+index 4225cb9251..9168b2c9e8 100644
+--- a/packages/SystemUI/compose/scene/src/com/android/compose/animation/scene/SceneTransitionLayoutState.kt
++++ b/packages/SystemUI/compose/scene/src/com/android/compose/animation/scene/SceneTransitionLayoutState.kt
+@@ -463,7 +463,7 @@ internal class MutableSceneTransitionLayoutStateImpl(
+     }
+ 
+     override suspend fun startTransition(transition: TransitionState.Transition, chain: Boolean) {
+-        Log.i(TAG, "startTransition(transition=$transition, chain=$chain)")
++        Log.d(TAG, "startTransition(transition=$transition, chain=$chain)")
+         checkThread()
+ 
+         // Prepare the transition before starting it. This is outside of the try/finally block on
+@@ -575,7 +575,7 @@ internal class MutableSceneTransitionLayoutStateImpl(
+             return
+         }
+ 
+-        Log.i(TAG, "finishTransition(transition=$transition)")
++        Log.d(TAG, "finishTransition(transition=$transition)")
+         check(transitionStates.fastAll { it is TransitionState.Transition })
+ 
+         // Mark this transition as finished.
+@@ -598,7 +598,7 @@ internal class MutableSceneTransitionLayoutStateImpl(
+         }
+ 
+         val idle = TransitionState.Idle(lastTransition.currentScene, lastTransition.currentOverlays)
+-        Log.i(TAG, "all transitions finished. idle=$idle")
++        Log.d(TAG, "all transitions finished. idle=$idle")
+         finishedTransitions.clear()
+         this.transitionStates = listOf(idle)
+     }

@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sun, 12 Apr 2026 17:49:45 +0800
+Subject: [PATCH 151/226] SystemUI: Throttling notification stack height
+ remeasure during fling
+
+StackLayoutNode was calling invalidateMeasurement on every intrinsicStackHeight change from NSSL, triggering full compose remeasure pass (69.5% of main thread per simpleperf) on every fling frame. added 8px threshold to skip remeasure when height delta is negligible, reducing compose measure passes during continuous fling animation
+
+Change-Id: Ia8798ea6492e67a2c6339f2d7926fbf2c6063e17
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../composable/NotificationStackContentHeight.kt   | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/packages/SystemUI/compose/features/src/com/android/systemui/notifications/ui/composable/NotificationStackContentHeight.kt b/packages/SystemUI/compose/features/src/com/android/systemui/notifications/ui/composable/NotificationStackContentHeight.kt
+index 8d609df73f..1d94974630 100644
+--- a/packages/SystemUI/compose/features/src/com/android/systemui/notifications/ui/composable/NotificationStackContentHeight.kt
++++ b/packages/SystemUI/compose/features/src/com/android/systemui/notifications/ui/composable/NotificationStackContentHeight.kt
+@@ -37,6 +37,8 @@ import com.android.systemui.statusbar.notification.stack.ui.view.NotificationScr
+  * @param totalVerticalPadding extra padding to be added to the received stack content height.
+  * @param constrainToMaxHeight if true, the height will not be taller than the available space.
+  */
++private const val STACK_HEIGHT_THRESHOLD = 8
++
+ fun Modifier.notificationStackHeight(
+     view: NotificationScrollView,
+     totalVerticalPadding: Dp = 0.dp,
+@@ -67,7 +69,14 @@ private class StackLayoutNode(
+     var constrainToMaxHeight: Boolean,
+ ) : LayoutModifierNode, Modifier.Node() {
+ 
+-    private val stackHeightChangedListener = Runnable { invalidateMeasureIfAttached() }
++    private var lastMeasuredStackHeight = -1
++    private val stackHeightChangedListener = Runnable {
++        val currentHeight = view.intrinsicStackHeight
++        if (Math.abs(currentHeight - lastMeasuredStackHeight) > STACK_HEIGHT_THRESHOLD) {
++            lastMeasuredStackHeight = currentHeight
++            invalidateMeasureIfAttached()
++        }
++    }
+ 
+     override fun onAttach() {
+         super.onAttach()
+@@ -83,7 +92,8 @@ private class StackLayoutNode(
+         measurable: Measurable,
+         constraints: Constraints,
+     ): MeasureResult {
+-        var contentHeight = padding.roundToPx() + view.intrinsicStackHeight
++        lastMeasuredStackHeight = view.intrinsicStackHeight
++        var contentHeight = padding.roundToPx() + lastMeasuredStackHeight
+         if (constrainToMaxHeight) {
+             contentHeight = contentHeight.coerceAtMost(constraints.maxHeight)
+         }

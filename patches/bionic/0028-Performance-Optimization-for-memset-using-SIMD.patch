@@ -1,0 +1,330 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "majianbo.666" <majianbo.666@bytedance.com>
+Date: Thu, 9 Jan 2025 17:58:14 +0800
+Subject: [PATCH 28/34] Performance Optimization for memset using SIMD
+
+Overview of Optimizations:
+A: Optimized using SIMD registers as referenced
+   in the latest ARM community version.
+B: Introduced a middle-tier approach
+   (64B< middle-tier < low_value_with_zva)
+   directly use SIMD registers for performance improvement.
+C: ZVA64 checks: added a check ignore option
+   for minimize instructions.
+D: Cache effectiveness: following Qualcomm's design,
+   use stnp, if memset is non-zero and
+   the size exceeds the Oryon L1-cache size.
+-----------------------------------------------
+-----------------------------------------------
+Test results with memset-benchmark
+on Qcom-8GEN4-Android15 baseline:
+
+Random memset (bytes/ns):
+kernel6.6     32K:  6.85 64K:  6.97 128K:  7.03 256K:  6.96
+Oryon_libc    32K: 13.39 64K: 13.20 128K: 13.12 256K: 12.66
+simd_optimize 32K: 21.25 64K: 20.85 128K: 20.71 256K: 20.18
+
+kernel6.6     512K:  6.93 1024K:  6.91 avg  6.94
+Oryon_libc    512K: 12.60 1024K: 12.41 avg 12.89
+simd_optimize 512K: 19.91 1024K: 19.57 avg 20.40
+-----------------------------------------------
+Medium memset (bytes/ns):
+kernel6.6     8B: 5.71 16B:  7.62 32B: 15.25 64B: 37.30
+Oryon_libc    8B: 3.81 16B:  9.81 32B: 22.44 64B: 32.94
+simd_optimize 8B: 6.71 16B: 13.03 32B: 21.83 64B: 41.98
+
+kernel6.6     128B: 24.86 256B: 47.87 512B: 71.43
+Oryon_libc    128B: 18.89 256B: 34.40 512B: 70.14
+simd_optimize 128B: 83.55 256B: 109.24 512B: 122.86
+-----------------------------------------------
+Large memset (bytes/ns):
+kernel6.6     1K: 112.06 2K: 188.91 4K: 211.70 8K: 191.21
+Oryon_libc    1K: 111.80 2K: 192.75 4K: 216.88 8K: 193.40
+simd_optimize 1K: 113.41 2K: 194.57 4K: 217.65 8K: 194.86
+
+kernel6.6     8k: 191.21 16K: 208.23 32K: 223.32 64K: 227.25
+Oryon_libc    8K: 193.40 16K: 209.33 32K: 223.86 64K: 227.99
+simd_optimize 8K: 194.86 16K: 212.74 32K: 225.66 64K: 226.46
+-----------------------------------------------
+
+Signed-off-by: majianbo.666 <majianbo.666@bytedance.com>
+Change-Id: I417c8de80e99aa496fdb5ff2904b8c7cb29697d4
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libc/Android.bp                        |   1 +
+ libc/arch-arm64/ifuncs.cpp             |   6 +-
+ libc/arch-arm64/oryon/memset-nt-simd.S | 236 +++++++++++++++++++++++++
+ 3 files changed, 242 insertions(+), 1 deletion(-)
+ create mode 100644 libc/arch-arm64/oryon/memset-nt-simd.S
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index e8d8b01..a590dac 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -1036,6 +1036,7 @@ cc_library_static {
+                 "arch-arm64/bionic/vfork.S",
+                 "arch-arm64/oryon/memcpy-nt.S",
+                 "arch-arm64/oryon/memset-nt.S",
++                "arch-arm64/oryon/memset-nt-simd.S",
+             ],
+         },
+ 
+diff --git a/libc/arch-arm64/ifuncs.cpp b/libc/arch-arm64/ifuncs.cpp
+index 49e67b4..25f2841 100644
+--- a/libc/arch-arm64/ifuncs.cpp
++++ b/libc/arch-arm64/ifuncs.cpp
+@@ -101,7 +101,11 @@ DEFINE_IFUNC_FOR(memset) {
+   if (arg->_hwcap2 & HWCAP2_MOPS) {
+     RETURN_FUNC(memset_func_t, __memset_aarch64_mops);
+   } else if (__bionic_is_oryon(arg->_hwcap)) {
+-    RETURN_FUNC(memset_func_t, __memset_aarch64_nt);
++      if (HWCAP_ASIMD) {
++        RETURN_FUNC(memset_func_t, __memset_aarch64_nt_simd);
++      } else {
++        RETURN_FUNC(memset_func_t, __memset_aarch64_nt);
++      }
+   } else {
+     RETURN_FUNC(memset_func_t, __memset_aarch64);
+   }
+diff --git a/libc/arch-arm64/oryon/memset-nt-simd.S b/libc/arch-arm64/oryon/memset-nt-simd.S
+new file mode 100644
+index 0000000..a62e9ff
+--- /dev/null
++++ b/libc/arch-arm64/oryon/memset-nt-simd.S
+@@ -0,0 +1,236 @@
++/*
++ * Copyright (C) 2024 The Android Open Source Project
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++/* Assumptions:
++ *
++ * ARMv8-a, AArch64
++ * Unaligned accesses
++ *
++ */
++#include <private/bionic_asm.h>
++
++#define A_q	q0
++#define A_s	s0
++#define dstin	x0
++#define val	x1
++#define valw	w1
++#define count	x2
++#define dst	x3
++#define off	x3
++#define dstend	x4
++#define dstend2	x5
++#define zva_len	x6
++#define zva_len_w	w6
++#define zva_bits	x7
++#define tmp1	x8
++#define tmp1w	w8
++#define tmp2	x9
++#define tmp2w	w9
++#define tmp3	x10
++#define tmp3w	w10
++/* More than SMALL_BUF_SIZE using stnp (non-temporal) instructions,
++ * best to refer the L1 cache size */
++#define SMALL_BUF_SIZE	98304 /*96K*/
++#define MEDIUM_THR	512
++
++ENTRY(__memset_aarch64_nt_simd)
++
++	add	dstend, dstin, count
++	dup	v0.16B, valw
++
++	/* Handle 0..15 bytes. */
++	cmp	count, 16
++	b.lo	.Lset_tiny
++
++	/* Handle #MEDIUM_THR+..bytes. */
++	cmp	count, #MEDIUM_THR
++	b.hi	.Lset_long
++
++	/* Handle 64..MEDIUM_THR bytes.*/
++	cmp	count, 64
++	b.hs	.Lset_medium
++
++	/* Handle 16..63 bytes. */
++	mov	off, 16
++	and	off, off, count, lsr 1
++	sub	dstend2, dstend, off
++	str	A_q, [dstin]
++	str	A_q, [dstin, off]
++	str	A_q, [dstend2, -16]
++	str	A_q, [dstend, -16]
++	ret
++
++	.p2align 4
++.Lset_tiny:
++	cmp	count, 4
++	b.lo	.tiny_4B
++	lsr	off, count, 3
++	sub	dstend2, dstend, off, lsl 2
++	str	A_s, [dstin]
++	str	A_s, [dstin, off, lsl 2]
++	str	A_s, [dstend2, -4]
++	str	A_s, [dstend, -4]
++	ret
++.tiny_4B:
++	cbz	count, .tiny_end
++	lsr	off, count, 1
++	strb	valw, [dstin]
++	strb	valw, [dstin, off]
++	strb	valw, [dstend, -1]
++.tiny_end:
++	ret
++
++.Lset_128:
++	stp	A_q, A_q, [dstin]
++	stp	A_q, A_q, [dstin, 32]
++	stp	A_q, A_q, [dstend, -64]
++	stp	A_q, A_q, [dstend, -32]
++	ret
++
++.Lset_medium:
++	cmp	count, 128
++	b.ls	.Lset_128
++	sub	count, count, 64
++	neg	tmp1, dstin
++	ands	tmp1, tmp1, 15
++	add	dst, dstin, tmp1
++	b.eq	.Lmedium_loop
++	str	A_q, [dstin]
++	sub	count, count, tmp1
++.Lmedium_loop:
++	stp	A_q, A_q, [dst]
++	stp	A_q, A_q, [dst, 32]
++	add	dst, dst, 64
++	subs	count, count, 64
++	b.hi	.Lmedium_loop
++	stp	A_q, A_q, [dstend, -64]
++	stp	A_q, A_q, [dstend, -32]
++	ret
++
++	.p2align 6
++.Lset_long:
++	and	valw, valw, 255
++	cbnz	valw, .Lwithout_zva
++
++.Lzero_mem_with_zva:
++
++#ifdef ZVA_COMMON_CHECK
++	/* common zva */
++.Lzva_common:
++	mov	dst, dstin
++
++	mrs	tmp2, dczid_el0
++	tbnz	tmp2, #4, .Lwithout_zva
++	/* zva_len = 4* 2^(tmp2w&0xF) */
++	and	zva_len_w, tmp2w, #15
++	mov	tmp3w, #4
++	lsl	zva_len_w, tmp3w, zva_len_w
++	sub	zva_bits, zva_len, #1
++	neg	tmp1, dstin
++	and	tmp1, tmp1, zva_bits
++	sub	count, count, tmp1
++	subs	count, count, zva_len
++	b.lt	.Lwithout_zva
++	cmp	tmp1, 0
++	b.eq	.Lcommon_zva_loop
++	sub	tmp2, tmp1, 64
++1:
++	str	A_q, [dst]
++	str	A_q, [dst, 16]
++	stp	A_q, A_q, [dst, 32]
++	add	dst, dst, 64
++	subs	tmp2, tmp2, 64
++	b.ge	1b
++	add	dst, dstin, tmp1
++.Lcommon_zva_loop:
++	dc	zva, dst
++	add	dst, dst, zva_len
++	subs	count, count, zva_len
++	b.ge	.Lcommon_zva_loop
++	adds	count, count, zva_len
++	b.eq	.Lcommon_zva_end
++2:
++	sub	dstend, dstend, 32
++	stp	A_q, A_q, [dstend]
++	subs	count, count, 32
++	b.ge	2b
++.Lcommon_zva_end:
++	ret
++#else
++	/* skip check for zva64 */
++.Lzva_64:
++	sub	count, count, 64
++	neg	tmp1, dstin
++	ands	tmp1, tmp1, 63
++	add	dst, dstin, tmp1
++	b.eq	.Lzva64_loop
++	str	A_q, [dstin]
++	str	A_q, [dstin, 16]
++	stp	A_q, A_q, [dstin, 32]
++	sub	count, count, tmp1
++.Lzva64_loop:
++	dc	zva, dst
++	add	dst, dst, 64
++	subs	count, count, 64
++	b.ge	.Lzva64_loop
++	adds	count, count, 64
++	b.eq	.Lzva64_end
++	stp	A_q, A_q, [dstend, -64]
++	stp	A_q, A_q, [dstend, -32]
++.Lzva64_end:
++	ret
++#endif
++
++	.p2align 4
++.Lwithout_zva:
++	bic	dst, dstin, 15
++	str	A_q, [dstin]
++	str	A_q, [dst, 16]
++	cmp	count, #SMALL_BUF_SIZE
++	sub	count, dstend, dst
++	sub	count, count, 64 + 32
++	bgt	.Lgreater_than_buf
++.Lless_than_buf:
++	stp	A_q, A_q, [dst, 32]
++	stp	A_q, A_q, [dst, 64]!
++	subs	count, count, 64
++	b.hi	.Lless_than_buf
++	stp	A_q, A_q, [dstend, -64]
++	stp	A_q, A_q, [dstend, -32]
++	ret
++.Lgreater_than_buf:
++	stnp	A_q, A_q, [dst, 32]
++	stnp	A_q, A_q, [dst, 64]
++	add	dst, dst, #64
++	subs	count, count, 64
++	b.hi	.Lgreater_than_buf
++	stnp	A_q, A_q, [dstend, -64]
++	stnp	A_q, A_q, [dstend, -32]
++	ret
++
++END(__memset_aarch64_nt_simd)

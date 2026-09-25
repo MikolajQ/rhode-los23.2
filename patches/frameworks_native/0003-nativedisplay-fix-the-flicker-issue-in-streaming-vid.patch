@@ -1,0 +1,107 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ray Zhang <quic_rayz@quicinc.com>
+Date: Fri, 18 Mar 2022 15:39:24 +0800
+Subject: [PATCH 03/42] nativedisplay: fix the flicker issue in streaming video
+
+In streaming video case, video decoder needs to change buffer
+color space dynamically according to video stream real-time
+parameters.
+
+CRs-Fixed: 3155775
+Change-Id: I21590ee41708f5cb1ed45cb5a7f5c00f1c129bb0
+Signed-off-by: tejas101k <tejassingh649@rediffmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../include/surfacetexture/EGLConsumer.h      |  3 ++-
+ .../surfacetexture/EGLConsumer.cpp            | 19 +++++++++++++++++--
+ libs/ui/include/ui/GraphicBuffer.h            |  5 +++++
+ 3 files changed, 24 insertions(+), 3 deletions(-)
+
+diff --git a/libs/nativedisplay/include/surfacetexture/EGLConsumer.h b/libs/nativedisplay/include/surfacetexture/EGLConsumer.h
+index 226a8a6..29e7df2 100644
+--- a/libs/nativedisplay/include/surfacetexture/EGLConsumer.h
++++ b/libs/nativedisplay/include/surfacetexture/EGLConsumer.h
+@@ -21,6 +21,7 @@
+ #include <gui/BufferQueueDefs.h>
+ #include <ui/FenceTime.h>
+ #include <ui/GraphicBuffer.h>
++#include <ui/GraphicTypes.h>
+ #include <utils/Mutex.h>
+ 
+ namespace android {
+@@ -191,7 +192,7 @@ protected:
+ 
+         // mGraphicBuffer is the buffer that was used to create this image.
+         sp<GraphicBuffer> mGraphicBuffer;
+-
++        ui::Dataspace mDataSpace;
+         // mEglImage is the EGLImage created from mGraphicBuffer.
+         EGLImageKHR mEglImage;
+ 
+diff --git a/libs/nativedisplay/surfacetexture/EGLConsumer.cpp b/libs/nativedisplay/surfacetexture/EGLConsumer.cpp
+index fad0f6c..1ff37b6 100644
+--- a/libs/nativedisplay/surfacetexture/EGLConsumer.cpp
++++ b/libs/nativedisplay/surfacetexture/EGLConsumer.cpp
+@@ -616,7 +616,9 @@ void EGLConsumer::onAbandonLocked() {
+ }
+ 
+ EGLConsumer::EglImage::EglImage(sp<GraphicBuffer> graphicBuffer)
+-      : mGraphicBuffer(graphicBuffer), mEglImage(EGL_NO_IMAGE_KHR), mEglDisplay(EGL_NO_DISPLAY) {}
++      : mGraphicBuffer(graphicBuffer), mEglImage(EGL_NO_IMAGE_KHR), mEglDisplay(EGL_NO_DISPLAY) {
++      mDataSpace = ui::Dataspace::UNKNOWN;  
++}
+ 
+ EGLConsumer::EglImage::~EglImage() {
+     if (mEglImage != EGL_NO_IMAGE_KHR) {
+@@ -631,7 +633,16 @@ status_t EGLConsumer::EglImage::createIfNeeded(EGLDisplay eglDisplay, bool force
+     // If there's an image and it's no longer valid, destroy it.
+     bool haveImage = mEglImage != EGL_NO_IMAGE_KHR;
+     bool displayInvalid = mEglDisplay != eglDisplay;
+-    if (haveImage && (displayInvalid || forceCreation)) {
++
++    ui::Dataspace dataspace;
++    bool dataspaceChanged = false;
++    if (mGraphicBuffer->getDataspace(&dataspace) == 0 ) {
++         dataspaceChanged = (mDataSpace != dataspace)? true:false;
++         if(dataspaceChanged)
++             ALOGI("createIfNeeded: Recreate new EGLImage since dataspace changed");
++    }
++
++    if (haveImage && (displayInvalid || forceCreation || dataspaceChanged)) {
+         if (!eglDestroyImageKHR(mEglDisplay, mEglImage)) {
+             ALOGE("createIfNeeded: eglDestroyImageKHR failed");
+         }
+@@ -655,6 +666,10 @@ status_t EGLConsumer::EglImage::createIfNeeded(EGLDisplay eglDisplay, bool force
+               buffer->getPixelFormat());
+         return UNKNOWN_ERROR;
+     }
++    
++    if (dataspaceChanged) {
++        mDataSpace = dataspace;
++    }
+ 
+     return OK;
+ }
+diff --git a/libs/ui/include/ui/GraphicBuffer.h b/libs/ui/include/ui/GraphicBuffer.h
+index 9305180..0ebfa5d 100644
+--- a/libs/ui/include/ui/GraphicBuffer.h
++++ b/libs/ui/include/ui/GraphicBuffer.h
+@@ -31,6 +31,7 @@
+ #include <ui/GraphicBufferMapper.h>
+ #include <ui/PixelFormat.h>
+ #include <ui/Rect.h>
++#include <ui/GraphicTypes.h>
+ #include <utils/Flattenable.h>
+ #include <utils/RefBase.h>
+ 
+@@ -168,6 +169,10 @@ public:
+     Rect getBounds() const              { return Rect(width, height); }
+     uint64_t getId() const              { return mId; }
+ 
++    status_t getDataspace(ui::Dataspace* outDataspace){
++        return mBufferMapper.getDataspace(handle, outDataspace);
++    }
++
+     uint32_t getGenerationNumber() const { return mGenerationNumber; }
+     void setGenerationNumber(uint32_t generation) {
+         mGenerationNumber = generation;

@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jurijs Oniscuks <jurijs.oniscuks@sony.com>
+Date: Wed, 7 Feb 2024 16:54:13 +0800
+Subject: [PATCH 32/42] surfaceflinger: Prevent rounding error in Fps
+ arithmetic
+
+fps_approx_ops::operator/ didn't handle floating point rounding errors
+which resulted to 60_Hz / 60_Hz to yield 2. Since this operator is
+used only for calculating integer multiplicaiton factors
+between Fps values we can fix it specifically for whole factors.
+
+Bug: 323048643
+Test: atest libsurfaceflinger_unittest
+Change-Id: I532229095941003df3af41096b9392024f01a78f
+---
+ services/surfaceflinger/Scheduler/include/scheduler/Fps.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/Scheduler/include/scheduler/Fps.h b/services/surfaceflinger/Scheduler/include/scheduler/Fps.h
+index 84ef89f..21abc9e 100644
+--- a/services/surfaceflinger/Scheduler/include/scheduler/Fps.h
++++ b/services/surfaceflinger/Scheduler/include/scheduler/Fps.h
+@@ -162,7 +162,7 @@ inline bool operator!=(const FpsRanges& lhs, const FpsRanges& rhs) {
+ }
+ 
+ inline unsigned operator/(Fps lhs, Fps rhs) {
+-    return static_cast<unsigned>(std::ceil(lhs.getValue() / rhs.getValue()));
++    return static_cast<unsigned>(std::ceil(lhs.getValue() / rhs.getValue() - 0.00001));
+ }
+ 
+ } // namespace fps_approx_ops

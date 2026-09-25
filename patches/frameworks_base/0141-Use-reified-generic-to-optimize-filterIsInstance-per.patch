@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mtk18608 <vincent.chung@mediatek.com>
+Date: Mon, 9 Mar 2026 19:12:53 +0800
+Subject: [PATCH 141/226] Use reified generic to optimize filterIsInstance
+ performance
+
+Replace filterIsInstance(T::class) with filterIsInstance<T>() to
+leverage inline reified generics, eliminating reflection overhead
+and improving SystemUI initialization performance.
+
+Test: Boot time profiling, existing tests pass
+Change-Id: I721fc6fcc6ac53c1d2952302e1fa7b728a2b3779
+---
+ .../settingslib/volume/data/repository/AudioRepository.kt       | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SettingsLib/src/com/android/settingslib/volume/data/repository/AudioRepository.kt b/packages/SettingsLib/src/com/android/settingslib/volume/data/repository/AudioRepository.kt
+index 1d2b3ed11e..2162108c1e 100644
+--- a/packages/SettingsLib/src/com/android/settingslib/volume/data/repository/AudioRepository.kt
++++ b/packages/SettingsLib/src/com/android/settingslib/volume/data/repository/AudioRepository.kt
+@@ -144,7 +144,7 @@ class AudioRepositoryImpl(
+ 
+     override val ringerMode: StateFlow<RingerMode> =
+         audioManagerEventsReceiver.events
+-            .filterIsInstance(AudioManagerEvent.InternalRingerModeChanged::class)
++            .filterIsInstance<AudioManagerEvent.InternalRingerModeChanged>()
+             .map { RingerMode(audioManager.ringerModeInternal) }
+             .onStart { emit(RingerMode(audioManager.ringerModeInternal)) }
+             .flowOn(backgroundCoroutineContext)

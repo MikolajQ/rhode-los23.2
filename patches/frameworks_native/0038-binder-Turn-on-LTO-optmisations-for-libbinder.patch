@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yi Kong <yikong@google.com>
+Date: Wed, 2 Aug 2023 03:36:13 +0900
+Subject: [PATCH 38/42] binder: Turn on LTO optmisations for libbinder
+
+This improves app launch performance by 0.13%.
+
+http://go/art-benchmark?p=BootImageProfileId:36062
+
+Test: presubmit
+Change-Id: If438da2f0a814e951687b50e46187bbf450a7629
+---
+ libs/binder/Android.bp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/libs/binder/Android.bp b/libs/binder/Android.bp
+index ab97db7..4416946 100644
+--- a/libs/binder/Android.bp
++++ b/libs/binder/Android.bp
+@@ -407,6 +407,9 @@ cc_defaults {
+         "portability*",
+         "-readability-redundant-smartptr-get",
+     ],
++    lto: {
++        thin: true,
++    },
+ }
+ 
+ cc_library_headers {

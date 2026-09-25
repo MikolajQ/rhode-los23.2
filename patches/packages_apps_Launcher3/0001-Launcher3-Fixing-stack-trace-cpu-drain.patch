@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Thu, 23 Apr 2026 13:09:49 +0800
+Subject: [PATCH 01/13] Launcher3: Fixing stack trace cpu drain
+
+Utilities.getTrimmedStackTrace, called during state transitions, relied on reflection to generate stack strings. On high-refresh-rate displays (120Hz), the 8.3ms frame budget is so tight that even 1-2ms of reflection-based string generation can cause a frame drop.
+
+Change-Id: Iec883fa7c561ea97968790d66409141d31a4fd8f
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ src/com/android/launcher3/Utilities.java | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/src/com/android/launcher3/Utilities.java b/src/com/android/launcher3/Utilities.java
+index 2dd683c04..fe3056d1a 100644
+--- a/src/com/android/launcher3/Utilities.java
++++ b/src/com/android/launcher3/Utilities.java
+@@ -1031,12 +1031,7 @@ public final class Utilities {
+      * Returns a partial, loggable stack trace.
+      */
+     public static String getTrimmedStackTrace(String callingMethodName) {
+-        String stackTrace = Log.getStackTraceString(new Exception());
+-        return Arrays.stream(stackTrace.split("\\n"))
+-                .skip(2) // Removes the line "java.lang.Exception" and "getTrimmedStackTrace".
+-                .filter(traceLine -> !traceLine.contains(callingMethodName))
+-                .limit(3)
+-                .collect(Collectors.joining("\n"));
++        return "";
+     }
+ 
+     /**

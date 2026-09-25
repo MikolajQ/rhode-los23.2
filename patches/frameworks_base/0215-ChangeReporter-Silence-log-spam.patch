@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: tejasvp25 <tejasvp25@gmail.com>
+Date: Mon, 3 Oct 2022 18:55:30 +0530
+Subject: [PATCH 215/226] ChangeReporter: Silence log spam
+
+Signed-off-by: tejasvp25 <tejasvp25@gmail.com>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ core/java/com/android/internal/compat/ChangeReporter.java | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/compat/ChangeReporter.java b/core/java/com/android/internal/compat/ChangeReporter.java
+index e11e2de4d4..0c28664186 100644
+--- a/core/java/com/android/internal/compat/ChangeReporter.java
++++ b/core/java/com/android/internal/compat/ChangeReporter.java
+@@ -120,7 +120,6 @@ public class ChangeReporter {
+      * @param doStatsLog whether to log to stats log.
+      */
+     public void reportChange(int uid, long changeId, int state, boolean doStatsLog) {
+-        reportChange(uid, changeId, state, false, doStatsLog);
+     }
+ 
+     /**

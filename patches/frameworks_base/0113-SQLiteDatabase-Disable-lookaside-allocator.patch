@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Fri, 1 Nov 2024 13:09:35 +0800
+Subject: [PATCH 113/226] SQLiteDatabase: Disable lookaside allocator
+
+---
+ core/java/android/database/sqlite/SQLiteDatabase.java | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/core/java/android/database/sqlite/SQLiteDatabase.java b/core/java/android/database/sqlite/SQLiteDatabase.java
+index 4329540369..33584aa010 100644
+--- a/core/java/android/database/sqlite/SQLiteDatabase.java
++++ b/core/java/android/database/sqlite/SQLiteDatabase.java
+@@ -496,10 +496,8 @@ public final class SQLiteDatabase extends SQLiteClosable {
+         mConfigurationLocked.lookasideSlotCount = lookasideSlotCount;
+ 
+         // Disable lookaside allocator on low-RAM devices
+-        if (ActivityManager.isLowRamDeviceStatic()) {
+-            mConfigurationLocked.lookasideSlotCount = 0;
+-            mConfigurationLocked.lookasideSlotSize = 0;
+-        }
++        mConfigurationLocked.lookasideSlotCount = 0;
++        mConfigurationLocked.lookasideSlotSize = 0;
+         long effectiveTimeoutMs = Long.MAX_VALUE;
+         // Never close idle connections for in-memory databases
+         if (!mConfigurationLocked.isInMemoryDb()) {

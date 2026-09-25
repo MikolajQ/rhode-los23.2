@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sun, 12 Apr 2026 15:56:41 +0800
+Subject: [PATCH 147/226] SystemUI: Fixing shade gc handler leak and premature
+ gc
+
+onWindowVisibilityChanged was creating new Handler each call, removeCallbacks targeted wrong instance causing stacked gc tasks during rapid shade cycles. using single handler field, delaying gc schedule by GC_DELAY_MS, canceling on VISIBLE re-entry
+
+Change-Id: If46980cec8ff2be02a6c0e05470c3b3740f4eda9
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../shade/NotificationShadeWindowView.java        | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowView.java b/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowView.java
+index d71fff3459..77a9a08b53 100644
+--- a/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowView.java
++++ b/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowView.java
+@@ -91,7 +91,9 @@ public class NotificationShadeWindowView extends WindowRootView {
+     private static final long GC_DELAY_MS = 5000;
+     private static final long GC_PSS_THRESHOLD_KB = 350 * 1024;
+     private boolean mIsFirstPendingGcOnBoot = true;
++    private boolean mGcScheduled = false;
+     private Handler mGcHandler;
++    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
+     private final Runnable mGcTask = this::scheduleGcOnIdle;
+     public NotificationShadeWindowView(Context context, AttributeSet attrs) {
+         super(context, attrs);
+@@ -127,16 +129,19 @@ public class NotificationShadeWindowView extends WindowRootView {
+     @Override
+     protected void onWindowVisibilityChanged(int visibility) {
+         super.onWindowVisibilityChanged(visibility);
+-        if (visibility != VISIBLE) {
+-            Handler handler = new Handler(Looper.getMainLooper());
+-            handler.removeCallbacks(mGcTask);
+-            handler.post(mGcTask);
++        if (visibility == VISIBLE) {
++            mMainHandler.removeCallbacks(mGcTask);
++            mGcScheduled = false;
++        } else if (!mGcScheduled) {
++            mGcScheduled = true;
++            mMainHandler.removeCallbacks(mGcTask);
++            mMainHandler.postDelayed(mGcTask, GC_DELAY_MS);
+         }
+     }
+     private void scheduleGcOnIdle() {
++        mGcScheduled = false;
+         Looper.getMainLooper().getQueue().addIdleHandler(() -> {
+             if (isShown()) {
+-                new Handler(Looper.getMainLooper()).postDelayed(mGcTask, GC_DELAY_MS);
+                 return false;
+             }
+             ensureGcHandler();

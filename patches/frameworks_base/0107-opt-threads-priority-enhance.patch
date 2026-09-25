@@ -1,0 +1,185 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 Aug 2025 20:56:13 +0800
+Subject: [PATCH 107/226] [opt] threads priority enhance
+
+Change-Id: Id4a46262e60c73b529a4b33e6261176158eff7bc
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+---
+ .../android/wm/shell/dagger/WMShellConcurrencyModule.java   | 6 +++---
+ .../systemui/util/concurrency/SysUIConcurrencyModule.kt     | 2 +-
+ services/core/java/com/android/server/AnimationThread.java  | 4 ++--
+ services/core/java/com/android/server/DisplayThread.java    | 2 +-
+ services/core/java/com/android/server/UiThread.java         | 2 +-
+ services/core/java/com/android/server/am/OomAdjuster.java   | 4 ++--
+ .../java/com/android/server/wm/SurfaceAnimationThread.java  | 4 ++--
+ .../server/wm/WindowManagerThreadPriorityBooster.java       | 6 +++---
+ 8 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/dagger/WMShellConcurrencyModule.java b/libs/WindowManager/Shell/src/com/android/wm/shell/dagger/WMShellConcurrencyModule.java
+index bd23a058e7..5e369529fb 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/dagger/WMShellConcurrencyModule.java
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/dagger/WMShellConcurrencyModule.java
+@@ -17,7 +17,7 @@
+ package com.android.wm.shell.dagger;
+ 
+ import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
+-import static android.os.Process.THREAD_PRIORITY_DISPLAY;
++import static android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY;
+ import static android.os.Process.THREAD_PRIORITY_FOREGROUND;
+ import static android.os.Process.THREAD_PRIORITY_TOP_APP_BOOST;
+ 
+@@ -96,7 +96,7 @@ public abstract class WMShellConcurrencyModule {
+      * See {@link com.android.systemui.SystemUIFactory#init(Context, boolean)}.
+      */
+     public static HandlerThread createShellMainThread() {
+-        HandlerThread mainThread = new HandlerThread("wmshell.main", THREAD_PRIORITY_DISPLAY);
++        HandlerThread mainThread = new HandlerThread("wmshell.main", THREAD_PRIORITY_URGENT_DISPLAY);
+         return mainThread;
+     }
+ 
+@@ -167,7 +167,7 @@ public abstract class WMShellConcurrencyModule {
+     @Provides
+     @ShellAnimationThread
+     public static Handler provideShellAnimationHandler() {
+-        HandlerThread animThread = new HandlerThread("wmshell.anim", THREAD_PRIORITY_DISPLAY);
++        HandlerThread animThread = new HandlerThread("wmshell.anim", THREAD_PRIORITY_URGENT_DISPLAY);
+         animThread.start();
+         if (Build.IS_DEBUGGABLE) {
+             animThread.getLooper().setTraceTag(Trace.TRACE_TAG_WINDOW_MANAGER);
+diff --git a/packages/SystemUI/src/com/android/systemui/util/concurrency/SysUIConcurrencyModule.kt b/packages/SystemUI/src/com/android/systemui/util/concurrency/SysUIConcurrencyModule.kt
+index 6dfca92226..69ad69ef33 100644
+--- a/packages/SystemUI/src/com/android/systemui/util/concurrency/SysUIConcurrencyModule.kt
++++ b/packages/SystemUI/src/com/android/systemui/util/concurrency/SysUIConcurrencyModule.kt
+@@ -129,7 +129,7 @@ object SysUIConcurrencyModule {
+     ): UiThreadContext {
+         return if (Flags.edgeBackGestureHandlerThread()) {
+             val thread =
+-                HandlerThread("BackPanelUiThread", Process.THREAD_PRIORITY_DISPLAY).apply {
++                HandlerThread("BackPanelUiThread", Process.THREAD_PRIORITY_URGENT_DISPLAY).apply {
+                     start()
+                     looper.setSlowLogThresholdMs(
+                         LONG_SLOW_DISPATCH_THRESHOLD,
+diff --git a/services/core/java/com/android/server/AnimationThread.java b/services/core/java/com/android/server/AnimationThread.java
+index 826e7b52a9..8f7643a13f 100644
+--- a/services/core/java/com/android/server/AnimationThread.java
++++ b/services/core/java/com/android/server/AnimationThread.java
+@@ -16,7 +16,7 @@
+ 
+ package com.android.server;
+ 
+-import static android.os.Process.THREAD_PRIORITY_DISPLAY;
++import static android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY;
+ 
+ import android.os.Handler;
+ import android.os.Trace;
+@@ -32,7 +32,7 @@ public final class AnimationThread extends ServiceThread {
+     private static Handler sHandler;
+ 
+     private AnimationThread() {
+-        super("android.anim", THREAD_PRIORITY_DISPLAY, false /*allowIo*/);
++        super("android.anim", THREAD_PRIORITY_URGENT_DISPLAY, false /*allowIo*/);
+     }
+ 
+     private static void ensureThreadLocked() {
+diff --git a/services/core/java/com/android/server/DisplayThread.java b/services/core/java/com/android/server/DisplayThread.java
+index 13e9550a7b..8d1c976a17 100644
+--- a/services/core/java/com/android/server/DisplayThread.java
++++ b/services/core/java/com/android/server/DisplayThread.java
+@@ -35,7 +35,7 @@ public final class DisplayThread extends ServiceThread {
+     private DisplayThread() {
+         // DisplayThread runs important stuff, but these are not as important as things running in
+         // AnimationThread. Thus, set the priority to one lower.
+-        super("android.display", Process.THREAD_PRIORITY_DISPLAY + 1, false /*allowIo*/);
++        super("android.display", Process.THREAD_PRIORITY_URGENT_DISPLAY + 1, false /*allowIo*/);
+     }
+ 
+     private static void ensureThreadLocked() {
+diff --git a/services/core/java/com/android/server/UiThread.java b/services/core/java/com/android/server/UiThread.java
+index 88004bd5f6..722e47dd58 100644
+--- a/services/core/java/com/android/server/UiThread.java
++++ b/services/core/java/com/android/server/UiThread.java
+@@ -35,7 +35,7 @@ public final class UiThread extends ServiceThread {
+     private static Handler sHandler;
+ 
+     private UiThread() {
+-        super("android.ui", Process.THREAD_PRIORITY_FOREGROUND, false /*allowIo*/);
++        super("android.ui", Process.THREAD_PRIORITY_URGENT_DISPLAY, false /*allowIo*/);
+     }
+ 
+     @Override
+diff --git a/services/core/java/com/android/server/am/OomAdjuster.java b/services/core/java/com/android/server/am/OomAdjuster.java
+index ba16a73409..a27705a2e8 100644
+--- a/services/core/java/com/android/server/am/OomAdjuster.java
++++ b/services/core/java/com/android/server/am/OomAdjuster.java
+@@ -68,7 +68,7 @@ import static android.os.Process.THREAD_GROUP_DEFAULT;
+ import static android.os.Process.THREAD_GROUP_FOREGROUND_WINDOW;
+ import static android.os.Process.THREAD_GROUP_RESTRICTED;
+ import static android.os.Process.THREAD_GROUP_TOP_APP;
+-import static android.os.Process.THREAD_PRIORITY_DISPLAY;
++import static android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY;
+ import static android.os.Process.THREAD_PRIORITY_TOP_APP_BOOST;
+ 
+ import static com.android.server.am.ActivityManagerDebugConfig.DEBUG_ALL;
+@@ -2181,7 +2181,7 @@ public abstract class OomAdjuster {
+                     }
+ 
+                     if (renderThreadTid != 0) {
+-                        mInjector.setThreadPriority(renderThreadTid, THREAD_PRIORITY_DISPLAY);
++                        mInjector.setThreadPriority(renderThreadTid, THREAD_PRIORITY_URGENT_DISPLAY);
+                     }
+                 }
+             } catch (Exception e) {
+diff --git a/services/core/java/com/android/server/wm/SurfaceAnimationThread.java b/services/core/java/com/android/server/wm/SurfaceAnimationThread.java
+index 8ea715c408..2806ff9bc9 100644
+--- a/services/core/java/com/android/server/wm/SurfaceAnimationThread.java
++++ b/services/core/java/com/android/server/wm/SurfaceAnimationThread.java
+@@ -16,7 +16,7 @@
+ 
+ package com.android.server.wm;
+ 
+-import static android.os.Process.THREAD_PRIORITY_DISPLAY;
++import static android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY;
+ 
+ import android.os.Handler;
+ import android.os.Trace;
+@@ -32,7 +32,7 @@ public final class SurfaceAnimationThread extends ServiceThread {
+     private static Handler sHandler;
+ 
+     private SurfaceAnimationThread() {
+-        super("android.anim.lf", THREAD_PRIORITY_DISPLAY, false /*allowIo*/);
++        super("android.anim.lf", THREAD_PRIORITY_URGENT_DISPLAY, false /*allowIo*/);
+     }
+ 
+     private static void ensureThreadLocked() {
+diff --git a/services/core/java/com/android/server/wm/WindowManagerThreadPriorityBooster.java b/services/core/java/com/android/server/wm/WindowManagerThreadPriorityBooster.java
+index 1b70d1d4a8..057abe81dc 100644
+--- a/services/core/java/com/android/server/wm/WindowManagerThreadPriorityBooster.java
++++ b/services/core/java/com/android/server/wm/WindowManagerThreadPriorityBooster.java
+@@ -16,7 +16,7 @@
+ 
+ package com.android.server.wm;
+ 
+-import static android.os.Process.THREAD_PRIORITY_DISPLAY;
++import static android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY;
+ import static android.os.Process.THREAD_PRIORITY_TOP_APP_BOOST;
+ import static android.os.Process.myTid;
+ import static android.os.Process.setThreadPriority;
+@@ -44,7 +44,7 @@ class WindowManagerThreadPriorityBooster extends ThreadPriorityBooster {
+     private boolean mBoundsAnimationRunning;
+ 
+     WindowManagerThreadPriorityBooster() {
+-        super(THREAD_PRIORITY_DISPLAY, INDEX_WINDOW);
++        super(THREAD_PRIORITY_URGENT_DISPLAY, INDEX_WINDOW);
+         mAnimationThreadId = AnimationThread.get().getThreadId();
+         mSurfaceAnimationThreadId = SurfaceAnimationThread.get().getThreadId();
+     }
+@@ -93,7 +93,7 @@ class WindowManagerThreadPriorityBooster extends ThreadPriorityBooster {
+     @GuardedBy("mLock")
+     private void updatePriorityLocked() {
+         int priority = (mAppTransitionRunning || mBoundsAnimationRunning)
+-                ? THREAD_PRIORITY_TOP_APP_BOOST : THREAD_PRIORITY_DISPLAY;
++                ? THREAD_PRIORITY_TOP_APP_BOOST : THREAD_PRIORITY_URGENT_DISPLAY;
+         setBoostToPriority(priority);
+         setThreadPriority(mAnimationThreadId, priority);
+         setThreadPriority(mSurfaceAnimationThreadId, priority);

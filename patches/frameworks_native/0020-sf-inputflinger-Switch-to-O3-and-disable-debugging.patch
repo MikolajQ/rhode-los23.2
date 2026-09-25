@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Adithya R <gh0strider.2k18.reborn@gmail.com>
+Date: Wed, 31 Mar 2021 12:10:24 +0530
+Subject: [PATCH 20/42] sf/inputflinger: Switch to -O3 and disable debugging
+
+Change-Id: I59021fd41dcea891de0dc7c9e1183be3985ed9fa
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ services/inputflinger/Android.bp   | 2 ++
+ services/surfaceflinger/Android.bp | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/services/inputflinger/Android.bp b/services/inputflinger/Android.bp
+index 3390782..f2e3637 100644
+--- a/services/inputflinger/Android.bp
++++ b/services/inputflinger/Android.bp
+@@ -41,6 +41,8 @@ cc_defaults {
+         "-Wshadow-field-in-constructor-modified",
+         "-Wshadow-uncaptured-local",
+         "-Wthread-safety",
++        "-O3",
++        "-g0"
+     ],
+     sanitize: {
+         misc_undefined: [
+diff --git a/services/surfaceflinger/Android.bp b/services/surfaceflinger/Android.bp
+index d39f7ad..034f037 100644
+--- a/services/surfaceflinger/Android.bp
++++ b/services/surfaceflinger/Android.bp
+@@ -38,6 +38,8 @@ cc_defaults {
+         "-Wthread-safety",
+         "-Wunreachable-code",
+         "-Wunused",
++        "-O3",
++        "-g0"
+     ],
+ }
+ 

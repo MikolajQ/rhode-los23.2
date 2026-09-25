@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Varun Murthy <murthyvs@google.com>
+Date: Wed, 22 Oct 2025 20:11:20 +0000
+Subject: [PATCH 209/226] Remove debug logs
+
+Bug: b/360053830
+Flag: com.android.systemui.scene_container
+Test: Tested on ST5
+Change-Id: Iaf8b233e337aa8ca4aba009fea9db74645c40d71
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../domain/interactor/ShadeInteractorSceneContainerImpl.kt      | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt b/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt
+index a83931c7aa..57854bfdf6 100644
+--- a/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt
++++ b/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt
+@@ -264,10 +264,8 @@ constructor(
+             "toggleNotificationsShade should only be called when dualShade is enabled."
+         }
+         if (isNotificationsExpanded.value) {
+-            android.util.Log.e("amehfooz", "Collapse notification shade")
+             collapseNotificationsShade(loggingReason, transitionKey)
+         } else {
+-            android.util.Log.e("amehfooz", "Expand Notifications Shade")
+             expandNotificationsShade(loggingReason, transitionKey)
+         }
+     }

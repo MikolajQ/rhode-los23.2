@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vaisakh Murali <mvaisakh@statixos.com>
+Date: Wed, 19 Apr 2023 10:41:19 +0000
+Subject: [PATCH 067/226] libhwui: compile for performance
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Change-Id: I26a7d9877563b9f5dad633c5255d75b10297788d
+Signed-off-by: Vaisakh Murali <mvaisakh@statixos.com>
+Signed-off-by: Hưng Phan <phandinhhungvp2001@gmail.com>
+---
+ libs/hwui/Android.bp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/hwui/Android.bp b/libs/hwui/Android.bp
+index 27d91b2bac..d02f83b399 100644
+--- a/libs/hwui/Android.bp
++++ b/libs/hwui/Android.bp
+@@ -50,7 +50,7 @@ cc_defaults {
+         "hwui_static_deps",
+         "skia_deps",
+         //"hwui_bugreport_font_cache_usage",
+-        //"hwui_compile_for_perf",
++        "hwui_compile_for_perf",
+         "hwui_lto",
+     ],
+ 

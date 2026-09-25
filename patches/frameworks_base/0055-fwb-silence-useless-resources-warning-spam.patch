@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Fri, 7 Apr 2023 15:14:42 +0000
+Subject: [PATCH 055/226] fwb: silence useless resources warning spam
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ core/java/android/content/res/Resources.java | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/core/java/android/content/res/Resources.java b/core/java/android/content/res/Resources.java
+index d9ad0313dd..fca62075e9 100644
+--- a/core/java/android/content/res/Resources.java
++++ b/core/java/android/content/res/Resources.java
+@@ -932,9 +932,9 @@ public class Resources {
+     public Drawable getDrawable(@DrawableRes int id) throws NotFoundException {
+         final Drawable d = getDrawable(id, null);
+         if (d != null && d.canApplyTheme()) {
+-            Log.w(TAG, "Drawable " + getResourceName(id) + " has unresolved theme "
+-                    + "attributes! Consider using Resources.getDrawable(int, Theme) or "
+-                    + "Context.getDrawable(int).", new RuntimeException());
++            //Log.w(TAG, "Drawable " + getResourceName(id) + " has unresolved theme "
++            //        + "attributes! Consider using Resources.getDrawable(int, Theme) or "
++            //        + "Context.getDrawable(int).", new RuntimeException());
+         }
+         return d;
+     }
+@@ -1131,10 +1131,10 @@ public class Resources {
+     public ColorStateList getColorStateList(@ColorRes int id) throws NotFoundException {
+         final ColorStateList csl = getColorStateList(id, null);
+         if (csl != null && csl.canApplyTheme()) {
+-            Log.w(TAG, "ColorStateList " + getResourceName(id) + " has "
+-                    + "unresolved theme attributes! Consider using "
+-                    + "Resources.getColorStateList(int, Theme) or "
+-                    + "Context.getColorStateList(int).", new RuntimeException());
++            //Log.w(TAG, "ColorStateList " + getResourceName(id) + " has "
++            //        + "unresolved theme attributes! Consider using "
++            //        + "Resources.getColorStateList(int, Theme) or "
++            //        + "Context.getColorStateList(int).", new RuntimeException());
+         }
+         return csl;
+     }

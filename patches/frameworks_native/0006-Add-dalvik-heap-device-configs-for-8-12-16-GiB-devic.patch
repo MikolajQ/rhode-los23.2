@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simao Gomes Viana <xdevs23@outlook.com>
+Date: Sat, 21 Dec 2019 12:09:48 +0100
+Subject: [PATCH 06/42] Add dalvik-heap device configs for 8/12/16 GiB devices
+
+Change-Id: Icdfd3512a79d9935d3fdb611c96dc8fd91a5e1c5
+Signed-off-by: DennySPB <dennyspb@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ build/phone-xhdpi-12288-dalvik-heap.mk | 26 ++++++++++++++++++++++++++
+ build/phone-xhdpi-16384-dalvik-heap.mk | 26 ++++++++++++++++++++++++++
+ build/phone-xhdpi-8192-dalvik-heap.mk  | 26 ++++++++++++++++++++++++++
+ 3 files changed, 78 insertions(+)
+ create mode 100644 build/phone-xhdpi-12288-dalvik-heap.mk
+ create mode 100644 build/phone-xhdpi-16384-dalvik-heap.mk
+ create mode 100644 build/phone-xhdpi-8192-dalvik-heap.mk
+
+diff --git a/build/phone-xhdpi-12288-dalvik-heap.mk b/build/phone-xhdpi-12288-dalvik-heap.mk
+new file mode 100644
+index 0000000..1b0eb03
+--- /dev/null
++++ b/build/phone-xhdpi-12288-dalvik-heap.mk
+@@ -0,0 +1,26 @@
++#
++# Copyright 2019 The Android Open Source Project
++# Copyright 2019 The halogenOS Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++# Provides overrides to configure the Dalvik heap for a 12 GiB phone
++
++PRODUCT_PROPERTY_OVERRIDES += \
++    dalvik.vm.heapstartsize=24m \
++    dalvik.vm.heapgrowthlimit=384m \
++    dalvik.vm.heapsize=512m \
++    dalvik.vm.heaptargetutilization=0.42 \
++    dalvik.vm.heapminfree=8m \
++    dalvik.vm.heapmaxfree=56m
+diff --git a/build/phone-xhdpi-16384-dalvik-heap.mk b/build/phone-xhdpi-16384-dalvik-heap.mk
+new file mode 100644
+index 0000000..c9adb54
+--- /dev/null
++++ b/build/phone-xhdpi-16384-dalvik-heap.mk
+@@ -0,0 +1,26 @@
++#
++# Copyright 2019 The Android Open Source Project
++# Copyright 2019 The halogenOS Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++# Provides overrides to configure the Dalvik heap for a 16 GiB phone
++
++PRODUCT_PROPERTY_OVERRIDES += \
++    dalvik.vm.heapstartsize=32m \
++    dalvik.vm.heapgrowthlimit=448m \
++    dalvik.vm.heapsize=640m \
++    dalvik.vm.heaptargetutilization=0.4 \
++    dalvik.vm.heapminfree=16m \
++    dalvik.vm.heapmaxfree=64m
+diff --git a/build/phone-xhdpi-8192-dalvik-heap.mk b/build/phone-xhdpi-8192-dalvik-heap.mk
+new file mode 100644
+index 0000000..3f526bd
+--- /dev/null
++++ b/build/phone-xhdpi-8192-dalvik-heap.mk
+@@ -0,0 +1,26 @@
++#
++# Copyright 2019 The Android Open Source Project
++# Copyright 2019 The halogenOS Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++# Provides overrides to configure the Dalvik heap for a 8 GiB phone
++
++PRODUCT_PROPERTY_OVERRIDES += \
++    dalvik.vm.heapstartsize=24m \
++    dalvik.vm.heapgrowthlimit=256m \
++    dalvik.vm.heapsize=512m \
++    dalvik.vm.heaptargetutilization=0.46 \
++    dalvik.vm.heapminfree=8m \
++    dalvik.vm.heapmaxfree=48m

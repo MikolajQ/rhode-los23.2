@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Adithya R <gh0strider.2k18.reborn@gmail.com>
+Date: Wed, 14 Apr 2021 23:14:16 +0530
+Subject: [PATCH 135/226] display: Don't spam log when display state changes
+
+ * dynamic refresh rate devices keep switching display configuration
+   for changing refresh rate and ends up spamming log way too much
+
+[ghostrider-reborn]
+- DisplayManagerService -> DisplayDeviceRepository in android 12
+
+Signed-off-by: Adithya R <gh0strider.2k18.reborn@gmail.com>
+Change-Id: I57c19a0042083a86e86f2c210288904f6dc87e2c
+---
+ .../android/server/display/DisplayDeviceRepository.java   | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/services/core/java/com/android/server/display/DisplayDeviceRepository.java b/services/core/java/com/android/server/display/DisplayDeviceRepository.java
+index 5f7bc4effa..40f66e35f4 100644
+--- a/services/core/java/com/android/server/display/DisplayDeviceRepository.java
++++ b/services/core/java/com/android/server/display/DisplayDeviceRepository.java
+@@ -202,6 +202,14 @@ class DisplayDeviceRepository implements DisplayAdapter.Listener {
+             } else if (diff != DisplayDeviceInfo.DIFF_HDR_SDR_RATIO) {
+                 Slog.i(TAG, "Display device changed: " + info);
+             }
++            if (DEBUG) {
++                if (diff == DisplayDeviceInfo.DIFF_STATE) {
++                    Slog.i(TAG, "Display device changed state: \"" + info.name
++                            + "\", " + Display.stateToString(info.state));
++                } else if (diff != DisplayDeviceInfo.DIFF_HDR_SDR_RATIO) {
++                    Slog.i(TAG, "Display device changed: " + info);
++                }
++            }
+ 
+             if ((diff & DisplayDeviceInfo.DIFF_COLOR_MODE) != 0) {
+                 try {

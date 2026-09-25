@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheHardGamer <gamelovr695@gmail.com>
+Date: Wed, 21 Dec 2022 11:05:44 +0530
+Subject: [PATCH 064/226] fwb: Disable DBG
+
+---
+ cmds/incidentd/src/WorkDirectory.cpp                            | 2 +-
+ core/java/android/net/SntpClient.java                           | 2 +-
+ core/java/com/android/internal/util/AsyncService.java           | 2 +-
+ .../android/carrierdefaultapp/CaptivePortalLoginActivity.java   | 2 +-
+ .../settingslib/bluetooth/CsipSetCoordinatorProfile.java        | 2 +-
+ telephony/java/android/telephony/data/DataServiceCallback.java  | 2 +-
+ telephony/java/com/android/ims/ImsConfig.java                   | 2 +-
+ .../hardware/usb/aoapdevicetest/UsbAoapDeviceTestActivity.java  | 2 +-
+ 8 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/cmds/incidentd/src/WorkDirectory.cpp b/cmds/incidentd/src/WorkDirectory.cpp
+index 5c5d5f4b52..7180af3f99 100644
+--- a/cmds/incidentd/src/WorkDirectory.cpp
++++ b/cmds/incidentd/src/WorkDirectory.cpp
+@@ -569,7 +569,7 @@ sp<ReportFile> WorkDirectory::createReportFile() {
+ status_t WorkDirectory::getReports(vector<sp<ReportFile>>* result, int64_t after) {
+     unique_lock<mutex> lock(mLock);
+ 
+-    const bool DBG = true;
++    const bool DBG = false;
+ 
+     if (DBG) {
+         ALOGD("WorkDirectory::getReports");
+diff --git a/core/java/android/net/SntpClient.java b/core/java/android/net/SntpClient.java
+index 0fb04b9d72..5797299821 100644
+--- a/core/java/android/net/SntpClient.java
++++ b/core/java/android/net/SntpClient.java
+@@ -56,7 +56,7 @@ import java.util.function.Supplier;
+  */
+ public class SntpClient {
+     private static final String TAG = "SntpClient";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+ 
+     private static final int REFERENCE_TIME_OFFSET = 16;
+     private static final int ORIGINATE_TIME_OFFSET = 24;
+diff --git a/core/java/com/android/internal/util/AsyncService.java b/core/java/com/android/internal/util/AsyncService.java
+index 58e4a605f8..44da8bbf9d 100644
+--- a/core/java/com/android/internal/util/AsyncService.java
++++ b/core/java/com/android/internal/util/AsyncService.java
+@@ -35,7 +35,7 @@ import android.util.Log;
+ abstract public class AsyncService extends Service {
+     private static final String TAG = "AsyncService";
+ 
+-    protected static final boolean DBG = true;
++    protected static final boolean DBG = false;
+ 
+     /** The command sent when a onStartCommand is invoked */
+     public static final int CMD_ASYNC_SERVICE_ON_START_INTENT = IBinder.LAST_CALL_TRANSACTION;
+diff --git a/packages/CarrierDefaultApp/src/com/android/carrierdefaultapp/CaptivePortalLoginActivity.java b/packages/CarrierDefaultApp/src/com/android/carrierdefaultapp/CaptivePortalLoginActivity.java
+index 10d68ba8d5..5c20ec4602 100644
+--- a/packages/CarrierDefaultApp/src/com/android/carrierdefaultapp/CaptivePortalLoginActivity.java
++++ b/packages/CarrierDefaultApp/src/com/android/carrierdefaultapp/CaptivePortalLoginActivity.java
+@@ -68,7 +68,7 @@ import java.util.Random;
+  */
+ public class CaptivePortalLoginActivity extends Activity {
+     private static final String TAG = CaptivePortalLoginActivity.class.getSimpleName();
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+ 
+     private static final int SOCKET_TIMEOUT_MS = 10 * 1000;
+     private static final int NETWORK_REQUEST_TIMEOUT_MS = 5 * 1000;
+diff --git a/packages/SettingsLib/src/com/android/settingslib/bluetooth/CsipSetCoordinatorProfile.java b/packages/SettingsLib/src/com/android/settingslib/bluetooth/CsipSetCoordinatorProfile.java
+index 45cafc6bf6..67fd2b3563 100644
+--- a/packages/SettingsLib/src/com/android/settingslib/bluetooth/CsipSetCoordinatorProfile.java
++++ b/packages/SettingsLib/src/com/android/settingslib/bluetooth/CsipSetCoordinatorProfile.java
+@@ -42,7 +42,7 @@ import java.util.Map;
+  */
+ public class CsipSetCoordinatorProfile implements LocalBluetoothProfile {
+     private static final String TAG = "CsipSetCoordinatorProfile";
+-    private static final boolean VDBG = true;
++    private static final boolean VDBG = false;
+ 
+     private Context mContext;
+ 
+diff --git a/telephony/java/android/telephony/data/DataServiceCallback.java b/telephony/java/android/telephony/data/DataServiceCallback.java
+index 8287a038c8..7910e59b16 100644
+--- a/telephony/java/android/telephony/data/DataServiceCallback.java
++++ b/telephony/java/android/telephony/data/DataServiceCallback.java
+@@ -42,7 +42,7 @@ public class DataServiceCallback {
+ 
+     private static final String TAG = DataServiceCallback.class.getSimpleName();
+ 
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+ 
+     /**
+      * Result of data requests
+diff --git a/telephony/java/com/android/ims/ImsConfig.java b/telephony/java/com/android/ims/ImsConfig.java
+index 487786045b..51c20533ad 100644
+--- a/telephony/java/com/android/ims/ImsConfig.java
++++ b/telephony/java/com/android/ims/ImsConfig.java
+@@ -41,7 +41,7 @@ import java.util.concurrent.Executor;
+ @Deprecated
+ public class ImsConfig {
+     private static final String TAG = "ImsConfig";
+-    private boolean DBG = true;
++    private boolean DBG = false;
+     private final IImsConfig miConfig;
+ 
+     /**
+diff --git a/tests/UsbHostExternalManagmentTest/AoapTestDevice/src/com/android/hardware/usb/aoapdevicetest/UsbAoapDeviceTestActivity.java b/tests/UsbHostExternalManagmentTest/AoapTestDevice/src/com/android/hardware/usb/aoapdevicetest/UsbAoapDeviceTestActivity.java
+index ef179e2da2..4c538e3c5d 100644
+--- a/tests/UsbHostExternalManagmentTest/AoapTestDevice/src/com/android/hardware/usb/aoapdevicetest/UsbAoapDeviceTestActivity.java
++++ b/tests/UsbHostExternalManagmentTest/AoapTestDevice/src/com/android/hardware/usb/aoapdevicetest/UsbAoapDeviceTestActivity.java
+@@ -35,7 +35,7 @@ import libcore.io.IoUtils;
+ 
+ public class UsbAoapDeviceTestActivity extends Activity {
+     private static final String TAG = UsbAoapDeviceTestActivity.class.getSimpleName();
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+ 
+     private static final String ACTION_USB_ACCESSORY_PERMISSION =
+             "com.android.hardware.usb.aoapdevicetest.ACTION_USB_ACCESSORY_PERMISSION";

@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Wed, 3 Jun 2026 21:50:55 +0800
+Subject: [PATCH 206/226] services Disable wm debug cpu hotspots
+
+Change-Id: Ia3ab65e8d89d3fd6dc1933da22feb3a83179635c
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../android/internal/protolog/WmProtoLogGroups.java   |  2 +-
+ .../server/wm/DesktopModeLaunchParamsModifier.java    | 11 +++++++++++
+ .../android/server/wm/TaskLaunchParamsModifier.java   | 11 +++++++++++
+ 3 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/protolog/WmProtoLogGroups.java b/core/java/com/android/internal/protolog/WmProtoLogGroups.java
+index 333603dec4..53ffcd5889 100644
+--- a/core/java/com/android/internal/protolog/WmProtoLogGroups.java
++++ b/core/java/com/android/internal/protolog/WmProtoLogGroups.java
+@@ -42,7 +42,7 @@ public enum WmProtoLogGroups implements IProtoLogGroup {
+     WM_DEBUG_STATES(Consts.ENABLE_DEBUG, false, Consts.TAG_WM),
+     WM_DEBUG_TASKS(Consts.ENABLE_DEBUG, false, Consts.TAG_WM),
+   // TODO: b/420917959 - Disable launch params logging this once the bug is fixed.
+-    WM_DEBUG_TASKS_LAUNCH_PARAMS(Consts.ENABLE_DEBUG, true, Consts.TAG_WM),
++    WM_DEBUG_TASKS_LAUNCH_PARAMS(Consts.ENABLE_DEBUG, false, Consts.TAG_WM),
+     WM_DEBUG_STARTING_WINDOW(Consts.ENABLE_DEBUG, false, Consts.TAG_WM),
+     WM_SHOW_TRANSACTIONS(Consts.ENABLE_DEBUG, false, Consts.TAG_WM),
+     WM_SHOW_SURFACE_ALLOC(Consts.ENABLE_DEBUG, false, Consts.TAG_WM),
+diff --git a/services/core/java/com/android/server/wm/DesktopModeLaunchParamsModifier.java b/services/core/java/com/android/server/wm/DesktopModeLaunchParamsModifier.java
+index 0aafdc5895..3bd8a756e1 100644
+--- a/services/core/java/com/android/server/wm/DesktopModeLaunchParamsModifier.java
++++ b/services/core/java/com/android/server/wm/DesktopModeLaunchParamsModifier.java
+@@ -28,6 +28,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TASK;
+ import static android.window.DesktopExperienceFlags.ENABLE_FREEFORM_DISPLAY_LAUNCH_PARAMS;
+ import static android.window.DesktopExperienceFlags.ENABLE_MULTIPLE_DESKTOPS_BACKEND;
+ 
++import static com.android.internal.protolog.common.LogLevel.VERBOSE;
+ import static com.android.server.wm.DesktopModeHelper.canEnterDesktopMode;
+ import static com.android.server.wm.LaunchParamsUtil.getPreferredLaunchTaskDisplayArea;
+ 
+@@ -88,6 +89,10 @@ class DesktopModeLaunchParamsModifier implements LaunchParamsModifier {
+         return result;
+     }
+ 
++    private static boolean isLaunchParamsLoggingEnabled() {
++        return ProtoLog.isEnabled(WmProtoLogGroups.WM_DEBUG_TASKS_LAUNCH_PARAMS, VERBOSE);
++    }
++
+     private int calculate(@Nullable Task task, @Nullable ActivityInfo.WindowLayout layout,
+             @Nullable ActivityRecord activity, @Nullable ActivityRecord source,
+             @Nullable ActivityOptions options, @Nullable ActivityStarter.Request request, int phase,
+@@ -568,15 +573,21 @@ class DesktopModeLaunchParamsModifier implements LaunchParamsModifier {
+     }
+ 
+     private void initLogBuilder(int phase, Task task, ActivityRecord activity) {
++        if (!isLaunchParamsLoggingEnabled()) {
++            mLogBuilder = null;
++            return;
++        }
+         mLogBuilder = new StringBuilder("DesktopModeLaunchParamsModifier: phase= " + phase
+                 + " task=" + task + " activity=" + activity);
+     }
+ 
+     private void appendLog(String format, Object... args) {
++        if (mLogBuilder == null) return;
+         mLogBuilder.append(" ").append(String.format(format, args));
+     }
+ 
+     private void outputLog() {
++        if (mLogBuilder == null) return;
+         ProtoLog.v(WmProtoLogGroups.WM_DEBUG_TASKS_LAUNCH_PARAMS, "%s", mLogBuilder.toString());
+     }
+ }
+diff --git a/services/core/java/com/android/server/wm/TaskLaunchParamsModifier.java b/services/core/java/com/android/server/wm/TaskLaunchParamsModifier.java
+index eecb414b54..d26bce5e40 100644
+--- a/services/core/java/com/android/server/wm/TaskLaunchParamsModifier.java
++++ b/services/core/java/com/android/server/wm/TaskLaunchParamsModifier.java
+@@ -35,6 +35,7 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;
+ import static android.util.DisplayMetrics.DENSITY_DEFAULT;
+ import static android.window.DisplayAreaOrganizer.FEATURE_UNDEFINED;
+ 
++import static com.android.internal.protolog.common.LogLevel.VERBOSE;
+ import static com.android.server.wm.ActivityStarter.Request;
+ import static com.android.server.wm.DesktopModeHelper.canEnterDesktopMode;
+ import static com.android.server.wm.LaunchParamsUtil.getPreferredLaunchTaskDisplayArea;
+@@ -106,6 +107,10 @@ class TaskLaunchParamsModifier implements LaunchParamsModifier {
+         return result;
+     }
+ 
++    private static boolean isLaunchParamsLoggingEnabled() {
++        return ProtoLog.isEnabled(WmProtoLogGroups.WM_DEBUG_TASKS_LAUNCH_PARAMS, VERBOSE);
++    }
++
+     @Result
+     private int calculate(@Nullable Task task, @Nullable ActivityInfo.WindowLayout layout,
+             @Nullable ActivityRecord activity, @Nullable ActivityRecord source,
+@@ -845,15 +850,21 @@ class TaskLaunchParamsModifier implements LaunchParamsModifier {
+     }
+ 
+     private void initLogBuilder(int phase, Task task, ActivityRecord activity) {
++        if (!isLaunchParamsLoggingEnabled()) {
++            mLogBuilder = null;
++            return;
++        }
+         mLogBuilder = new StringBuilder("TaskLaunchParamsModifier:phase=" + phase
+                 + " task=" + task + " activity=" + activity);
+     }
+ 
+     private void appendLog(String log) {
++        if (mLogBuilder == null) return;
+         mLogBuilder.append(" ").append(log);
+     }
+ 
+     private void outputLog() {
++        if (mLogBuilder == null) return;
+         ProtoLog.v(WmProtoLogGroups.WM_DEBUG_TASKS_LAUNCH_PARAMS, "%s", mLogBuilder.toString());
+     }
+ 

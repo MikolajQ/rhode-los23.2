@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Sun, 14 Apr 2024 18:05:42 +0000
+Subject: [PATCH 059/226] ContextImpl: silence some spam
+
+         1713111805.765  1000  1741  7197 W ContextImpl: Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcastMultiplePermissions:1277 android.content.Context.sendBroadcastMultiplePermissions:2497 com.android.server.TelephonyRegistry.broadcastServiceStateChanged:3619 com.android.server.TelephonyRegistry.notifyServiceStateForPhoneId:1728 com.android.internal.telephony.ITelephonyRegistry$Stub.onTransact:531
+         1713111805.765  1000  1741  7197 W ContextImpl: Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcastMultiplePermissions:1310 com.android.server.TelephonyRegistry.broadcastServiceStateChanged:3623 com.android.server.TelephonyRegistry.notifyServiceStateForPhoneId:1728 com.android.internal.telephony.ITelephonyRegistry$Stub.onTransact:531 android.os.Binder.execTransactInternal:1530
+         1713111805.766  1000  1741  7197 W ContextImpl: Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcastMultiplePermissions:1277 android.content.Context.sendBroadcastMultiplePermissions:2497 com.android.server.TelephonyRegistry.broadcastServiceStateChanged:3619 com.android.server.TelephonyRegistry.notifyServiceStateForPhoneId:1728 com.android.internal.telephony.ITelephonyRegistry$Stub.onTransact:531
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ core/java/android/app/ContextImpl.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/app/ContextImpl.java b/core/java/android/app/ContextImpl.java
+index 2e3c93a27d..ae78d7cb9c 100644
+--- a/core/java/android/app/ContextImpl.java
++++ b/core/java/android/app/ContextImpl.java
+@@ -2828,8 +2828,10 @@ class ContextImpl extends Context {
+      */
+     private void warnIfCallingFromSystemProcess() {
+         if (Process.myUid() == Process.SYSTEM_UID) {
+-            Slog.w(TAG, "Calling a method in the system process without a qualified user: "
++           if (DEBUG) {
++	      Slog.w(TAG, "Calling a method in the system process without a qualified user: "
+                     + Debug.getCallers(5));
++           }
+         }
+     }
+ 

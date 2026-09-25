@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Fri, 25 Aug 2023 05:37:02 +0000
+Subject: [PATCH 052/226] fwb: silence batteryexternalstatsworker spam
+
+BatteryExternalStatsWorker: error reading Bluetooth stats
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../server/power/stats/BatteryExternalStatsWorker.java        | 4 ++--
+ .../com/android/server/stats/pull/StatsPullAtomService.java   | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/services/core/java/com/android/server/power/stats/BatteryExternalStatsWorker.java b/services/core/java/com/android/server/power/stats/BatteryExternalStatsWorker.java
+index f8b83d950a..7587ec9a91 100644
+--- a/services/core/java/com/android/server/power/stats/BatteryExternalStatsWorker.java
++++ b/services/core/java/com/android/server/power/stats/BatteryExternalStatsWorker.java
+@@ -469,7 +469,7 @@ public class BatteryExternalStatsWorker implements BatteryStatsImpl.ExternalStat
+ 
+                                 @Override
+                                 public void onBluetoothActivityEnergyInfoError(int errorCode) {
+-                                    Slog.w(TAG, "error reading Bluetooth stats: " + errorCode);
++                                    //Slog.w(TAG, "error reading Bluetooth stats: " + errorCode);
+                                     Bundle bundle = new Bundle();
+                                     bundle.putParcelable(
+                                             BatteryStats.RESULT_RECEIVER_CONTROLLER_KEY, null);
+@@ -502,7 +502,7 @@ public class BatteryExternalStatsWorker implements BatteryStatsImpl.ExternalStat
+ 
+                                 @Override
+                                 public void onError(TelephonyManager.ModemActivityInfoException e) {
+-                                    Slog.w(TAG, "error reading modem stats:" + e);
++                                    //Slog.w(TAG, "error reading modem stats:" + e);
+                                     temp.complete(null);
+                                 }
+                             });
+diff --git a/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java b/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
+index d200f69623..28bbf73582 100644
+--- a/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
++++ b/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
+@@ -2005,7 +2005,7 @@ public class StatsPullAtomService extends SystemService {
+ 
+                         @Override
+                         public void onBluetoothActivityEnergyInfoError(int errorCode) {
+-                            Slog.w(TAG, "error reading Bluetooth stats: " + errorCode);
++                            //Slog.w(TAG, "error reading Bluetooth stats: " + errorCode);
+                             Bundle bundle = new Bundle();
+                             bundle.putParcelable(
+                                     BatteryStats.RESULT_RECEIVER_CONTROLLER_KEY, null);
+@@ -2367,7 +2367,7 @@ public class StatsPullAtomService extends SystemService {
+ 
+                         @Override
+                         public void onError(TelephonyManager.ModemActivityInfoException e) {
+-                            Slog.w(TAG, "error reading modem stats:" + e);
++                            //Slog.w(TAG, "error reading modem stats:" + e);
+                             modemFuture.complete(null);
+                         }
+                     });

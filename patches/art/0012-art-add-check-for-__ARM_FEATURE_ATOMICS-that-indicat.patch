@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: XeonDead <xeondead@gmail.com>
+Date: Tue, 23 Aug 2022 13:16:23 +0300
+Subject: [PATCH 12/21] art: add check for __ARM_FEATURE_ATOMICS that indicates
+ LSE atomics availability on target
+
+fixes: Mismatch between dex2oat instruction set features to use (ISA: Arm64 Feature string: -a53,crc,lse,fp16,dotprod,-sve) and those from CPP defines (ISA: Arm64 Feature string: -a53,crc,-lse,fp16,dotprod,-sve)
+
+Signed-off-by: XeonDead <xeondead@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ runtime/arch/arm64/instruction_set_features_arm64.cc | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/runtime/arch/arm64/instruction_set_features_arm64.cc b/runtime/arch/arm64/instruction_set_features_arm64.cc
+index e6152a0..6808738 100644
+--- a/runtime/arch/arm64/instruction_set_features_arm64.cc
++++ b/runtime/arch/arm64/instruction_set_features_arm64.cc
+@@ -228,8 +228,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromCppDefines() {
+   has_crc = true;
+ #endif
+ 
+-#if defined (__ARM_ARCH_8_1A__) || defined (__ARM_ARCH_8_2A__)
+-  // There is no specific ACLE macro defined for ARMv8.1 LSE features.
++#if defined (__ARM_FEATURE_ATOMICS)
+   has_lse = true;
+ #endif
+ 

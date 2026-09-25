@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheHardGamer <gamelovr695@gmail.com>
+Date: Wed, 5 Apr 2023 12:09:25 +0530
+Subject: [PATCH 218/226] DisplayPowerController: Disable log spam
+
+DisplayPowerController[0]: BrightnessEvent: disp=0, physDisp=local:4630946480857061761, brt=0.0, initBrt=0.0066815144, rcmdBrt=0.0066815144, preBrt=NaN, lux=0.0, preLux=0.0, hbmMax=1.0, hbmMode=off, rbcStrength=50, powerFactor=1.0, thrmMax=1.0, wasShortTermModelActive=false, flags=, reason=automatic [ dim ], autoBrightness=true
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ .../java/com/android/server/display/DisplayPowerController.java  | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/display/DisplayPowerController.java b/services/core/java/com/android/server/display/DisplayPowerController.java
+index 93e00c7c81..48e21ecc52 100644
+--- a/services/core/java/com/android/server/display/DisplayPowerController.java
++++ b/services/core/java/com/android/server/display/DisplayPowerController.java
+@@ -1868,7 +1868,6 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+             newEvent.setAdjustmentFlags(brightnessAdjustmentFlags);
+             newEvent.setFlags(newEvent.getFlags() | (userSetBrightnessChanged
+                     ? BrightnessEvent.FLAG_USER_SET : 0));
+-            Slog.i(mTag, newEvent.toString(/* includeTime= */ false));
+ 
+             if (userSetBrightnessChanged
+                     || newEvent.getReason().getReason() != BrightnessReason.REASON_TEMPORARY) {

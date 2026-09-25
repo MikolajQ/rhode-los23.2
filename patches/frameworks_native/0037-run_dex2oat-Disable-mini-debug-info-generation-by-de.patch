@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Thu, 8 May 2025 23:43:01 +0800
+Subject: [PATCH 37/42] run_dex2oat: Disable mini debug info generation by
+ default
+
+Change-Id: I3025708803d6cfe2f6e9eb80f87cc97c4943d02e
+---
+ cmds/installd/run_dex2oat.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmds/installd/run_dex2oat.cpp b/cmds/installd/run_dex2oat.cpp
+index 7648265..20dd3b8 100644
+--- a/cmds/installd/run_dex2oat.cpp
++++ b/cmds/installd/run_dex2oat.cpp
+@@ -43,7 +43,7 @@ namespace {
+ // Should minidebug info be included in compiled artifacts? Even if this value is
+ // "true," usage might still be conditional to other constraints, e.g., system
+ // property overrides.
+-static constexpr bool kEnableMinidebugInfo = true;
++static constexpr bool kEnableMinidebugInfo = false;
+ 
+ static constexpr const char* kMinidebugInfoSystemProperty = "dalvik.vm.dex2oat-minidebuginfo";
+ static constexpr bool kMinidebugInfoSystemPropertyDefault = false;

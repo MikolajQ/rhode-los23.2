@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: strwbrry143 <alexfinhart@gmail.com>
+Date: Sat, 20 Aug 2022 06:10:16 +0800
+Subject: [PATCH 216/226] ProcessList: Silence lmkd retries logspam
+
+Signed-off-by: strwbrry143 <alexfinhart@gmail.com>
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ services/core/java/com/android/server/am/ProcessList.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/ProcessList.java b/services/core/java/com/android/server/am/ProcessList.java
+index a421ee65fc..b9bdd42e17 100644
+--- a/services/core/java/com/android/server/am/ProcessList.java
++++ b/services/core/java/com/android/server/am/ProcessList.java
+@@ -865,8 +865,8 @@ public final class ProcessList implements ProcessStateController.ProcessLruUpdat
+                     break;
+                 case LMKD_RECONNECT_MSG:
+                     if (!sLmkdConnection.connect()) {
+-                        Slog.i(TAG, "Failed to connect to lmkd, retry after " +
+-                                LMKD_RECONNECT_DELAY_MS + " ms");
++                        //Slog.i(TAG, "Failed to connect to lmkd, retry after " +
++                                //LMKD_RECONNECT_DELAY_MS + " ms");
+                         // retry after LMKD_RECONNECT_DELAY_MS
+                         sendMessageDelayed(obtainMessage(
+                                 LMKD_RECONNECT_MSG), LMKD_RECONNECT_DELAY_MS);

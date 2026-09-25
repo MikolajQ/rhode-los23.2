@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "zhangjun.yu" <zhangjun.yu@mediatek.com>
+Date: Tue, 12 Aug 2025 10:27:40 +0800
+Subject: [PATCH 10/42] gui: Fix buffer caching issue causing flicker
+
+Adjusted buffer caching logic to prevent flickering by ensuring
+buffers with frame numbers above 4 are not cached.
+
+Bug: 438100090
+Test: kill activity and monkey 60 minutes no flicker.
+
+Change-Id: I890b18c10a2f5fca454dce0bf36fa0452b4f9e00
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ libs/gui/SurfaceComposerClient.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/gui/SurfaceComposerClient.cpp b/libs/gui/SurfaceComposerClient.cpp
+index 8546b0c..517c224 100644
+--- a/libs/gui/SurfaceComposerClient.cpp
++++ b/libs/gui/SurfaceComposerClient.cpp
+@@ -1072,7 +1072,7 @@ void SurfaceComposerClient::Transaction::cacheBuffers() {
+ 
+         uint64_t cacheId = 0;
+         status_t ret = BufferCache::getInstance().getCacheId(s->bufferData->buffer, &cacheId);
+-        if (ret == NO_ERROR) {
++        if (ret == NO_ERROR && s->bufferData->frameNumber > 8) {
+             // Cache-hit. Strip the buffer and send only the id.
+             s->bufferData->buffer = nullptr;
+         } else {

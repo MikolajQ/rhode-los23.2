@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Wed, 24 May 2023 22:44:46 +0800
+Subject: [PATCH 214/226] hwui: Remove logspam cause by early animation handle
+ check
+
+* reserve/swap were added as alternative for animator size checks and null checks were performed before animators gets executed
+
+Change-Id: I8d963465b5bc4c51016f172298ede2702456663b
+Signed-off-by: minaripenguin <minaripenguin@users.noreply.github.com>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ libs/hwui/AnimatorManager.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/libs/hwui/AnimatorManager.cpp b/libs/hwui/AnimatorManager.cpp
+index 8645995e3d..c5ad005e44 100644
+--- a/libs/hwui/AnimatorManager.cpp
++++ b/libs/hwui/AnimatorManager.cpp
+@@ -70,8 +70,6 @@ void AnimatorManager::setAnimationHandle(AnimationHandle* handle) {
+ void AnimatorManager::pushStaging() {
+     if (mNewAnimators.size()) {
+         if (CC_UNLIKELY(!mAnimationHandle)) {
+-            ALOGW("Trying to start new animators on %p (%s) without an animation handle!", &mParent,
+-                  mParent.getName());
+             return;
+         }
+ 

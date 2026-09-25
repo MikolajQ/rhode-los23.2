@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Thu, 26 Feb 2026 14:59:10 +0100
+Subject: [PATCH 17/21] fixup grapheneos commit
+
+Change-Id: Icd45a291426b50ae7ddc92220b555b86390a8c0d
+---
+ .../java/com/android/server/art/BackgroundDexoptJob.java        | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java b/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java
+index 16073ca..7d2bc66 100644
+--- a/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java
++++ b/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java
+@@ -135,7 +135,7 @@ public class BackgroundDexoptJob implements ArtServiceJobInterface {
+             throw new IllegalStateException("This job cannot be scheduled");
+         }
+ 
+-        start();
++        start(jobType);
+ 
+         if (SystemProperties.getBoolean("pm.dexopt.disable_bg_dexopt", false /* def */)) {
+             AsLog.i("Job is disabled by system property 'pm.dexopt.disable_bg_dexopt'");

@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: tejasvp25 <tejasvp25@gmail.com>
+Date: Mon, 17 Apr 2023 15:56:15 +0530
+Subject: [PATCH 047/226] SystemUI: Fix logspam in NotificationMenuRow
+
+Signed-off-by: tejasvp25 <tejasvp25@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../statusbar/notification/row/NotificationMenuRow.java         | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationMenuRow.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationMenuRow.java
+index 1b2e65c5dc..28379ac5ae 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationMenuRow.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationMenuRow.java
+@@ -961,7 +961,7 @@ public class NotificationMenuRow implements NotificationMenuRowPlugin, View.OnCl
+             if (iconResId >= 0) {
+                 AlphaOptimizedImageView iv = new AlphaOptimizedImageView(context);
+                 iv.setPadding(padding, padding, padding, padding);
+-                Drawable icon = context.getResources().getDrawable(iconResId);
++                Drawable icon = context.getDrawable(iconResId);
+                 iv.setImageDrawable(icon);
+                 iv.setColorFilter(tint);
+                 iv.setAlpha(1f);

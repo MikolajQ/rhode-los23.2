@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CeRRiLLo89 <56557070+CeRRiLLo89@users.noreply.github.com>
+Date: Fri, 31 Jul 2026 18:55:17 +0200
+Subject: [PATCH 223/226] CachedAppOptimizer: skip unsupported system memcg
+ compaction
+
+System compaction unconditionally applies the CompactFull process profile to non-application processes.
+
+On devices without a valid memory.reclaim memcg profile this produces repeated failed cgroup operations. Reuse the existing cached profile validation before scheduling global system compaction.
+
+Per-process compaction and the process_madvise fallback remain unchanged.
+---
+ .../core/java/com/android/server/am/CachedAppOptimizer.java    | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/services/core/java/com/android/server/am/CachedAppOptimizer.java b/services/core/java/com/android/server/am/CachedAppOptimizer.java
+index 75ca8260df..426f459a79 100644
+--- a/services/core/java/com/android/server/am/CachedAppOptimizer.java
++++ b/services/core/java/com/android/server/am/CachedAppOptimizer.java
+@@ -1868,6 +1868,9 @@ public class CachedAppOptimizer {
+                     break;
+                 }
+                 case COMPACT_SYSTEM_MSG: {
++                    if (!profileValidForMemcg(CompactProfile.FULL)) {
++                        break;
++                    }
+                     Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "compactSystem");
+                     long memFreedBefore = getMemoryFreedCompaction();
+                     compactSystem();

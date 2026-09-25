@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Adithya R <gh0strider.2k18.reborn@gmail.com>
+Date: Sun, 8 Dec 2024 19:21:54 +0530
+Subject: [PATCH 19/42] SF: Do not force idle refresh rate in some more
+ scenarios
+
+- When primary or app-request refresh rates are higher than 60 Hz
+- When there are explicit vote layers present
+
+Change-Id: I69c2f709b869e48d69917d93d427ce890d2dd7b5
+Signed-off-by: Omkar Chandorkar <gotenksIN@aospa.co>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../Scheduler/RefreshRateSelector.cpp         | 33 ++++++++++++-------
+ .../Scheduler/RefreshRateSelector.h           |  2 ++
+ 2 files changed, 23 insertions(+), 12 deletions(-)
+
+diff --git a/services/surfaceflinger/Scheduler/RefreshRateSelector.cpp b/services/surfaceflinger/Scheduler/RefreshRateSelector.cpp
+index 4df98db..136795c 100644
+--- a/services/surfaceflinger/Scheduler/RefreshRateSelector.cpp
++++ b/services/surfaceflinger/Scheduler/RefreshRateSelector.cpp
+@@ -776,22 +776,26 @@ auto RefreshRateSelector::getRankedFrameRatesLocked(const std::vector<LayerRequi
+             seamedFocusedLayers > 0 ? activeMode.getGroup() : defaultMode->getGroup();
+ 
+     const auto selectivelyForceIdle = [&]() REQUIRES(mLock) -> RankedFrameRates {
+-        ALOGV("localIsIdle: %s", localIsIdle ? "true" : "false");
+-        if (localIsIdle && ranking.front().frameRateMode.fps > 60_Hz) {
++        ALOGV("selectivelyForceIdle(): localIsIdle: %d, hasExplicitVoteLayers: %d",
++                localIsIdle, hasExplicitVoteLayers);
++
++        if (localIsIdle && !hasExplicitVoteLayers && ranking.front().frameRateMode.fps > mIdleFps) {
+             /*
+              * We heavily rely on touch to boost higher than 60 fps.
+-             * Fallback to 60 fps if a higher fps was calculated.
++             * Fallback to idle fps if a higher fps was calculated.
+              */
+             auto idleRanking = rankFrameRates(activeMode.getGroup(), RefreshRateOrder::Ascending);
+-            // Find the 60 Hz mode in the ranking
+-            auto it = std::find_if(idleRanking.begin(), idleRanking.end(),
+-                                   [](const ScoredFrameRate& sfr) {
+-                                       return isApproxEqual(sfr.frameRateMode.fps, 60_Hz);
++            // Find the idle mode in the ranking
++            const auto it = std::find_if(idleRanking.begin(), idleRanking.end(),
++                                   [&](const ScoredFrameRate& sfr) {
++                                       return isApproxEqual(sfr.frameRateMode.fps, mIdleFps);
+                                    });
+             if (it != idleRanking.end()) {
++                idleRanking = FrameRateRanking{*it};
+                 ALOGV("Forcing idle");
+-                return {FrameRateRanking{*it}, GlobalSignals{.idle = true}};
+             }
++            // Otherwise return the idle ranking as it is
++            ALOGV("%s scored", to_string(idleRanking.front().frameRateMode.fps).c_str());
+             return {idleRanking, GlobalSignals{.idle = true}};
+         }
+ 
+@@ -942,17 +946,15 @@ auto RefreshRateSelector::getRankedFrameRatesLocked(const std::vector<LayerRequi
+                 continue;
+             }
+ 
+-            float layerScore;
+             if (layer.vote == LayerVoteType::Heuristic && signals.heuristicIdle && fps > 60_Hz) {
+                 // Time for heuristic layer to keep using high refresh rate has expired
+                 localIsIdle = true;
+                 ALOGV("%s expired to keep using %s", formatLayerInfo(layer, weight).c_str(),
+                       to_string(fps).c_str());
+                 continue;
+-            } else {
+-                layerScore =
+-                    calculateLayerScoreLocked(layer, fps, isSeamlessSwitch);
+             }
++
++            const float layerScore = calculateLayerScoreLocked(layer, fps, isSeamlessSwitch);
+             const float weightedLayerScore = weight * layerScore;
+ 
+             // Layer with fixed source has a special consideration which depends on the
+@@ -1751,6 +1753,13 @@ void RefreshRateSelector::constructAvailableRefreshRates() {
+ 
+     mPrimaryFrameRates = filterRefreshRates(policy->primaryRanges, "primary");
+     mAppRequestFrameRates = filterRefreshRates(policy->appRequestRanges, "app request");
++    // Idle refresh rate is 60 Hz while respecting minimum of primary and app ranges.
++    const Fps minPrimary = mPrimaryFrameRates.front().modePtr.get()->getVsyncRate();
++    const Fps minAppRequest = mAppRequestFrameRates.front().modePtr.get()->getVsyncRate();
++    mIdleFps = std::max({60_Hz, minPrimary, minAppRequest}, fps_approx_ops::operator<);
++
++    ALOGV("idle refresh rate calculated: %s", to_string(mIdleFps).c_str());
++
+     mAllFrameRates = filterRefreshRates(FpsRanges(getSupportedFrameRateRangeLocked(),
+                                                   getSupportedFrameRateRangeLocked()),
+                                         "full frame rates");
+diff --git a/services/surfaceflinger/Scheduler/RefreshRateSelector.h b/services/surfaceflinger/Scheduler/RefreshRateSelector.h
+index feaac78..7524871 100644
+--- a/services/surfaceflinger/Scheduler/RefreshRateSelector.h
++++ b/services/surfaceflinger/Scheduler/RefreshRateSelector.h
+@@ -583,6 +583,8 @@ private:
+     ftl::Optional<scheduler::OneShotTimer> mIdleTimer;
+     std::atomic<bool> mIdleTimerStarted = false;
+ 
++    Fps mIdleFps = 60_Hz;
++
+     // Returns the range of supported frame rates.
+     FpsRange getSupportedFrameRateRangeLocked() const REQUIRES(mLock);
+ 

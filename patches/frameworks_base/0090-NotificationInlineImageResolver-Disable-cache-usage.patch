@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Wed, 15 Jan 2025 08:52:25 +0800
+Subject: [PATCH 090/226] NotificationInlineImageResolver: Disable cache usage
+
+---
+ .../notification/row/NotificationInlineImageResolver.java       | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
+index 3e932aa616..b3f781644e 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
+@@ -90,7 +90,7 @@ public class NotificationInlineImageResolver implements ImageResolver {
+     }
+ 
+     private boolean isLowRam() {
+-        return ActivityManager.isLowRamDeviceStatic();
++        return true;
+     }
+ 
+     /**

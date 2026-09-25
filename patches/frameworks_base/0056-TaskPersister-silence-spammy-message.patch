@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Tue, 16 May 2023 11:18:49 +0000
+Subject: [PATCH 056/226] TaskPersister: silence spammy message
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ services/core/java/com/android/server/wm/TaskPersister.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/wm/TaskPersister.java b/services/core/java/com/android/server/wm/TaskPersister.java
+index 91cd9498a3..feeb50b565 100644
+--- a/services/core/java/com/android/server/wm/TaskPersister.java
++++ b/services/core/java/com/android/server/wm/TaskPersister.java
+@@ -451,7 +451,7 @@ public class TaskPersister implements PersisterQueue.Listener {
+         if (DEBUG) Slog.d(TAG, "removeObsoleteFiles: persistentTaskIds=" + persistentTaskIds +
+                 " files=" + Arrays.toString(files));
+         if (files == null) {
+-            Slog.e(TAG, "File error accessing recents directory (directory doesn't exist?).");
++            //Slog.e(TAG, "File error accessing recents directory (directory doesn't exist?).");
+             return;
+         }
+         for (int fileNdx = 0; fileNdx < files.length; ++fileNdx) {

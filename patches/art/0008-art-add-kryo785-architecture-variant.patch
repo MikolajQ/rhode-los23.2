@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sungwook Jung <sungwook.jung@codeaurora.org>
+Date: Wed, 9 Jun 2021 23:21:49 -0700
+Subject: [PATCH 08/21] art: add kryo785 architecture variant.
+
+CRs-Fixed: 2966364
+Change-Id: I9ea83f5b6f2767847c6416560728a7c29199b862
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ runtime/arch/arm64/instruction_set_features_arm64.cc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/runtime/arch/arm64/instruction_set_features_arm64.cc b/runtime/arch/arm64/instruction_set_features_arm64.cc
+index 4aebeba..37440cc 100644
+--- a/runtime/arch/arm64/instruction_set_features_arm64.cc
++++ b/runtime/arch/arm64/instruction_set_features_arm64.cc
+@@ -61,6 +61,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromVariant(
+       "cortex-a57",
+       "cortex-a72",
+       "cortex-a73",
++      "kryo785",
+   };
+ 
+   static const char* arm64_variants_with_crc[] = {

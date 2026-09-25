@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vaisakh Murali <vaisakhmurali@gmail.com>
+Date: Sat, 6 Jul 2024 11:28:51 +0530
+Subject: [PATCH 32/34] bionic: Optimize libc for performance
+
+libc is a library that is used across android constantly.
+Use O3 to compile it for performance.
+
+Change-Id: I2f2eca0b37ed056dc470c76201a24f0c8784043f
+Signed-off-by: Mrick343 <mrinmoy8429de@gmail.com>
+---
+ libc/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index bc04e03..d736cb8 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -30,6 +30,7 @@ libc_common_flags = [
+     "-Wno-gcc-compat",
+     "-Wframe-larger-than=2048",
+     "-Wno-reorder-init-list",
++    "-O3",
+ 
+     // Try to catch typical 32-bit assumptions that break with 64-bit pointers.
+     "-Werror=pointer-to-int-cast",

@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Mon, 23 Oct 2023 15:04:35 +0300
+Subject: [PATCH 02/21] skip "speed"-optimized packages at an earlier dexopt
+ stage
+
+Skipping them early improves accuracy of dexopt job progress reports.
+---
+ .../android/server/art/ArtManagerLocal.java   | 27 ++++++++++++++++---
+ 1 file changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/libartservice/service/java/com/android/server/art/ArtManagerLocal.java b/libartservice/service/java/com/android/server/art/ArtManagerLocal.java
+index 105546c..78b042d 100644
+--- a/libartservice/service/java/com/android/server/art/ArtManagerLocal.java
++++ b/libartservice/service/java/com/android/server/art/ArtManagerLocal.java
+@@ -1518,10 +1518,29 @@ public final class ArtManagerLocal {
+             @NonNull /* @BatchDexoptReason|REASON_INACTIVE */ String reason) {
+         var appHibernationManager = mInjector.getAppHibernationManager();
+ 
+-        // Filter out hibernating packages even if the reason is REASON_INACTIVE. This is because
+-        // artifacts for hibernating packages are already deleted.
+-        Stream<PackageState> packages = snapshot.getPackageStates().values().stream().filter(
+-                pkgState -> Utils.canDexoptPackage(pkgState, appHibernationManager));
++        Stream<PackageState> packages = snapshot.getPackageStates().values().stream().filter(pkgState -> {
++            // Filter out hibernating packages even if the reason is REASON_INACTIVE. This is because
++            // artifacts for hibernating packages are already deleted.
++            if (!Utils.canDexoptPackage(pkgState, appHibernationManager)) {
++                return false;
++            }
++
++            if (reason.equals(ReasonMapping.REASON_PRE_REBOOT_DEXOPT)) {
++                // pre-reboot dexopt runs ART code from next OTA update, it doesn't have access to
++                // system_server code that is called below
++                return true;
++            }
++
++            List<DexContainerFileDexoptStatus> statuses = getDexoptStatus(snapshot, pkgState.getPackageName())
++                .getDexContainerFileDexoptStatuses();
++
++            for (var s : statuses) {
++                if (!"speed".equals(s.getCompilerFilter())) {
++                    return true;
++                }
++            }
++            return false;
++        });
+ 
+         switch (reason) {
+             case ReasonMapping.REASON_BOOT_AFTER_MAINLINE_UPDATE:

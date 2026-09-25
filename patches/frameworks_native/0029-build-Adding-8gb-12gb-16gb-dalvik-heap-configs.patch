@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Tue, 17 Mar 2026 10:33:14 +0800
+Subject: [PATCH 29/42] build: Adding 8gb/12gb/16gb dalvik heap configs
+
+tuned heap utilization, usap pool, and madvise limits for high-ram devices
+
+Change-Id: I20f6009aa21b9286b11fa34347becdb9b61f0ee1
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ build/phone-xhdpi-12288-dalvik-heap.mk | 29 ++++++++++++++++++++++++++
+ build/phone-xhdpi-16384-dalvik-heap.mk | 29 ++++++++++++++++++++++++++
+ build/phone-xhdpi-8192-dalvik-heap.mk  | 29 ++++++++++++++++++++++++++
+ 3 files changed, 87 insertions(+)
+ create mode 100644 build/phone-xhdpi-12288-dalvik-heap.mk
+ create mode 100644 build/phone-xhdpi-16384-dalvik-heap.mk
+ create mode 100644 build/phone-xhdpi-8192-dalvik-heap.mk
+
+diff --git a/build/phone-xhdpi-12288-dalvik-heap.mk b/build/phone-xhdpi-12288-dalvik-heap.mk
+new file mode 100644
+index 0000000..6bfcd7c
+--- /dev/null
++++ b/build/phone-xhdpi-12288-dalvik-heap.mk
+@@ -0,0 +1,29 @@
++#
++# Copyright 2025 AxionOS
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++# Provides overrides to configure the Dalvik heap for a 12GB phone
++
++PRODUCT_VENDOR_PROPERTIES += \
++    dalvik.vm.heapstartsize?=24m \
++    dalvik.vm.heapgrowthlimit?=384m \
++    dalvik.vm.heapsize?=512m \
++    dalvik.vm.heaptargetutilization?=0.7 \
++    dalvik.vm.heapminfree?=16m \
++    dalvik.vm.heapmaxfree?=64m \
++    dalvik.vm.usap_pool_enabled?=true \
++    dalvik.vm.usap_pool_size_max?=5 \
++    dalvik.vm.madvise.vdexfile.size?=209715200 \
++    dalvik.vm.madvise.odexfile.size?=209715200
+diff --git a/build/phone-xhdpi-16384-dalvik-heap.mk b/build/phone-xhdpi-16384-dalvik-heap.mk
+new file mode 100644
+index 0000000..fa62ce0
+--- /dev/null
++++ b/build/phone-xhdpi-16384-dalvik-heap.mk
+@@ -0,0 +1,29 @@
++#
++# Copyright 2025 AxionOS
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++# Provides overrides to configure the Dalvik heap for a 16GB phone
++
++PRODUCT_VENDOR_PROPERTIES += \
++    dalvik.vm.heapstartsize?=32m \
++    dalvik.vm.heapgrowthlimit?=512m \
++    dalvik.vm.heapsize?=768m \
++    dalvik.vm.heaptargetutilization?=0.75 \
++    dalvik.vm.heapminfree?=16m \
++    dalvik.vm.heapmaxfree?=64m \
++    dalvik.vm.usap_pool_enabled?=true \
++    dalvik.vm.usap_pool_size_max?=5 \
++    dalvik.vm.madvise.vdexfile.size?=209715200 \
++    dalvik.vm.madvise.odexfile.size?=209715200
+diff --git a/build/phone-xhdpi-8192-dalvik-heap.mk b/build/phone-xhdpi-8192-dalvik-heap.mk
+new file mode 100644
+index 0000000..2083781
+--- /dev/null
++++ b/build/phone-xhdpi-8192-dalvik-heap.mk
+@@ -0,0 +1,29 @@
++#
++# Copyright 2025 AxionOS
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++# Provides overrides to configure the Dalvik heap for an 8GB phone
++
++PRODUCT_VENDOR_PROPERTIES += \
++    dalvik.vm.heapstartsize?=16m \
++    dalvik.vm.heapgrowthlimit?=256m \
++    dalvik.vm.heapsize?=512m \
++    dalvik.vm.heaptargetutilization?=0.6 \
++    dalvik.vm.heapminfree?=12m \
++    dalvik.vm.heapmaxfree?=48m \
++    dalvik.vm.usap_pool_enabled?=true \
++    dalvik.vm.usap_pool_size_max?=3 \
++    dalvik.vm.madvise.vdexfile.size?=157286400 \
++    dalvik.vm.madvise.odexfile.size?=157286400

@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheHardGamer <gamelovr695@gmail.com>
+Date: Fri, 23 Dec 2022 18:36:58 +0530
+Subject: [PATCH 043/226] ZygoteInit: Disable debug and tracing
+
+---
+ core/java/android/util/TimingsTraceLog.java       | 2 +-
+ core/java/com/android/internal/os/ZygoteInit.java | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/java/android/util/TimingsTraceLog.java b/core/java/android/util/TimingsTraceLog.java
+index b4f4729c82..9c3a02a5d3 100644
+--- a/core/java/android/util/TimingsTraceLog.java
++++ b/core/java/android/util/TimingsTraceLog.java
+@@ -37,7 +37,7 @@ import java.util.List;
+ @android.ravenwood.annotation.RavenwoodKeepWholeClass
+ public class TimingsTraceLog {
+     // Debug boot time for every step if it's non-user build.
+-    private static final boolean DEBUG_BOOT_TIME = !Build.IS_USER;
++    private static final boolean DEBUG_BOOT_TIME = false;
+ 
+     // Maximum number of nested calls that are stored
+     private static final int MAX_NESTED_CALLS = 10;
+diff --git a/core/java/com/android/internal/os/ZygoteInit.java b/core/java/com/android/internal/os/ZygoteInit.java
+index e90b277f5e..53c03fbb6d 100644
+--- a/core/java/com/android/internal/os/ZygoteInit.java
++++ b/core/java/com/android/internal/os/ZygoteInit.java
+@@ -91,7 +91,7 @@ public class ZygoteInit {
+ 
+     private static final String TAG = "Zygote";
+ 
+-    private static final boolean LOGGING_DEBUG = Log.isLoggable(TAG, Log.DEBUG);
++    private static final boolean LOGGING_DEBUG = false;
+ 
+     private static final String PROPERTY_DISABLE_GRAPHICS_DRIVER_PRELOADING =
+             "ro.zygote.disable_gl_preload";

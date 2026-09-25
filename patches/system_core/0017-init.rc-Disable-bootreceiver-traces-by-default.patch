@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Divyanand Rangu <quic_drangu@quicinc.com>
+Date: Wed, 1 Mar 2023 11:27:13 +0530
+Subject: [PATCH 17/19] init.rc: Disable bootreceiver traces by default
+
+These traces consume about 10MB of inode cache memory
+in slabs and are not actively used on production devices.
+So, disable them by default.
+
+CRs-Fixed: 3420855
+Change-Id: Icce7b467fa98299c51d7b1b18251c8ae32271c2c
+---
+ rootdir/init.rc | 11 +----------
+ 1 file changed, 1 insertion(+), 10 deletions(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index 2551faf..801eeea 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -683,18 +683,9 @@ on late-fs
+     # HALs required before storage encryption can get unlocked (FBE)
+     class_start early_hal
+ 
+-# Only enable the bootreceiver tracing instance for kernels 5.10 and above.
+-on late-fs && property:ro.kernel.version=4.9
+-    setprop bootreceiver.enable 0
+-on late-fs && property:ro.kernel.version=4.14
+-    setprop bootreceiver.enable 0
+-on late-fs && property:ro.kernel.version=4.19
+-    setprop bootreceiver.enable 0
+-on late-fs && property:ro.kernel.version=5.4
+-    setprop bootreceiver.enable 0
+ on late-fs
+     # Bootreceiver tracing instance is enabled by default.
+-    setprop bootreceiver.enable ${bootreceiver.enable:-1}
++    setprop bootreceiver.enable 0
+ 
+ on property:ro.product.cpu.abilist64=* && property:bootreceiver.enable=1
+     # Set up a tracing instance for system_server to monitor error_report_end events.

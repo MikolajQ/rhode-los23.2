@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ghostrider-reborn <adithya.r02@outlook.com>
+Date: Tue, 14 Oct 2025 19:52:36 +0800
+Subject: [PATCH 08/14] config: Disable dexpreopt minidebuginfo
+
+Change-Id: Ief843fc411189906c5d0183a6ff4485f6b3041ee
+---
+ config/common.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/config/common.mk b/config/common.mk
+index d945ff9..705002b 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -152,6 +152,9 @@ PRODUCT_DEX_PREOPT_BOOT_IMAGE_PROFILE_LOCATION := \
+ # Dedupe VNDK libraries with identical core variants.
+ TARGET_VNDK_USE_CORE_VARIANT := true
+ 
++# Disable dexpreopt minidebuginfo
++WITH_DEXPREOPT_DEBUG_INFO := false
++
+ # Bootanimation
+ TARGET_SCREEN_WIDTH ?= 1080
+ TARGET_SCREEN_HEIGHT ?= 1920

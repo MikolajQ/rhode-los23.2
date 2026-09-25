@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simao Gomes Viana <simao@halogenos.org>
+Date: Sat, 23 Jul 2022 20:34:38 +0200
+Subject: [PATCH 10/10] core: Use SOONG_ZIP for all zip usages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Multithreaded
+
+Signed-off-by: Simão Gomes Viana <devel@superboring.dev>
+---
+ core/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index c3e1ae6..5eb72cc 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -7859,7 +7859,7 @@ INTERNAL_EMULATOR_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
+ 
+ $(INTERNAL_EMULATOR_PACKAGE_TARGET): $(INTERNAL_EMULATOR_PACKAGE_FILES)
+ 	@echo "Package: $@"
+-	$(hide) zip -qjX $@ $(INTERNAL_EMULATOR_PACKAGE_FILES)
++	$(hide) $(SOONG_ZIP) -qjX $@ $(INTERNAL_EMULATOR_PACKAGE_FILES)
+ 
+ endif
+ 
+@@ -8001,7 +8001,7 @@ $(INTERNAL_SDK_TARGET): $(deps) | $(BUILD_NUMBER_FILE)
+ 	        sed -e "s/{BUILD_NUMBER}/`cat $(BUILD_NUMBER_FILE)`/" -e "s/{PRODUCT_EXPORT_RUNTIME_APIS}/$(PRODUCT_EXPORT_RUNTIME_APIS)/" build/make/core/build_properties_template.xml > $(PRIVATE_DIR)/build_properties.xml; \
+ 	    fi && \
+ 	    chmod -R ug+rwX $(PRIVATE_DIR) && \
+-	    cd $(dir $@) && zip -rqX $(notdir $@) $(PRIVATE_NAME) \
++	    cd $(dir $@) && $(SOONG_ZIP) -rqX $(notdir $@) $(PRIVATE_NAME) \
+ 	) || ( rm -rf $(PRIVATE_DIR) $@ && exit 44 )
+ 
+ MAIN_SDK_DIR  := $(sdk_dir)

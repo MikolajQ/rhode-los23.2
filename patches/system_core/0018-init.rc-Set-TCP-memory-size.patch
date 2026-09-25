@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kai Shi <kaishi@google.com>
+Date: Thu, 18 Apr 2024 08:42:24 +0800
+Subject: [PATCH 18/19] init.rc: Set TCP memory size
+
+Set ipv4 min/default/max write and read memory size and socket max send/receive memory size to values that are high enough to reach 1+Gbps over wifi and cellular. Moving forward there is no need to override them in per device init.rc or framework config file.
+
+Bug: 213596972
+Test: manual test to confirm TCP memory size is increased and wifi TCP throughput with default TCP window size can reach 700Mbps in HE80 mode.
+Change-Id: I0eb644453ab44804d33e3ed21e64aaccdc8c1ecd
+---
+ rootdir/init.rc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index 801eeea..38eb934 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -344,8 +344,8 @@ on init
+     # Assign reasonable ceiling values for socket rcv/snd buffers.
+     # These should almost always be overridden by the target per the
+     # the corresponding technology maximums.
+-    write /proc/sys/net/core/rmem_max  262144
+-    write /proc/sys/net/core/wmem_max  262144
++    write /proc/sys/net/core/rmem_max  8388608
++    write /proc/sys/net/core/wmem_max  8388608
+ 
+     # reflect fwmark from incoming packets onto generated replies
+     write /proc/sys/net/ipv4/fwmark_reflect 1

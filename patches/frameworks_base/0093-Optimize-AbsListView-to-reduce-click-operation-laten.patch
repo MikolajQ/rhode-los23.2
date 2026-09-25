@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jun Wang <quic_junwan@quicinc.com>
+Date: Fri, 19 May 2023 13:43:22 +0800
+Subject: [PATCH 093/226] Optimize AbsListView to reduce click operation
+ latency
+
+Separate performClick from delayed message. Then we can do
+performClick in advance of PRESSED_STATE_DURATION(64ms) delay.
+This will benefit for click operation latency. The delayed
+message is still used to clear pressed status.
+
+Change-Id: I95eb72c5362a1838ab16ee8211120aee8cd548e5
+CRs-Fixed: 3503330
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ core/java/android/widget/AbsListView.java | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/core/java/android/widget/AbsListView.java b/core/java/android/widget/AbsListView.java
+index 61ade5fdad..406961490d 100644
+--- a/core/java/android/widget/AbsListView.java
++++ b/core/java/android/widget/AbsListView.java
+@@ -4278,6 +4278,10 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
+                                     }
+                                     mSelector.setHotspot(x, ev.getY());
+                                 }
++                                if (!mDataChanged && !mIsDetaching
++                                        && isAttachedToWindow()) {
++                                    performClick.run();
++                                }
+                                 if (mTouchModeReset != null) {
+                                     removeCallbacks(mTouchModeReset);
+                                 }
+@@ -4288,10 +4292,6 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
+                                         mTouchMode = TOUCH_MODE_REST;
+                                         child.setPressed(false);
+                                         setPressed(false);
+-                                        if (!mDataChanged && !mIsDetaching
+-                                                && isAttachedToWindow()) {
+-                                            performClick.run();
+-                                        }
+                                     }
+                                 };
+                                 postDelayed(mTouchModeReset,

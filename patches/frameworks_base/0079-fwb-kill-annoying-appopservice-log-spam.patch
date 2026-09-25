@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Sun, 12 Jan 2025 11:07:45 -0500
+Subject: [PATCH 079/226] fwb: kill annoying appopservice log spam
+
+01-12 21:02:28.335  1537  1728 E AppOpService: Blocked setUidMode call for runtime permission app op: uid = 1001, code = FINE_LOCATION, mode = foreground, callingUid = 1000, oldMode = allow
+01-12 21:02:28.335  1537  1728 E AppOpService: java.lang.RuntimeException
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.permission.access.appop.AppOpService.setUidMode(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:159)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.appop.AppOpsCheckingServiceTracingDecorator.setUidMode(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:10)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.appop.AppOpsService.setUidMode(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:46)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.appop.AppOpsService$AppOpsManagerInternalImpl.setUidModeFromPermissionPolicy(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:5)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.policy.PermissionPolicyService$PermissionToOpSynchroniser.setUidMode(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:19)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.policy.PermissionPolicyService$PermissionToOpSynchroniser.-$$Nest$msyncPackages(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:84)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.policy.PermissionPolicyService.synchronizeUidPermissionsAndAppOps(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:68)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.policy.PermissionPolicyService$$ExternalSyntheticLambda4.accept(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:22)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.internal.util.function.pooled.PooledLambdaImpl.doInvoke(PooledLambdaImpl.java:281)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.internal.util.function.pooled.PooledLambdaImpl.invoke(PooledLambdaImpl.java:204)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.internal.util.function.pooled.OmniFunction.run(OmniFunction.java:87)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at android.os.Handler.handleCallback(Handler.java:991)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at android.os.Handler.dispatchMessage(Handler.java:102)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at android.os.Looper.loopOnce(Looper.java:232)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at android.os.Looper.loop(Looper.java:317)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+01-12 21:02:28.335  1537  1728 E AppOpService: 	at com.android.server.ServiceThread.run(go/retraceme 4d3c0e336f7cd1696c0929859f3884314450873bd7d16c85595f3b014722d011:13)
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../android/server/permission/access/appop/AppOpService.kt   | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/services/permission/java/com/android/server/permission/access/appop/AppOpService.kt b/services/permission/java/com/android/server/permission/access/appop/AppOpService.kt
+index 73f1033f36..6fdf97bf0e 100644
+--- a/services/permission/java/com/android/server/permission/access/appop/AppOpService.kt
++++ b/services/permission/java/com/android/server/permission/access/appop/AppOpService.kt
+@@ -269,11 +269,6 @@ class AppOpService(private val service: AccessCheckingService) : AppOpsCheckingS
+                     " mode = ${AppOpsManager.modeToName(mode)}," +
+                     " callingUid = ${Binder.getCallingUid()}," +
+                     " oldMode = ${AppOpsManager.modeToName(oldMode)}"
+-            if (wouldHaveChanged) {
+-                Slog.e(LOG_TAG, logMessage, RuntimeException())
+-            } else {
+-                Slog.w(LOG_TAG, logMessage)
+-            }
+             return false
+         }
+ 

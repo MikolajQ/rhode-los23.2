@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: spezi77 <spezi7713@gmx.net>
+Date: Sun, 27 Feb 2022 10:59:28 +0100
+Subject: [PATCH 075/226] NavigationModeController: Mute debug logging.
+
+02-27 15:05:40.079  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.125  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.139  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.143  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.147  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.155  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.163  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.172  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.179  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.186  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.193  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.537  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.567  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.574  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.586  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.590  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.596  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:40.603  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:41.133  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+02-27 15:05:41.180  2282  2282 D NavigationModeController: getCurrentUserContext: contextUser=0 currentUser=0
+
+Signed-off-by: spezi77 <spezi7713@gmx.net>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../systemui/navigationbar/NavigationModeController.java        | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java b/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java
+index cf66e1596e..20a7191d43 100644
+--- a/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java
++++ b/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java
+@@ -57,7 +57,7 @@ import javax.inject.Inject;
+ public class NavigationModeController implements Dumpable {
+ 
+     private static final String TAG = NavigationModeController.class.getSimpleName();
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+ 
+     public interface ModeChangedListener {
+         void onNavigationModeChanged(int mode);

@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sun, 12 Apr 2026 15:50:52 +0800
+Subject: [PATCH 148/226] SystemUI: Caching tile viewmodels across qs fling
+
+tileViewModels getter was creating new TileViewModel instances every access, each new instance registered fresh callbacks causing mapper re-runs and drawable re-inflation during qqs to qs fling. caching instances by tile identity, only recreated when tile list changes
+
+Change-Id: I50fd0d8780fd9dccb56800f3f25b5e3edc32e8cd
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../ui/viewmodel/QuickQuickSettingsViewModel.kt     | 13 +++++++++++--
+ .../qs/panels/ui/viewmodel/TileGridViewModel.kt     | 13 ++++++++++++-
+ 2 files changed, 23 insertions(+), 3 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/QuickQuickSettingsViewModel.kt b/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/QuickQuickSettingsViewModel.kt
+index 5515510832..4ffd61f07f 100644
+--- a/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/QuickQuickSettingsViewModel.kt
++++ b/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/QuickQuickSettingsViewModel.kt
+@@ -29,6 +29,7 @@ import com.android.systemui.qs.panels.domain.interactor.QuickQuickSettingsRowInt
+ import com.android.systemui.qs.panels.shared.model.SizedTileImpl
+ import com.android.systemui.qs.panels.shared.model.splitInRowsSequence
+ import com.android.systemui.qs.pipeline.domain.interactor.CurrentTilesInteractor
++import com.android.systemui.qs.pipeline.domain.model.TileModel
+ import com.android.systemui.qs.pipeline.shared.TileSpec
+ import dagger.assisted.AssistedFactory
+ import dagger.assisted.AssistedInject
+@@ -81,9 +82,17 @@ constructor(
+     private val currentTiles by
+         hydrator.hydratedStateOf(traceName = "currentTiles", source = tilesInteractor.currentTiles)
+ 
++    private var cachedCurrentTiles: List<TileModel> = emptyList()
++    private var cachedTileVMs: Map<TileSpec, TileViewModel> = emptyMap()
++
+     val tileViewModels by derivedStateOf {
+-        currentTiles
+-            .map { SizedTileImpl(TileViewModel(it.tile, it.spec), it.spec.width()) }
++        val tiles = currentTiles
++        if (tiles !== cachedCurrentTiles) {
++            cachedCurrentTiles = tiles
++            cachedTileVMs = tiles.associate { it.spec to TileViewModel(it.tile, it.spec) }
++        }
++        tiles
++            .map { SizedTileImpl(cachedTileVMs[it.spec]!!, it.spec.width()) }
+             .let { splitInRowsSequence(it, columns).take(rows).toList().flatten() }
+     }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/TileGridViewModel.kt b/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/TileGridViewModel.kt
+index 77faf3fb19..ade00d1394 100644
+--- a/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/TileGridViewModel.kt
++++ b/packages/SystemUI/src/com/android/systemui/qs/panels/ui/viewmodel/TileGridViewModel.kt
+@@ -23,6 +23,7 @@ import com.android.systemui.qs.panels.domain.interactor.GridLayoutTypeInteractor
+ import com.android.systemui.qs.panels.shared.model.GridLayoutType
+ import com.android.systemui.qs.panels.ui.compose.GridLayout
+ import com.android.systemui.qs.pipeline.domain.interactor.CurrentTilesInteractor
++import com.android.systemui.qs.pipeline.domain.model.TileModel
+ import dagger.assisted.AssistedFactory
+ import dagger.assisted.AssistedInject
+ import javax.inject.Named
+@@ -49,8 +50,18 @@ constructor(
+     private val tileModels by
+         hydrator.hydratedStateOf(traceName = "tileModels", source = tilesInteractor.currentTiles)
+ 
++    private var cachedTileModels: List<TileModel> = emptyList()
++    private var cachedTileViewModels: List<TileViewModel> = emptyList()
++
+     val tileViewModels: List<TileViewModel>
+-        get() = tileModels.map { TileViewModel(it.tile, it.spec) }
++        get() {
++            val current = tileModels
++            if (current !== cachedTileModels) {
++                cachedTileModels = current
++                cachedTileViewModels = current.map { TileViewModel(it.tile, it.spec) }
++            }
++            return cachedTileViewModels
++        }
+ 
+     override suspend fun onActivated(): Nothing {
+         hydrator.activate()

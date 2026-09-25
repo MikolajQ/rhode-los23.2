@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Wed, 15 Jul 2026 13:35:31 +0200
+Subject: [PATCH 34/34] wtf
+
+Change-Id: Ic54eb09970cbf1ccb6591aa86b8a1bc2c26a1921
+---
+ libc/bionic/jemalloc_wrapper.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libc/bionic/jemalloc_wrapper.cpp b/libc/bionic/jemalloc_wrapper.cpp
+index 6140351..47af38f 100644
+--- a/libc/bionic/jemalloc_wrapper.cpp
++++ b/libc/bionic/jemalloc_wrapper.cpp
+@@ -80,7 +80,7 @@ int je_mallopt(int param, int value) {
+       // sufficiently large number that essentially disables the decay timer.
+       decay_time_ms = 10000000;
+     } else if (value) {
+-      decay_time_ms = 1000;
++      decay_time_ms = 500;
+     } else {
+       decay_time_ms = 0;
+     }

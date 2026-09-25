@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 May 2026 06:29:14 +0800
+Subject: [PATCH 166/226] services: Disabling dma buff stats pull
+
+simpleperf shows high cpu usage caused by dma stats pull during app launch, we dont care about dma buf stats, only enable it on eng builds
+
+Change-Id: Ifa76e5d0cfbc552a8257b43450e332d49c9c3ad8
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../com/android/server/stats/pull/StatsPullAtomService.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java b/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
+index 28bbf73582..058b27c303 100644
+--- a/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
++++ b/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
+@@ -2696,6 +2696,9 @@ public class StatsPullAtomService extends SystemService {
+     }
+ 
+     private void registerProcessDmabufMemory() {
++        if (!Build.IS_ENG) {
++            return;
++        }
+         int tagId = FrameworkStatsLog.PROCESS_DMABUF_MEMORY;
+         mStatsManager.setPullAtomCallback(
+                 tagId,
+@@ -2706,6 +2709,9 @@ public class StatsPullAtomService extends SystemService {
+     }
+ 
+     int pullProcessDmabufMemory(int atomTag, List<StatsEvent> pulledData) {
++        if (!Build.IS_ENG) {
++            return StatsManager.PULL_SKIP;
++        }
+         KernelAllocationStats.ProcessDmabuf[] procBufs =
+                 KernelAllocationStats.getDmabufAllocations();
+ 

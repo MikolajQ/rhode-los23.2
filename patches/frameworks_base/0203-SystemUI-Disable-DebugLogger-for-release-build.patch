@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: someone5678 <59456192+someone5678@users.noreply.github.com>
+Date: Sat, 28 Dec 2024 20:37:31 +0900
+Subject: [PATCH 203/226] SystemUI: Disable DebugLogger for release build
+
+Change-Id: I4175e5bc550eded51be1f3608dfa233d576570ef
+---
+ .../src-debug/com/android/systemui/log/DebugLogger.kt      | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/packages/SystemUI/src-debug/com/android/systemui/log/DebugLogger.kt b/packages/SystemUI/src-debug/com/android/systemui/log/DebugLogger.kt
+index 8d1de0e65d..6c41458ec9 100644
+--- a/packages/SystemUI/src-debug/com/android/systemui/log/DebugLogger.kt
++++ b/packages/SystemUI/src-debug/com/android/systemui/log/DebugLogger.kt
+@@ -71,12 +71,5 @@ object DebugLogger {
+         error: Throwable? = null,
+         message: () -> String,
+     ) {
+-        if (enabled) {
+-            if (error == null) {
+-                Log.println(priority, tag, message())
+-            } else {
+-                Log.printlns(LOG_ID_MAIN, priority, tag, message(), error)
+-            }
+-        }
+     }
+ }

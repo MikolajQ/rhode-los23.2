@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Fri, 28 Mar 2025 16:04:33 -0400
+Subject: [PATCH 26/34] libc: Set 100 instr-limit
+
+Do not additionally restrict instr limit for libc.
+
+Benefits app open performance.
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libc/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index 063ca77..cd5ffdd 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -1540,6 +1540,7 @@ cc_library {
+         export_llndk_headers: ["libc_headers"],
+     },
+     afdo: true,
++    lto_Instr100: true,
+ }
+ 
+ cc_library {

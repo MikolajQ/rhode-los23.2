@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 9 May 2025 00:42:36 +0800
+Subject: [PATCH 19/19] init-perfetto.rc: Lower CPU time for perf sampling
+ events
+
+Change-Id: Id06a65ebeec1e1d7bf8d123da8876f33ee022d86
+---
+ rootdir/init-perfetto.rc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/rootdir/init-perfetto.rc b/rootdir/init-perfetto.rc
+index 59f525f..8a6e0b1 100644
+--- a/rootdir/init-perfetto.rc
++++ b/rootdir/init-perfetto.rc
+@@ -17,12 +17,12 @@ on property:security.perf_harden=1 && property:sys.init.perf_lsm_hooks=""
+ # sysprops to be able to indirectly set these sysctls.
+ on property:security.perf_harden=0
+     write /proc/sys/kernel/perf_event_max_sample_rate ${debug.perf_event_max_sample_rate:-100000}
+-    write /proc/sys/kernel/perf_cpu_time_max_percent ${debug.perf_cpu_time_max_percent:-25}
++    write /proc/sys/kernel/perf_cpu_time_max_percent 1
+     write /proc/sys/kernel/perf_event_mlock_kb ${debug.perf_event_mlock_kb:-516}
+ # Default values.
+ on property:security.perf_harden=1
+     write /proc/sys/kernel/perf_event_max_sample_rate 100000
+-    write /proc/sys/kernel/perf_cpu_time_max_percent 25
++    write /proc/sys/kernel/perf_cpu_time_max_percent 1
+     write /proc/sys/kernel/perf_event_mlock_kb 516
+ 
+ # This property can be set only on userdebug/eng. See neverallow rule in

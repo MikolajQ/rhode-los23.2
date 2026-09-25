@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 May 2026 06:31:38 +0800
+Subject: [PATCH 165/226] services: Optimizing redundant status bar top hide
+ checks
+
+Change-Id: I128348eab541df5b6f0171bfdba402275a5df747
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../server/statusbar/StatusBarManagerService.java     | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/services/core/java/com/android/server/statusbar/StatusBarManagerService.java b/services/core/java/com/android/server/statusbar/StatusBarManagerService.java
+index b4485236a8..e876cc5053 100644
+--- a/services/core/java/com/android/server/statusbar/StatusBarManagerService.java
++++ b/services/core/java/com/android/server/statusbar/StatusBarManagerService.java
+@@ -207,6 +207,8 @@ public class StatusBarManagerService extends IStatusBarService.Stub implements D
+     private int mCurrentUserId;
+     private boolean mTracingEnabled;
+     private int mLastSystemKey = -1;
++    private volatile boolean mLastTopAppHidesStatusBar;
++    private volatile boolean mLastTopAppHidesStatusBarValid;
+ 
+     private final TileRequestTracker mTileRequestTracker;
+ 
+@@ -229,6 +231,7 @@ public class StatusBarManagerService extends IStatusBarService.Stub implements D
+         public void binderDied() {
+             mBar.asBinder().unlinkToDeath(this,0);
+             mBar = null;
++            mLastTopAppHidesStatusBarValid = false;
+             notifyBarAttachChanged();
+         }
+ 
+@@ -713,8 +716,14 @@ public class StatusBarManagerService extends IStatusBarService.Stub implements D
+             }
+             IStatusBar bar = mBar;
+             if (bar != null) {
++                if (mLastTopAppHidesStatusBarValid
++                        && mLastTopAppHidesStatusBar == hidesStatusBar) {
++                    return;
++                }
+                 try {
+                     bar.setTopAppHidesStatusBar(hidesStatusBar);
++                    mLastTopAppHidesStatusBar = hidesStatusBar;
++                    mLastTopAppHidesStatusBarValid = true;
+                 } catch (RemoteException ex) {}
+             }
+         }
+@@ -1798,6 +1807,7 @@ public class StatusBarManagerService extends IStatusBarService.Stub implements D
+ 
+         Slog.i(TAG, "registerStatusBar bar=" + bar);
+         mBar = bar;
++        mLastTopAppHidesStatusBarValid = false;
+         mDeathRecipient.linkToDeath();
+         notifyBarAttachChanged();
+         final ArrayMap<String, StatusBarIcon> icons;
+@@ -1822,6 +1832,7 @@ public class StatusBarManagerService extends IStatusBarService.Stub implements D
+ 
+         Slog.i(TAG, "registerStatusBarForAllDisplays bar=" + bar);
+         mBar = bar;
++        mLastTopAppHidesStatusBarValid = false;
+         mDeathRecipient.linkToDeath();
+         notifyBarAttachChanged();
+ 

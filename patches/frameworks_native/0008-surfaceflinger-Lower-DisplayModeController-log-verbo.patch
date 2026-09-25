@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ghosuto <clash.raja10@gmail.com>
+Date: Sat, 24 Jan 2026 19:21:40 +0000
+Subject: [PATCH 08/42] surfaceflinger: Lower DisplayModeController log
+ verbosity
+
+Change-Id: I75f596ed1b333e32bd25fdbc8ff3275caa7d746c
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ services/surfaceflinger/Display/DisplayModeController.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/Display/DisplayModeController.cpp b/services/surfaceflinger/Display/DisplayModeController.cpp
+index c319be1..5e4a712 100644
+--- a/services/surfaceflinger/Display/DisplayModeController.cpp
++++ b/services/surfaceflinger/Display/DisplayModeController.cpp
+@@ -99,7 +99,7 @@ auto DisplayModeController::setDesiredMode(PhysicalDisplayId displayId,
+ 
+     {
+         SFTRACE_NAME(displayPtr->concatId(__func__).c_str());
+-        ALOGD("%s %s", displayPtr->concatId(__func__).c_str(), to_string(desiredMode).c_str());
++        ALOGV("%s %s", displayPtr->concatId(__func__).c_str(), to_string(desiredMode).c_str());
+ 
+         std::scoped_lock lock(displayPtr->desiredModeLock);
+ 

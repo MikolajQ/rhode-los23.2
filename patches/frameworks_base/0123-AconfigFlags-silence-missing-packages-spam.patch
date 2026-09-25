@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Tue, 20 Jan 2026 00:27:26 +0000
+Subject: [PATCH 123/226] AconfigFlags: silence missing packages spam
+
+01-19 10:21:03.147  1736  2037 E AconfigFlags: Failed to load aconfig package android.xr
+01-19 10:21:03.147  1736  2037 E AconfigFlags: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package android.xr cannot be found on the device
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at android.os.flagging.AconfigPackage.load(AconfigPackage.java:160)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.component.AconfigFlags.lambda$getFlagValueFromNewStorage$0(AconfigFlags.java:265)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.component.AconfigFlags$$ExternalSyntheticLambda0.apply(D8$$SyntheticClass:0)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1713)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.component.AconfigFlags.getFlagValueFromNewStorage(AconfigFlags.java:263)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.component.AconfigFlags.getFlagValue(AconfigFlags.java:229)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.component.AconfigFlags.skip(AconfigFlags.java:343)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.component.AconfigFlags.skipCurrentElement(AconfigFlags.java:331)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.component.AconfigFlags.skipCurrentElement(AconfigFlags.java:299)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.parsing.ParsingPackageUtils.parseBaseApkTags(ParsingPackageUtils.java:1053)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.parsing.ParsingPackageUtils.parseBaseApk(ParsingPackageUtils.java:786)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.parsing.ParsingPackageUtils.parseBaseApk(ParsingPackageUtils.java:618)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.parsing.ParsingPackageUtils.parseMonolithicPackage(ParsingPackageUtils.java:454)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.pkg.parsing.ParsingPackageUtils.parsePackage(ParsingPackageUtils.java:352)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.pm.parsing.PackageParser2.parsePackage(PackageParser2.java:134)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.server.pm.ParallelPackageParser.parsePackage(go/retraceme c4881300f9a26cec87a4f45b7feae07c123ca539ee52fe36a528a87e7b5f9fc3:4)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.server.pm.ParallelPackageParser$$ExternalSyntheticLambda1.call(go/retraceme c4881300f9a26cec87a4f45b7feae07c123ca539ee52fe36a528a87e7b5f9fc3:47)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: 	at com.android.internal.util.ConcurrentUtils$1$1.run(ConcurrentUtils.java:65)
+01-19 10:21:03.147  1736  2037 E AconfigFlags: Failed to load aconfig package android.xr
+01-19 10:21:03.147  1736  2037 E AconfigFlags: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package android.xr cannot be found on the device
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../com/android/internal/pm/pkg/component/AconfigFlags.java     | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/pm/pkg/component/AconfigFlags.java b/core/java/com/android/internal/pm/pkg/component/AconfigFlags.java
+index d1067a79dd..5ad0d072de 100644
+--- a/core/java/com/android/internal/pm/pkg/component/AconfigFlags.java
++++ b/core/java/com/android/internal/pm/pkg/component/AconfigFlags.java
+@@ -263,7 +263,7 @@ public class AconfigFlags {
+             try {
+                 return AconfigPackage.load(p);
+             } catch (Exception e) {
+-                Slog.e(LOG_TAG, "Failed to load aconfig package " + p, e);
++                //Slog.e(LOG_TAG, "Failed to load aconfig package " + p, e);
+                 return null;
+             }
+         });

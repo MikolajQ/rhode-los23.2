@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Quince <quinceroms@gmail.com>
+Date: Fri, 3 Apr 2026 11:20:54 +0200
+Subject: [PATCH 157/226] core: Avoid DeadSystemException recursion when
+ dropbox is unavailable
+
+During early boot, framework callers can ask for DropBoxManager before the
+`dropbox` binder has been published. Using getServiceOrThrow() sends that path
+through onServiceNotFound(), which emits another WTF from a core process and can
+cascade into recursive error handling while system_server is already failing.
+
+Switch DROPBOX_SERVICE to ServiceManager.getService(), return null while the
+binder is still absent, and treat dropbox as an allowed transiently-unavailable
+service in getSystemService(). This keeps the early-boot path null-safe without
+spamming an extra WTF that can amplify DeadSystemException-style failures.
+
+Signed-off-by: Quince <quinceroms@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ core/java/android/app/SystemServiceRegistry.java | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/app/SystemServiceRegistry.java b/core/java/android/app/SystemServiceRegistry.java
+index e2f5c8d537..6d02cb0cfa 100644
+--- a/core/java/android/app/SystemServiceRegistry.java
++++ b/core/java/android/app/SystemServiceRegistry.java
+@@ -575,7 +575,10 @@ public final class SystemServiceRegistry {
+                 new CachedServiceFetcher<DropBoxManager>() {
+             @Override
+             public DropBoxManager createService(ContextImpl ctx) throws ServiceNotFoundException {
+-                IBinder b = ServiceManager.getServiceOrThrow(Context.DROPBOX_SERVICE);
++                IBinder b = ServiceManager.getService(Context.DROPBOX_SERVICE);
++                if (b == null) {
++                    return null;
++                }
+                 IDropBoxManagerService service = IDropBoxManagerService.Stub.asInterface(b);
+                 return new DropBoxManager(ctx, service);
+             }});
+@@ -2071,6 +2074,7 @@ public final class SystemServiceRegistry {
+                 case Context.CONTEXTHUB_SERVICE:
+                 case Context.VIRTUALIZATION_SERVICE:
+                 case Context.VIRTUAL_DEVICE_SERVICE:
++                case Context.DROPBOX_SERVICE:
+                     return null;
+                 case Context.VCN_MANAGEMENT_SERVICE:
+                     if (!hasSystemFeatureOpportunistic(ctx,

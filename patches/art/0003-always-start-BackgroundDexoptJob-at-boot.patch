@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Mon, 23 Oct 2023 15:54:45 +0300
+Subject: [PATCH 03/21] always start BackgroundDexoptJob at boot
+
+At boot, packages might need to be optimized for one of the following reasons:
+- this is a first reboot after OTA, which means user packages need to be reoptimized from
+speed-profile to speed
+- post-OTA optimization wasn't completed during previous boot
+- device was rebooted before post-app-installation dexopt completed
+
+This is not a full list.
+---
+ .../java/com/android/server/art/BackgroundDexoptJob.java        | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java b/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java
+index e7e1bbd..16073ca 100644
+--- a/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java
++++ b/libartservice/service/java/com/android/server/art/BackgroundDexoptJob.java
+@@ -135,6 +135,8 @@ public class BackgroundDexoptJob implements ArtServiceJobInterface {
+             throw new IllegalStateException("This job cannot be scheduled");
+         }
+ 
++        start();
++
+         if (SystemProperties.getBoolean("pm.dexopt.disable_bg_dexopt", false /* def */)) {
+             AsLog.i("Job is disabled by system property 'pm.dexopt.disable_bg_dexopt'");
+             return ArtFlags.SCHEDULE_DISABLED_BY_SYSPROP;

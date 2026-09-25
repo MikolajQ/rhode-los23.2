@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: jhonboy121 <alfredmathew05@gmail.com>
+Date: Fri, 29 Oct 2021 17:54:49 +0530
+Subject: [PATCH 038/226] core: PinSet: Fixup and improve algorithms caching
+
+* algorithms shouldn't be a static field since pins is an instance variable
+* use stream API's to map and collect pin algorithms to an ArraySet
+
+Fixes: 1d384463675effe0544a38ec137fa5021d571fc2 ("Cache pin algorithms in PinSet")
+Signed-off-by: Adithya R <gh0strider.2k18.reborn@gmail.com>
+Change-Id: I8a0cd85a350901b9900044cb536bd32b7cb40e02
+---
+ .../src/android/security/net/config/PinSet.java     | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java b/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java
+index 87fcde943d..ff66b6c3be 100644
+--- a/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java
++++ b/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java
+@@ -17,16 +17,18 @@
+ package android.security.net.config;
+ 
+ import android.util.ArraySet;
++
+ import java.util.Collections;
+ import java.util.Set;
++import java.util.stream.Collectors;
+ 
+ /** @hide */
+ public final class PinSet {
+-    private static Set<String> algorithms;
+     public static final PinSet EMPTY_PINSET =
+             new PinSet(Collections.<Pin>emptySet(), Long.MAX_VALUE);
+     public final long expirationTime;
+     public final Set<Pin> pins;
++    private final Set<String> algorithms;
+ 
+     public PinSet(Set<Pin> pins, long expirationTime) {
+         if (pins == null) {
+@@ -34,15 +36,12 @@ public final class PinSet {
+         }
+         this.pins = pins;
+         this.expirationTime = expirationTime;
++        this.algorithms = pins.stream()
++            .map(pin -> pin.digestAlgorithm)
++            .collect(Collectors.toCollection(ArraySet::new));
+     }
+ 
+     Set<String> getPinAlgorithms() {
+-        if(algorithms == null){
+-            algorithms = new ArraySet<String>();
+-            for (Pin pin : pins) {
+-                algorithms.add(pin.digestAlgorithm);
+-            }
+-        }
+         return algorithms;
+     }
+ }

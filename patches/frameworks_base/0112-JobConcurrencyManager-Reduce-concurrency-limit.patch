@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Fri, 1 Nov 2024 13:15:59 +0800
+Subject: [PATCH 112/226] JobConcurrencyManager: Reduce concurrency limit
+
+---
+ .../server/job/JobConcurrencyManager.java     | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
+
+diff --git a/apex/jobscheduler/service/java/com/android/server/job/JobConcurrencyManager.java b/apex/jobscheduler/service/java/com/android/server/job/JobConcurrencyManager.java
+index 03bf2fede2..12173bcead 100644
+--- a/apex/jobscheduler/service/java/com/android/server/job/JobConcurrencyManager.java
++++ b/apex/jobscheduler/service/java/com/android/server/job/JobConcurrencyManager.java
+@@ -96,24 +96,7 @@ class JobConcurrencyManager {
+ 
+     static final String CONFIG_KEY_PREFIX_CONCURRENCY = "concurrency_";
+     private static final String KEY_CONCURRENCY_LIMIT = CONFIG_KEY_PREFIX_CONCURRENCY + "limit";
+-    static final int DEFAULT_CONCURRENCY_LIMIT;
+-
+-    static {
+-        if (ActivityManager.isLowRamDeviceStatic()) {
+-            DEFAULT_CONCURRENCY_LIMIT = 8;
+-        } else {
+-            final long ramBytes = new MemInfoReader().getTotalSize();
+-            if (ramBytes <= GIGABYTES.toBytes(6)) {
+-                DEFAULT_CONCURRENCY_LIMIT = 16;
+-            } else if (ramBytes <= GIGABYTES.toBytes(8)) {
+-                DEFAULT_CONCURRENCY_LIMIT = 20;
+-            } else if (ramBytes <= GIGABYTES.toBytes(12)) {
+-                DEFAULT_CONCURRENCY_LIMIT = 32;
+-            } else {
+-                DEFAULT_CONCURRENCY_LIMIT = 40;
+-            }
+-        }
+-    }
++    static final int DEFAULT_CONCURRENCY_LIMIT = 8;
+ 
+     private static final String KEY_SCREEN_OFF_ADJUSTMENT_DELAY_MS =
+             CONFIG_KEY_PREFIX_CONCURRENCY + "screen_off_adjustment_delay_ms";

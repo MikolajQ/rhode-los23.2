@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Micay <danielmicay@gmail.com>
+Date: Tue, 12 May 2020 21:02:49 -0400
+Subject: [PATCH 09/10] core: Always use UTC as the time zone for build dates
+
+---
+ core/main.mk         | 2 +-
+ core/version_util.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/main.mk b/core/main.mk
+index 617b036..75d6faf 100644
+--- a/core/main.mk
++++ b/core/main.mk
+@@ -48,7 +48,7 @@ $(KATI_obsolete_var FILE_NAME_TAG,https://android.googlesource.com/platform/buil
+ .KATI_RESTAT: $(BUILD_NUMBER_FILE)
+ .KATI_RESTAT: $(BUILD_HOSTNAME_FILE)
+ 
+-DATE_FROM_FILE := date -d @$(BUILD_DATETIME_FROM_FILE)
++DATE_FROM_FILE := date -ud @$(BUILD_DATETIME_FROM_FILE)
+ .KATI_READONLY := DATE_FROM_FILE
+ 
+ 
+diff --git a/core/version_util.mk b/core/version_util.mk
+index 8ab36b7..285f108 100644
+--- a/core/version_util.mk
++++ b/core/version_util.mk
+@@ -234,7 +234,7 @@ ifndef BUILD_DATETIME
+   BUILD_DATETIME := $(shell date +%s)
+ endif
+ 
+-DATE := date -d @$(BUILD_DATETIME)
++DATE := date -ud @$(BUILD_DATETIME)
+ .KATI_READONLY := DATE
+ 
+ # Everything should be using BUILD_DATETIME_FROM_FILE instead.

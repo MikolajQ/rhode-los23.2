@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Mon, 16 Mar 2026 23:39:44 +0800
+Subject: [PATCH 154/226] services: Throttling user activity binder calls
+
+noteUserActivity fires a cross-process binder call to batterystats + telephony on every touch event during scrolling/typing. adding 500ms minimum interval between dispatches, battery stats at 2Hz is more than enough for power accounting
+
+Change-Id: I80ccc61cea7466a88768ff97fda96048614c4e8c
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../com/android/server/power/Notifier.java    | 35 +++++++++++--------
+ 1 file changed, 20 insertions(+), 15 deletions(-)
+
+diff --git a/services/core/java/com/android/server/power/Notifier.java b/services/core/java/com/android/server/power/Notifier.java
+index 44b438bfcf..b304389587 100644
+--- a/services/core/java/com/android/server/power/Notifier.java
++++ b/services/core/java/com/android/server/power/Notifier.java
+@@ -206,6 +206,8 @@ public class Notifier {
+     private int mBroadcastedInteractiveState;
+     private boolean mBroadcastInProgress;
+     private long mBroadcastStartTime;
++    private static final long USER_ACTIVITY_MIN_INTERVAL_MS = 500;
++    private long mLastUserActivityTimeMs;
+ 
+     // True if a user activity message should be sent.
+     private boolean mUserActivityPending;
+@@ -877,22 +879,25 @@ public class Notifier {
+             Slog.d(TAG, "onUserActivity: event=" + event + ", uid=" + uid);
+         }
+ 
+-        try {
+-            mBatteryStats.noteUserActivity(uid, event);
+-            mWakefulnessSessionObserver.notifyUserActivity(
+-                    SystemClock.uptimeMillis(), displayGroupId, event);
+-        } catch (RemoteException ex) {
+-            // Ignore
+-        }
++        final long now = SystemClock.uptimeMillis();
++        if (now - mLastUserActivityTimeMs >= USER_ACTIVITY_MIN_INTERVAL_MS) {
++            mLastUserActivityTimeMs = now;
++            try {
++                mBatteryStats.noteUserActivity(uid, event);
++                mWakefulnessSessionObserver.notifyUserActivity(now, displayGroupId, event);
++            } catch (RemoteException ex) {
++                // Ignore
++            }
+ 
+-        synchronized (mLock) {
+-            if (!mUserActivityPending) {
+-                mUserActivityPending = true;
+-                Message msg = mHandler.obtainMessage(MSG_USER_ACTIVITY);
+-                msg.arg1 = displayGroupId;
+-                msg.arg2 = event;
+-                msg.setAsynchronous(true);
+-                mHandler.sendMessage(msg);
++            synchronized (mLock) {
++                if (!mUserActivityPending) {
++                    mUserActivityPending = true;
++                    Message msg = mHandler.obtainMessage(MSG_USER_ACTIVITY);
++                    msg.arg1 = displayGroupId;
++                    msg.arg2 = event;
++                    msg.setAsynchronous(true);
++                    mHandler.sendMessage(msg);
++                }
+             }
+         }
+     }

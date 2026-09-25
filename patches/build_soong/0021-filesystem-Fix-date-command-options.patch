@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: misakazip <git@misaka.zip>
+Date: Sat, 8 Nov 2025 11:42:42 +0900
+Subject: [PATCH 21/23] filesystem: Fix 'date' command options
+
+Some enviroments, such as Ubuntu 25.10 cause errors.
+$ date -d 'TZ="GMT" 2025-10-01' +%s
+date: invalid date 'TZ="GMT" 2025-10-01'
+$
+
+Change-Id: Ie715739bac6c50f5826e39b73e4a8fd3d2e57499
+---
+ filesystem/vbmeta.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/filesystem/vbmeta.go b/filesystem/vbmeta.go
+index 7e1c4c31..e9475455 100644
+--- a/filesystem/vbmeta.go
++++ b/filesystem/vbmeta.go
+@@ -486,7 +486,7 @@ func (v *vbmeta) rollbackIndexCommand(ctx android.ModuleContext) string {
+ 		return fmt.Sprintf("%d", *v.properties.Rollback_index)
+ 	} else {
+ 		// Take the first line and remove the newline char
+-		return "$(date -d 'TZ=\"GMT\" " + ctx.Config().PlatformSecurityPatch() + "' +%s | head -1 | tr -d '\n'" + ")"
++		return "$(date -u -d  " + ctx.Config().PlatformSecurityPatch() + " +%s | head -1 | tr -d '\n'" + ")"
+ 	}
+ }
+ 

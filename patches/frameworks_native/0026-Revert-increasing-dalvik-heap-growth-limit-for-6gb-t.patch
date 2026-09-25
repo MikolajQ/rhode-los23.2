@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Sun, 10 May 2026 10:34:28 +0530
+Subject: [PATCH 26/42] Revert "increasing dalvik heap growth limit for 6gb+
+ targets"
+
+This reverts commit 603c207bf2c5d97f412afa0a7c761ab8bec8e9f8.
+---
+ build/phone-xhdpi-6144-dalvik-heap.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build/phone-xhdpi-6144-dalvik-heap.mk b/build/phone-xhdpi-6144-dalvik-heap.mk
+index 8d3e80d..f08830b 100644
+--- a/build/phone-xhdpi-6144-dalvik-heap.mk
++++ b/build/phone-xhdpi-6144-dalvik-heap.mk
+@@ -18,7 +18,7 @@
+ 
+ PRODUCT_VENDOR_PROPERTIES += \
+     dalvik.vm.heapstartsize?=16m \
+-    dalvik.vm.heapgrowthlimit?=384m \
++    dalvik.vm.heapgrowthlimit?=256m \
+     dalvik.vm.heapsize?=512m \
+     dalvik.vm.heaptargetutilization?=0.5 \
+     dalvik.vm.heapminfree?=8m \

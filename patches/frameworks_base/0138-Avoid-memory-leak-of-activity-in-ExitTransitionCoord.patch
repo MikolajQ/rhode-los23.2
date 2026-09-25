@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zhang Xiaowei <zhang.xiaowei5@zte.com.cn>
+Date: Fri, 6 Mar 2026 11:23:32 +0800
+Subject: [PATCH 138/226] Avoid memory leak of activity in
+ ExitTransitionCoordinator
+
+During the use of makeSceneTransitionAnimation(), two
+ExitTransitionCoordinator instances are generated, corresponding to the
+activity before the transition and the activity after the transition,
+respectively. The activity after the transition is released after
+finishing() when finishAfterTransition() is called. However, the
+activity before the transition is leaked in ExitTransitionCoordinator
+because mExitCallbacks holds it and cannot be released.. We found that
+the reason why the activity before the transition cannot reach finish()
+is that mIsReturning is always false.Therefore, we modified
+finishIfNecessary() to release the activity to avoid the leak.
+
+Change-Id: I795f4c85ebb85a5fb8448738e127f7b07cf8ef35
+---
+ core/java/android/app/ExitTransitionCoordinator.java | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/core/java/android/app/ExitTransitionCoordinator.java b/core/java/android/app/ExitTransitionCoordinator.java
+index 46c677de85..25293c64f4 100644
+--- a/core/java/android/app/ExitTransitionCoordinator.java
++++ b/core/java/android/app/ExitTransitionCoordinator.java
+@@ -466,9 +466,13 @@ public class ExitTransitionCoordinator extends ActivityTransitionCoordinator {
+     }
+ 
+     private void finishIfNecessary() {
+-        if (mIsReturning && mExitNotified && mExitCallbacks != null && (mSharedElements.isEmpty()
+-                || mSharedElementsHidden)) {
+-            finish();
++        if (!mExitNotified || mExitCallbacks == null || (!mSharedElements.isEmpty() && !mSharedElementsHidden)) {
++            return;
++        }
++        if (mIsReturning) {
++             finish();
++        } else {
++            mExitCallbacks = null;
+         }
+     }
+ 

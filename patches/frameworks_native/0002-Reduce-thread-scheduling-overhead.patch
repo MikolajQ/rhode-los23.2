@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Liangliang Sui <coolsui.coding@gmail.com>
+Date: Mon, 29 Dec 2025 14:36:54 +0800
+Subject: [PATCH 02/42] Reduce thread scheduling overhead
+
+When `listenerStatsToSend` in
+`TransactionCallbackInvoker::sendCallbacks` is empty, simply return to
+avoid the redundant thread scheduling overhead caused by
+`BackgroundExecutor::getInstance()`.
+
+Change-Id: I00a717933406b2580e5d28daca28e94f0b80f9c8
+Signed-off-by: Liangliang Sui <coolsui.coding@gmail.com>
+---
+ services/surfaceflinger/TransactionCallbackInvoker.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/services/surfaceflinger/TransactionCallbackInvoker.cpp b/services/surfaceflinger/TransactionCallbackInvoker.cpp
+index 6232707..84b03f7 100644
+--- a/services/surfaceflinger/TransactionCallbackInvoker.cpp
++++ b/services/surfaceflinger/TransactionCallbackInvoker.cpp
+@@ -225,6 +225,10 @@ void TransactionCallbackInvoker::sendCallbacks(bool onCommitOnly) {
+         mPresentFence.clear();
+     }
+ 
++    if (listenerStatsToSend.empty()) {
++        return;
++    }
++
+     BackgroundExecutor::getInstance().sendCallbacks(
+             {[listenerStatsToSend = std::move(listenerStatsToSend)]() {
+                 SFTRACE_NAME("TransactionCallbackInvoker::sendCallbacks");

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Tue, 7 Apr 2026 16:38:39 +0800
+Subject: [PATCH 31/42] keeping expensive rendering across blur cache hits
+
+client comp cache hit was clearing the expensive rendering hint mid-blur, causing the gpu boost to flap on/off frame to frame during steady state blur like qs held open. keep it asserted while a blur layer is still present.
+
+Change-Id: I3632b4cca7ebb06d21ea1098764bef8de5e78f1c
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ services/surfaceflinger/CompositionEngine/src/Output.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/CompositionEngine/src/Output.cpp b/services/surfaceflinger/CompositionEngine/src/Output.cpp
+index ac01f1e..cd2804e 100644
+--- a/services/surfaceflinger/CompositionEngine/src/Output.cpp
++++ b/services/surfaceflinger/CompositionEngine/src/Output.cpp
+@@ -1431,7 +1431,7 @@ std::optional<base::unique_fd> Output::composeSurfaces(
+                                                    clientCompositionLayers)) {
+             SFTRACE_NAME("ClientCompositionCacheHit");
+             outputCompositionState.reusedClientComposition = true;
+-            setExpensiveRenderingExpected(false);
++            setExpensiveRenderingExpected(mLayerRequestingBackgroundBlur != nullptr);
+             // b/239944175 pass the fence associated with the buffer.
+             return base::unique_fd(std::move(fd));
+         }

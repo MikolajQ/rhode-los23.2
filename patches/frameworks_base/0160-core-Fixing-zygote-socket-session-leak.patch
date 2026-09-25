@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sat, 2 May 2026 10:16:01 +0800
+Subject: [PATCH 160/226] core: Fixing zygote socket session leak
+
+Change-Id: Idaabdf5de4d80927041282d3ac29dcae7402c31f
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ core/java/com/android/internal/os/Zygote.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/core/java/com/android/internal/os/Zygote.java b/core/java/com/android/internal/os/Zygote.java
+index 168e4e5b34..43e2e6a92c 100644
+--- a/core/java/com/android/internal/os/Zygote.java
++++ b/core/java/com/android/internal/os/Zygote.java
+@@ -852,6 +852,7 @@ public final class Zygote {
+                         throw new RuntimeException(ex);
+                     }
+                 }
++                IoUtils.closeQuietly(sessionSocket);
+             }
+ 
+             if (writePipe != null) {

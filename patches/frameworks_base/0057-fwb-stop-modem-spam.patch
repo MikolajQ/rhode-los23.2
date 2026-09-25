@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Mon, 25 Apr 2022 11:36:44 +0000
+Subject: [PATCH 057/226] fwb: stop modem spam
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ telephony/java/android/telephony/TelephonyManager.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/telephony/java/android/telephony/TelephonyManager.java b/telephony/java/android/telephony/TelephonyManager.java
+index 1b51e3adcb..cae7c72e16 100644
+--- a/telephony/java/android/telephony/TelephonyManager.java
++++ b/telephony/java/android/telephony/TelephonyManager.java
+@@ -13116,7 +13116,7 @@ public class TelephonyManager {
+         }
+ 
+         public @ModemActivityInfoError int getErrorCode() {
+-            return mErrorCode;
++            return 0;
+         }
+ 
+         @Override

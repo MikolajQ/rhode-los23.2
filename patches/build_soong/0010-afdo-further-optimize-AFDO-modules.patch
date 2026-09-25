@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Sat, 17 May 2025 09:29:06 -0400
+Subject: [PATCH 10/23] afdo: further optimize AFDO modules
+
+These are performance sensitive by nature
+---
+ cc/afdo.go | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/cc/afdo.go b/cc/afdo.go
+index 9be39185..1104674d 100644
+--- a/cc/afdo.go
++++ b/cc/afdo.go
+@@ -100,6 +100,10 @@ func (afdo *afdo) flags(ctx ModuleContext, flags Flags) Flags {
+ 		// TODO(b/266595187): Remove the following feature once it is enabled in LLVM by default.
+ 		flags.Local.CFlags = append([]string{"-mllvm", "-improved-fs-discriminator=true"}, flags.Local.CFlags...)
+ 		flags.Local.LdFlags = append([]string{"-Wl,-mllvm,-improved-fs-discriminator=true"}, flags.Local.LdFlags...)
++		// Given AFDO'd modules are performance sensitive, further optimize them
++		flags.Local.CFlags = append([]string{"-O3"}, flags.Local.CFlags...)
++		flags.Local.LdFlags = append([]string{"-Wl,-O3"}, flags.Local.LdFlags...)
++		flags.Local.LdFlags = append([]string{"-Wl,--lto-O3"}, flags.Local.LdFlags...)
+ 	}
+ 	if fdoProfilePath := getFdoProfilePathFromDep(ctx); fdoProfilePath != "" {
+ 		// The flags are prepended to allow overriding.

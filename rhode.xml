@@ -15,6 +15,13 @@
   <project path="hardware/motorola"             name="LineageOS/android_hardware_motorola"          remote="github" revision="lineage-23.2" />
   <project path="hardware/samsung_slsi/nfc"     name="LineageOS/android_hardware_samsung_slsi_nfc"  remote="github" revision="lineage-23.2" />
 
+  <!-- wydajność (jak u Tomoms): nowszy jemalloc (process_madvise, poprawki purge; bionic przełączony na jemalloc
+       patchami bionic/build_make/build_soong/system_core) i nowsze Arm Optimized Routines (memcpy/strlen/… w bionic) z yaap -->
+  <remove-project name="platform/external/jemalloc_new" />
+  <project path="external/jemalloc_new" name="yaap/external_jemalloc_new" remote="github" revision="sixteen" groups="pdk" />
+  <remove-project name="platform/external/arm-optimized-routines" />
+  <project path="external/arm-optimized-routines" name="yaap/external_arm-optimized-routines" remote="github" revision="sixteen" groups="pdk" />
+
   <!-- bloby: radio/* na git-lfs, stąd flaga git-lfs przy repo init -->
   <project path="vendor/motorola/rhode"         name="TheMuppets/proprietary_vendor_motorola_rhode"          remote="github" revision="lineage-23.2" />
   <project path="vendor/motorola/sm6225-common" name="TheMuppets/proprietary_vendor_motorola_sm6225-common"  remote="github" revision="lineage-23.2" />

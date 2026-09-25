@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Thu, 14 Nov 2024 10:30:55 +0800
+Subject: [PATCH 109/226] Notification: Switch to low ram policy for bitmaps
+
+---
+ .../widget/BigPictureNotificationImageView.java        |  2 +-
+ .../systemui/screenrecord/ScreenMediaRecorder.java     |  2 +-
+ .../android/systemui/statusbar/StatusBarIconView.java  |  2 +-
+ .../notification/row/BigPictureIconManager.kt          |  2 +-
+ .../row/NotificationInlineImageResolver.java           | 10 ++++------
+ 5 files changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/core/java/com/android/internal/widget/BigPictureNotificationImageView.java b/core/java/com/android/internal/widget/BigPictureNotificationImageView.java
+index 3f3b513eff..1c428ff022 100644
+--- a/core/java/com/android/internal/widget/BigPictureNotificationImageView.java
++++ b/core/java/com/android/internal/widget/BigPictureNotificationImageView.java
+@@ -66,7 +66,7 @@ public class BigPictureNotificationImageView extends ImageView implements
+     public BigPictureNotificationImageView(@NonNull Context context, @Nullable AttributeSet attrs,
+             @AttrRes int defStyleAttr, @StyleRes int defStyleRes) {
+         super(context, attrs, defStyleAttr, defStyleRes);
+-        boolean isLowRam = ActivityManager.isLowRamDeviceStatic();
++        boolean isLowRam = true;
+         mMaximumDrawableWidth = context.getResources().getDimensionPixelSize(
+                 isLowRam ? R.dimen.notification_big_picture_max_width_low_ram
+                         : R.dimen.notification_big_picture_max_width);
+diff --git a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+index 8274713d3c..99d55aa571 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
++++ b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+@@ -471,7 +471,7 @@ public class ScreenMediaRecorder extends MediaProjection.Callback {
+      * Returns the required {@code Size} of the thumbnail.
+      */
+     private Size getRequiredThumbnailSize() {
+-        boolean isLowRam = ActivityManager.isLowRamDeviceStatic();
++        boolean isLowRam = true;
+         int thumbnailIconHeight = mContext.getResources().getDimensionPixelSize(isLowRam
+                 ? R.dimen.notification_big_picture_max_height_low_ram
+                 : R.dimen.notification_big_picture_max_height);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/StatusBarIconView.java b/packages/SystemUI/src/com/android/systemui/statusbar/StatusBarIconView.java
+index bdf215c7f8..c8bc05e4cc 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/StatusBarIconView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/StatusBarIconView.java
+@@ -497,7 +497,7 @@ public class StatusBarIconView extends AnimatedImageView implements StatusIconDi
+             // We downscale the loaded drawable to reasonable size to protect against applications
+             // using too much memory. The size can be tweaked in config.xml. Drawables that are
+             // already sized properly won't be touched.
+-            boolean isLowRamDevice = ActivityManager.isLowRamDeviceStatic();
++            boolean isLowRamDevice = true;
+             Resources res = sysuiContext.getResources();
+             int maxIconSize = res.getDimensionPixelSize(isLowRamDevice
+                     ? com.android.internal.R.dimen.notification_small_icon_size_low_ram
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/BigPictureIconManager.kt b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/BigPictureIconManager.kt
+index 916414548f..deb8042cb2 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/BigPictureIconManager.kt
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/BigPictureIconManager.kt
+@@ -208,7 +208,7 @@ constructor(
+     }
+ 
+     private fun isLowRam(): Boolean {
+-        return ActivityManager.isLowRamDeviceStatic()
++        return true
+     }
+ 
+     private fun getMaxWidth() =
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
+index 5eb5421eda..9f0b638b8c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
+@@ -103,16 +103,14 @@ public class NotificationInlineImageResolver implements ImageResolver {
+ 
+     @VisibleForTesting
+     protected int getMaxImageWidth() {
+-        return mContext.getResources().getDimensionPixelSize(isLowRam()
+-                ? R.dimen.notification_custom_view_max_image_width_low_ram
+-                : R.dimen.notification_custom_view_max_image_width);
++        return mContext.getResources().getDimensionPixelSize(
++            R.dimen.notification_custom_view_max_image_width_low_ram);
+     }
+ 
+     @VisibleForTesting
+     protected int getMaxImageHeight() {
+-        return mContext.getResources().getDimensionPixelSize(isLowRam()
+-                ? R.dimen.notification_custom_view_max_image_height_low_ram
+-                : R.dimen.notification_custom_view_max_image_height);
++        return mContext.getResources().getDimensionPixelSize(
++            R.dimen.notification_custom_view_max_image_height_low_ram);
+     }
+ 
+     /**

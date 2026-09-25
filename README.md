@@ -11,6 +11,8 @@ Różnice względem oficjalnego LineageOS:
   27 commitów drzew urządzenia (DT2W, MGLRU, readahead, `/vendor_dlkm`, 60 fps w Aperture, KTweak), PropImitationHooks
   (Play Integrity), hartowanie sieci i bionic z GrapheneOS (VPN lockdown bez wycieku DNS, sprawdzanie łączności bez Google,
   losowy MAC, strony ochronne stosu), wyłączanie Wi-Fi/Bluetooth po czasie, automatyczne nagrywanie rozmów
+- **Pakiet wydajnościowy** (cel tego builda): jemalloc, `-O3`/LTO, nowsze Arm Optimized Routines, strojenie ART
+  (`bg-dexopt=speed`), SurfaceFlinger, ~190 optymalizacji system_server/SystemUI, Launcher3 — `docs/przeglad-tomoms.md`
 - **Jądro Tomoms** (optymalizacje baterii/płynności) z **KernelSU-Next** (manual hooks) w
   [forku](https://github.com/MikolajQ/android_kernel_motorola_sm6225/tree/16.2-ksun), przy każdym buildzie scalane z jądrem LineageOS
 - **GApps w obrazie**: MindTheGapps (`baklava`) przycięte do zestawu NikGapps core + pełny Android Auto

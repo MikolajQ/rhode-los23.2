@@ -1,0 +1,386 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: maxwen <max.weninger@gmail.com>
+Date: Sat, 16 Oct 2021 21:03:16 +0200
+Subject: [PATCH 071/226] base: PSSSSST! disable some DEBUG logspill
+
+Change-Id: I719cd895a5225cadd6120980665754d63cb98687
+
+Co-authored-by: George Zacharia <george.zcharia@gmail.com>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ core/java/android/app/ApplicationLoaders.java |  3 +-
+ .../internal/compat/ChangeReporter.java       |  2 ++
+ core/jni/android_database_SQLiteGlobal.cpp    |  4 ++-
+ .../android/server/DropBoxManagerService.java |  5 +--
+ .../appop/LegacyHistoricalRegistry.java       |  2 +-
+ .../display/DisplayPowerController.java       | 20 ++++++------
+ .../server/dreams/DreamManagerService.java    |  8 ++---
+ .../NotificationHistoryManager.java           |  2 +-
+ .../NotificationManagerService.java           | 32 +++++++++----------
+ .../android/server/usage/IntervalStats.java   |  4 +--
+ 10 files changed, 44 insertions(+), 38 deletions(-)
+
+diff --git a/core/java/android/app/ApplicationLoaders.java b/core/java/android/app/ApplicationLoaders.java
+index 9cd99dca1a..215671f7c3 100644
+--- a/core/java/android/app/ApplicationLoaders.java
++++ b/core/java/android/app/ApplicationLoaders.java
+@@ -37,6 +37,7 @@ import java.util.Map;
+ /** @hide */
+ public class ApplicationLoaders {
+     private static final String TAG = "ApplicationLoaders";
++    private static final boolean DEBUG = false;
+ 
+     @UnsupportedAppUsage
+     public static ApplicationLoaders getDefault() {
+@@ -211,7 +212,7 @@ public class ApplicationLoaders {
+         cached.loader = classLoader;
+         cached.sharedLibraries = sharedLibraries;
+ 
+-        Log.d(TAG, "Created zygote-cached class loader: " + path);
++        if (DEBUG) Log.d(TAG, "Created zygote-cached class loader: " + path);
+         mSystemLibsCacheMap.put(path, cached);
+     }
+ 
+diff --git a/core/java/com/android/internal/compat/ChangeReporter.java b/core/java/com/android/internal/compat/ChangeReporter.java
+index 1d3b8e9e60..e11e2de4d4 100644
+--- a/core/java/com/android/internal/compat/ChangeReporter.java
++++ b/core/java/com/android/internal/compat/ChangeReporter.java
+@@ -47,6 +47,7 @@ public class ChangeReporter {
+     private static final String TAG = "CompatChangeReporter";
+     private static final Function<Integer, Set<ChangeReport>> NEW_CHANGE_REPORT_SET =
+             uid -> Collections.synchronizedSet(new HashSet<>());
++    private static final boolean DBG = false;
+     private int mSource;
+ 
+     private static final class ChangeReport {
+@@ -237,6 +238,7 @@ public class ChangeReporter {
+     }
+ 
+     private void debugLog(int uid, long changeId, int state) {
++        if (!DBG) return;
+         String message = formatSimple("Compat change id reported: %d; UID %d; state: %s", changeId,
+                 uid, stateToString(state));
+         if (mSource == SOURCE_SYSTEM_SERVER) {
+diff --git a/core/jni/android_database_SQLiteGlobal.cpp b/core/jni/android_database_SQLiteGlobal.cpp
+index ec5dc4ae30..274a6d8c11 100644
+--- a/core/jni/android_database_SQLiteGlobal.cpp
++++ b/core/jni/android_database_SQLiteGlobal.cpp
+@@ -44,7 +44,9 @@ static void sqliteLogCallback(void* data, int err, const char* msg) {
+             ALOG(LOG_VERBOSE, SQLITE_LOG_TAG, "(%d) %s\n", err, msg);
+         }
+     } else if (errType == SQLITE_WARNING) {
+-        ALOG(LOG_WARN, SQLITE_LOG_TAG, "(%d) %s\n", err, msg);
++        if (verboseLog) {
++            ALOG(LOG_WARN, SQLITE_LOG_TAG, "(%d) %s\n", err, msg);
++        }
+     } else {
+         ALOG(LOG_ERROR, SQLITE_LOG_TAG, "(%d) %s\n", err, msg);
+     }
+diff --git a/services/core/java/com/android/server/DropBoxManagerService.java b/services/core/java/com/android/server/DropBoxManagerService.java
+index 4b16e4fc74..c0679104df 100644
+--- a/services/core/java/com/android/server/DropBoxManagerService.java
++++ b/services/core/java/com/android/server/DropBoxManagerService.java
+@@ -104,6 +104,7 @@ public final class DropBoxManagerService extends SystemService {
+     @EnabledAfter(targetSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+     private static final long ENFORCE_READ_DROPBOX_DATA = 296060945L;
+     private static final String TAG = "DropBoxManagerService";
++    private static final boolean DBG = false;
+     private static final int DEFAULT_AGE_SECONDS = 3 * 86400;
+     private static final int DEFAULT_MAX_FILES = 1000;
+     private static final int DEFAULT_MAX_FILES_LOWRAM = 300;
+@@ -530,7 +531,7 @@ public final class DropBoxManagerService extends SystemService {
+     public void addEntry(String tag, EntrySource entry, int flags) {
+         File temp = null;
+         try {
+-            Slog.i(TAG, "add tag=" + tag + " isTagEnabled=" + isTagEnabled(tag)
++            if (DBG) Slog.i(TAG, "add tag=" + tag + " isTagEnabled=" + isTagEnabled(tag)
+                     + " flags=0x" + Integer.toHexString(flags));
+             if ((flags & DropBoxManager.IS_EMPTY) != 0) throw new IllegalArgumentException();
+ 
+@@ -1149,7 +1150,7 @@ public final class DropBoxManagerService extends SystemService {
+             // Scan pre-existing files.
+             for (File file : files) {
+                 if (file.getName().endsWith(".tmp")) {
+-                    Slog.i(TAG, "Cleaning temp file: " + file);
++                    if (DBG) Slog.i(TAG, "Cleaning temp file: " + file);
+                     file.delete();
+                     continue;
+                 }
+diff --git a/services/core/java/com/android/server/appop/LegacyHistoricalRegistry.java b/services/core/java/com/android/server/appop/LegacyHistoricalRegistry.java
+index ba2d9449a8..006684acc6 100644
+--- a/services/core/java/com/android/server/appop/LegacyHistoricalRegistry.java
++++ b/services/core/java/com/android/server/appop/LegacyHistoricalRegistry.java
+@@ -577,7 +577,7 @@ final class LegacyHistoricalRegistry implements HistoricalRegistryInterface {
+         synchronized (mInMemoryLock) {
+             if (mMode == AppOpsManager.HISTORICAL_MODE_ENABLED_ACTIVE) {
+                 if (!isPersistenceInitializedMLocked()) {
+-                    Slog.v(LOG_TAG, "Interaction before persistence initialized");
++                    if (DEBUG) Slog.v(LOG_TAG, "Interaction before persistence initialized");
+                     return;
+                 }
+                 getUpdatedPendingHistoricalOpsMLocked(
+diff --git a/services/core/java/com/android/server/display/DisplayPowerController.java b/services/core/java/com/android/server/display/DisplayPowerController.java
+index e1f13b9f74..93e00c7c81 100644
+--- a/services/core/java/com/android/server/display/DisplayPowerController.java
++++ b/services/core/java/com/android/server/display/DisplayPowerController.java
+@@ -749,7 +749,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+     }
+ 
+     private void handleOnSwitchUser(@UserIdInt int newUserId, int userSerial, float newBrightness) {
+-        Slog.i(mTag, "Switching user newUserId=" + newUserId + " userSerial=" + userSerial
++        if (DEBUG) Slog.i(mTag, "Switching user newUserId=" + newUserId + " userSerial=" + userSerial
+                 + " newBrightness=" + newBrightness);
+ 
+         if (mAutomaticBrightnessController != null) {
+@@ -1795,13 +1795,13 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+ 
+         // Log any changes to what is currently driving the brightness setting.
+         if (!mBrightnessReasonTemp.equals(mBrightnessReason) || brightnessAdjustmentFlags != 0) {
+-            Slog.v(mTag, "Brightness [" + brightnessState + "] reason changing to: '"
++            if (DEBUG) Slog.v(mTag, "Brightness [" + brightnessState + "] reason changing to: '"
+                     + mBrightnessReasonTemp.toString(brightnessAdjustmentFlags)
+                     + "', previous reason: '" + mBrightnessReason + "'.");
+             mBrightnessReason.set(mBrightnessReasonTemp);
+         } else if (mBrightnessReasonTemp.getReason() == BrightnessReason.REASON_MANUAL
+                 && userSetBrightnessChanged) {
+-            Slog.v(mTag, "Brightness [" + brightnessState + "] manual adjustment.");
++            if (DEBUG) Slog.v(mTag, "Brightness [" + brightnessState + "] manual adjustment.");
+         }
+ 
+ 
+@@ -2123,7 +2123,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+             Trace.asyncTraceBegin(Trace.TRACE_TAG_POWER, SCREEN_ON_BLOCKED_TRACE_NAME, 0);
+             mPendingScreenOnUnblocker = new ScreenOnUnblocker();
+             mScreenOnBlockStartRealTime = SystemClock.elapsedRealtime();
+-            Slog.i(mTag, "Blocking screen on until initial contents have been drawn.");
++            if (DEBUG) Slog.i(mTag, "Blocking screen on until initial contents have been drawn.");
+         }
+     }
+ 
+@@ -2131,7 +2131,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+         if (mPendingScreenOnUnblocker != null) {
+             mPendingScreenOnUnblocker = null;
+             long delay = SystemClock.elapsedRealtime() - mScreenOnBlockStartRealTime;
+-            Slog.i(mTag, "Unblocked screen on after " + delay + " ms");
++            if (DEBUG) Slog.i(mTag, "Unblocked screen on after " + delay + " ms");
+             Trace.asyncTraceEnd(Trace.TRACE_TAG_POWER, SCREEN_ON_BLOCKED_TRACE_NAME, 0);
+         }
+     }
+@@ -2141,7 +2141,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+             Trace.asyncTraceBegin(Trace.TRACE_TAG_POWER, SCREEN_OFF_BLOCKED_TRACE_NAME, 0);
+             mPendingScreenOffUnblocker = new ScreenOffUnblocker();
+             mScreenOffBlockStartRealTime = SystemClock.elapsedRealtime();
+-            Slog.i(mTag, "Blocking screen off");
++            if (DEBUG) Slog.i(mTag, "Blocking screen off");
+         }
+     }
+ 
+@@ -2149,7 +2149,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+         if (mPendingScreenOffUnblocker != null) {
+             mPendingScreenOffUnblocker = null;
+             long delay = SystemClock.elapsedRealtime() - mScreenOffBlockStartRealTime;
+-            Slog.i(mTag, "Unblocked screen off after " + delay + " ms");
++            if (DEBUG) Slog.i(mTag, "Unblocked screen off after " + delay + " ms");
+             Trace.asyncTraceEnd(Trace.TRACE_TAG_POWER, SCREEN_OFF_BLOCKED_TRACE_NAME, 0);
+         }
+     }
+@@ -2176,7 +2176,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+                     Trace.TRACE_TAG_POWER, SCREEN_ON_BLOCKED_BY_DISPLAYOFFLOAD_TRACE_NAME, 0);
+             return;
+         }
+-        Slog.i(mTag, "Blocking screen on for offloading.");
++        if (DEBUG) Slog.i(mTag, "Blocking screen on for offloading.");
+     }
+ 
+     private void onDisplayOffloadUnblockScreenOn(DisplayOffloadSession displayOffloadSession) {
+@@ -2191,7 +2191,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+         }
+         mPendingScreenOnUnblockerByDisplayOffload = null;
+         long delay = SystemClock.elapsedRealtime() - mScreenOnBlockByDisplayOffloadStartRealTime;
+-        Slog.i(mTag, "Unblocked screen on for offloading after " + delay + " ms");
++        if (DEBUG) Slog.i(mTag, "Unblocked screen on for offloading after " + delay + " ms");
+         Trace.asyncTraceEnd(
+                 Trace.TRACE_TAG_POWER, SCREEN_ON_BLOCKED_BY_DISPLAYOFFLOAD_TRACE_NAME, 0);
+     }
+@@ -3301,7 +3301,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+                         Settings.System.SCREEN_BRIGHTNESS_FOR_ALS,
+                         Settings.System.SCREEN_BRIGHTNESS_AUTOMATIC_NORMAL,
+                         UserHandle.USER_CURRENT);
+-                Slog.i(mTag, "Setting up auto-brightness for preset "
++                if (DEBUG) Slog.i(mTag, "Setting up auto-brightness for preset "
+                         + autoBrightnessPresetToString(preset));
+                 setUpAutoBrightness(mContext, mHandler);
+                 sendUpdatePowerState();
+diff --git a/services/core/java/com/android/server/dreams/DreamManagerService.java b/services/core/java/com/android/server/dreams/DreamManagerService.java
+index 842ecfc067..e5ce9674b4 100644
+--- a/services/core/java/com/android/server/dreams/DreamManagerService.java
++++ b/services/core/java/com/android/server/dreams/DreamManagerService.java
+@@ -951,11 +951,11 @@ public final class DreamManagerService extends SystemService {
+                 && mCurrentDream.isPreview == isPreviewMode
+                 && mCurrentDream.canDoze == canDoze
+                 && mCurrentDream.userId == userId) {
+-            Slog.i(TAG, "Already in target dream.");
++            if (DEBUG) Slog.i(TAG, "Already in target dream.");
+             return;
+         }
+ 
+-        Slog.i(TAG, "Entering dreamland.");
++        if (DEBUG) Slog.i(TAG, "Entering dreamland.");
+ 
+         if (mCurrentDream != null && mCurrentDream.isDozing) {
+             stopDozingInternal(mCurrentDream.token);
+@@ -984,12 +984,12 @@ public final class DreamManagerService extends SystemService {
+     private void stopDreamLocked(final boolean immediate, String reason) {
+         if (mCurrentDream != null) {
+             if (immediate) {
+-                Slog.i(TAG, "Leaving dreamland.");
++                if (DEBUG) Slog.i(TAG, "Leaving dreamland.");
+                 cleanupDreamLocked();
+             } else if (mCurrentDream.isWaking) {
+                 return; // already waking
+             } else {
+-                Slog.i(TAG, "Gently waking up from dream.");
++                if (DEBUG) Slog.i(TAG, "Gently waking up from dream.");
+                 mCurrentDream.isWaking = true;
+             }
+ 
+diff --git a/services/core/java/com/android/server/notification/NotificationHistoryManager.java b/services/core/java/com/android/server/notification/NotificationHistoryManager.java
+index c42d3b5a41..ab0297426d 100644
+--- a/services/core/java/com/android/server/notification/NotificationHistoryManager.java
++++ b/services/core/java/com/android/server/notification/NotificationHistoryManager.java
+@@ -98,7 +98,7 @@ public class NotificationHistoryManager {
+             final NotificationHistoryDatabase userHistory =
+                     getUserHistoryAndInitializeIfNeededLocked(userId);
+             if (userHistory == null) {
+-                Slog.i(TAG, "Attempted to unlock gone/disabled user " + userId);
++                if (DEBUG) Slog.i(TAG, "Attempted to unlock gone/disabled user " + userId);
+                 return;
+             }
+ 
+diff --git a/services/core/java/com/android/server/notification/NotificationManagerService.java b/services/core/java/com/android/server/notification/NotificationManagerService.java
+index b45403eba1..e61b189e47 100644
+--- a/services/core/java/com/android/server/notification/NotificationManagerService.java
++++ b/services/core/java/com/android/server/notification/NotificationManagerService.java
+@@ -460,7 +460,7 @@ import java.util.stream.Collectors;
+ /** @hide */
+ public class NotificationManagerService extends SystemService {
+     public static final String TAG = "NotificationService";
+-    public static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
++    public static final boolean DBG = false;
+     public static final boolean ENABLE_CHILD_NOTIFICATIONS
+             = SystemProperties.getBoolean("debug.child_notifs", true);
+ 
+@@ -1410,9 +1410,9 @@ public class NotificationManagerService extends SystemService {
+                         .addTaggedData(MetricsEvent.NOTIFICATION_SHADE_COUNT, nv.count));
+                 mNotificationRecordLogger.log(
+                         NotificationRecordLogger.NotificationEvent.NOTIFICATION_CLICKED, r);
+-                EventLogTags.writeNotificationClicked(key,
++                /* EventLogTags.writeNotificationClicked(key,
+                         r.getLifespanMs(now), r.getFreshnessMs(now), r.getExposureMs(now),
+-                        nv.rank, nv.count);
++                        nv.rank, nv.count); */
+ 
+                 StatusBarNotification sbn = r.getSbn();
+                 // Notifications should be cancelled on click if they have been lifetime extended,
+@@ -1545,7 +1545,7 @@ public class NotificationManagerService extends SystemService {
+             MetricsLogger.histogram(getContext(), "note_load", items);
+             mNotificationRecordLogger.log(
+                     NotificationRecordLogger.NotificationPanelEvent.NOTIFICATION_PANEL_OPEN);
+-            EventLogTags.writeNotificationPanelRevealed(items);
++            // EventLogTags.writeNotificationPanelRevealed(items);
+             if (clearEffects) {
+                 clearEffects();
+             }
+@@ -1557,7 +1557,7 @@ public class NotificationManagerService extends SystemService {
+             MetricsLogger.hidden(getContext(), MetricsEvent.NOTIFICATION_PANEL);
+             mNotificationRecordLogger.log(
+                     NotificationRecordLogger.NotificationPanelEvent.NOTIFICATION_PANEL_CLOSE);
+-            EventLogTags.writeNotificationPanelHidden();
++            //EventLogTags.writeNotificationPanelHidden();
+             mAssistants.onPanelHidden();
+         }
+ 
+@@ -7822,7 +7822,7 @@ public class NotificationManagerService extends SystemService {
+             }
+ 
+             addAutoGroupAdjustment(r, groupName);
+-            EventLogTags.writeNotificationAutogrouped(key);
++            //EventLogTags.writeNotificationAutogrouped(key);
+ 
+             if (requestSort) {
+                 mRankingHandler.requestSort();
+@@ -10169,9 +10169,9 @@ public class NotificationManagerService extends SystemService {
+                         enqueueStatus = EVENTLOG_ENQUEUE_STATUS_UPDATE;
+                     }
+                     int appProvided = isAppProvided ? 1 : 0;
+-                    EventLogTags.writeNotificationEnqueue(callingUid, callingPid,
++                    /* EventLogTags.writeNotificationEnqueue(callingUid, callingPid,
+                             pkg, id, tag, userId, notification.toString(),
+-                            enqueueStatus, appProvided);
++                            enqueueStatus, appProvided); */
+                 }
+ 
+                 // tell the assistant service about the notification
+@@ -11418,9 +11418,9 @@ public class NotificationManagerService extends SystemService {
+                     .addTaggedData(MetricsEvent.NOTIFICATION_SHADE_COUNT, count);
+         }
+         MetricsLogger.action(logMaker);
+-        EventLogTags.writeNotificationCanceled(canceledKey, reason,
++        /* EventLogTags.writeNotificationCanceled(canceledKey, reason,
+                 r.getLifespanMs(now), r.getFreshnessMs(now), r.getExposureMs(now),
+-                rank, count, listenerName);
++                rank, count, listenerName); */
+         if (wasPosted) {
+             mNotificationRecordLogger.logNotificationCancelled(r, reason,
+                     r.getStats().getDismissalSurface());
+@@ -11659,9 +11659,9 @@ public class NotificationManagerService extends SystemService {
+         mHandler.post(new Runnable() {
+             @Override
+             public void run() {
+-                EventLogTags.writeNotificationCancelAll(callingUid, callingPid,
++                /* EventLogTags.writeNotificationCancelAll(callingUid, callingPid,
+                         pkg, userId, mustHaveFlags, mustNotHaveFlags, reason,
+-                        /* listener= */ null);
++                        /* listener= null); */
+ 
+                 synchronized (mNotificationLock) {
+                     FlagChecker flagChecker = (int flags) -> {
+@@ -11861,8 +11861,8 @@ public class NotificationManagerService extends SystemService {
+                 synchronized (mNotificationLock) {
+                     String listenerName =
+                             listener == null ? null : listener.component.toShortString();
+-                    EventLogTags.writeNotificationCancelAll(callingUid, callingPid,
+-                            null, userId, 0, 0, reason, listenerName);
++                   /*  EventLogTags.writeNotificationCancelAll(callingUid, callingPid,
++                            null, userId, 0, 0, reason, listenerName); */
+ 
+                     FlagChecker flagChecker = (int flags) -> {
+                         int flagsToCheck = mustNotHaveFlags;
+@@ -11922,8 +11922,8 @@ public class NotificationManagerService extends SystemService {
+             if (grouChildChecker.apply(childR, userId, pkg, groupKey)
+                 && (flagChecker == null || flagChecker.apply(childR.getFlags()))
+                 && (!isPromotedOutOfGroup(childR) || reason != REASON_CANCEL)) {
+-                EventLogTags.writeNotificationCancel(callingUid, callingPid, pkg, childSbn.getId(),
+-                        childSbn.getTag(), userId, 0, 0, childReason, listenerName);
++                /*EventLogTags.writeNotificationCancel(callingUid, callingPid, pkg, childSbn.getId(),
++                        childSbn.getTag(), userId, 0, 0, childReason, listenerName); */
+                 notificationList.remove(i);
+                 mNotificationsByKey.remove(childR.getKey());
+                 cancelNotificationLocked(childR, sendDelete, childReason, wasPosted, listenerName,
+diff --git a/services/usage/java/com/android/server/usage/IntervalStats.java b/services/usage/java/com/android/server/usage/IntervalStats.java
+index 6148584beb..480fe4ff31 100644
+--- a/services/usage/java/com/android/server/usage/IntervalStats.java
++++ b/services/usage/java/com/android/server/usage/IntervalStats.java
+@@ -504,10 +504,10 @@ public class IntervalStats {
+             }
+             packageStats.put(usageStats.mPackageName, usageStats);
+         }
+-        if (dataOmitted) {
++        /* if (dataOmitted) {
+             Slog.d(TAG, "Unable to parse usage stats packages: "
+                     + Arrays.toString(omittedTokens.toArray()));
+-        }
++        } */
+         return dataOmitted;
+     }
+ 

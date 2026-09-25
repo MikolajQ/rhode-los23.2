@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Thu, 13 Feb 2025 13:25:13 +0800
+Subject: [PATCH 108/226] [notifications] disabling notification cache
+
+Change-Id: Ia841dfc8f87fe9fc9c76785e4165890a47071424
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+---
+ .../notification/row/NotificationInlineImageResolver.java       | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
+index b3f781644e..5eb5421eda 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/NotificationInlineImageResolver.java
+@@ -86,7 +86,7 @@ public class NotificationInlineImageResolver implements ImageResolver {
+      * @return True if has its internal cache, false otherwise.
+      */
+     public boolean hasCache() {
+-        return mImageCache != null && !isLowRam();
++        return false;
+     }
+ 
+     private boolean isLowRam() {

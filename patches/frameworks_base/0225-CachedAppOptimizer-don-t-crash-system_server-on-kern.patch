@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Tue, 4 Aug 2026 21:17:01 +0530
+Subject: [PATCH 225/226] CachedAppOptimizer: don't crash system_server on
+ kernels without memcg reclaim
+
+Log:
+
+08-04 16:13:12.948  5665  5875 E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: CachedAppOptimizerThread
+08-04 16:13:12.948  5665  5875 E AndroidRuntime: java.lang.IllegalArgumentException: Invalid compaction flags
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at com.android.server.am.CachedAppOptimizer.compactionFlagsValidForMemcg(Native Method)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at com.android.server.am.CachedAppOptimizer.-$$Nest$smcompactionFlagsValidForMemcg(CachedAppOptimizer.java:0)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at com.android.server.am.CachedAppOptimizer$MemCompactionHandler.profileValidForMemcg(CachedAppOptimizer.java:1697)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at com.android.server.am.CachedAppOptimizer$MemCompactionHandler.handleMessage(CachedAppOptimizer.java:1871)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at android.os.Handler.dispatchMessage(Handler.java:132)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at android.os.Looper.dispatchMessage(Looper.java:333)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at android.os.Looper.loopOnce(Looper.java:263)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at android.os.Looper.loop(Looper.java:367)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at android.os.HandlerThread.run(HandlerThread.java:139)
+08-04 16:13:12.948  5665  5875 E AndroidRuntime:        at com.android.server.ServiceThread.run(ServiceThread.java:46)
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../com/android/server/am/CachedAppOptimizer.java    | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/CachedAppOptimizer.java b/services/core/java/com/android/server/am/CachedAppOptimizer.java
+index 426f459a79..ea0f8e314b 100644
+--- a/services/core/java/com/android/server/am/CachedAppOptimizer.java
++++ b/services/core/java/com/android/server/am/CachedAppOptimizer.java
+@@ -1694,7 +1694,17 @@ public class CachedAppOptimizer {
+ 
+             if (valid == null) {
+                 // Use JNI only once
+-                valid = new Boolean(compactionFlagsValidForMemcg(getCompactionFlags(profile)));
++                try {
++                    valid = Boolean.valueOf(
++                            compactionFlagsValidForMemcg(getCompactionFlags(profile)));
++                } catch (RuntimeException e) {
++                    // On older kernels the memcg reclaim interface may not support
++                    // these flags; the native side throws IllegalArgumentException
++                    // instead of returning false. Treat that as "not valid for
++                    // memcg" and fall back to per-process compaction rather than
++                    // crashing system_server.
++                    valid = Boolean.FALSE;
++                }
+                 mProfileValidForMemcgMap.put(profile, valid);
+             }
+ 

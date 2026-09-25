@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akane Beneckendorff <akane@akanework.org>
+Date: Mon, 23 Oct 2023 20:04:10 +0800
+Subject: [PATCH 101/226] base: tools: aapt2: Use '-O3' for build configuration
+
+Change-Id: I260c986093c80f53562cd1eb7d1f79222af9943f
+Signed-off-by: Akane Beneckendorff <akane@akanework.org>
+---
+ tools/aapt2/Android.bp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/tools/aapt2/Android.bp b/tools/aapt2/Android.bp
+index ce501cdb6b..4af9b65302 100644
+--- a/tools/aapt2/Android.bp
++++ b/tools/aapt2/Android.bp
+@@ -34,11 +34,13 @@ cc_defaults {
+     name: "aapt2_defaults",
+     cpp_std: "gnu++2b",
+     cflags: [
++        "-O3",
+         "-Wall",
+         "-Werror",
+         "-Wno-unused-parameter",
+     ],
+     cppflags: [
++        "-O3",
+         "-Wno-missing-field-initializers",
+         "-fno-exceptions",
+         "-fno-rtti",
+@@ -48,7 +50,7 @@ cc_defaults {
+         windows: {
+             compile_multilib: "64",
+             enabled: true,
+-            cflags: ["-Wno-maybe-uninitialized"],
++            cflags: ["-O3", "-Wno-maybe-uninitialized"],
+             ldflags: ["-static"],
+             host_ldlibs: [
+                 // Required by stack tracing code bundled with protobuf
+@@ -56,7 +58,7 @@ cc_defaults {
+             ],
+         },
+         darwin: {
+-            cflags: ["-D_DARWIN_UNLIMITED_STREAMS"],
++            cflags: ["-O3", "-D_DARWIN_UNLIMITED_STREAMS"],
+             host_ldlibs: [
+                 // Required by protobuf
+                 "-framework CoreFoundation",

@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Wed, 2 Apr 2025 12:03:06 +0800
+Subject: [PATCH 20/21] jit: Use default jit hotness threshold for debug builds
+
+Change-Id: Ia6e7f943fa2fd4b972b6e3f37cc54bd11c3b8abb
+---
+ runtime/jit/jit_options.cc | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/runtime/jit/jit_options.cc b/runtime/jit/jit_options.cc
+index b68d14e..70761aa 100644
+--- a/runtime/jit/jit_options.cc
++++ b/runtime/jit/jit_options.cc
+@@ -63,14 +63,10 @@ JitOptions* JitOptions::CreateFromRuntimeArguments(const RuntimeArgumentMap& opt
+       options.GetOrDefault(RuntimeArgumentMap::JITZygotePoolThreadPthreadPriority);
+ 
+   // Set default optimize threshold to aid with checking defaults.
+-  jit_options->optimize_threshold_ = kIsDebugBuild
+-      ? (kSlowMode ? kJitSlowStressDefaultOptimizeThreshold : kJitStressDefaultOptimizeThreshold)
+-      : kJitDefaultOptimizeThreshold;
++  jit_options->optimize_threshold_ = kJitDefaultOptimizeThreshold;
+ 
+   // Set default warm-up threshold to aid with checking defaults.
+-  jit_options->warmup_threshold_ = kIsDebugBuild
+-      ? (kSlowMode ? kJitSlowStressDefaultWarmupThreshold : kJitStressDefaultWarmupThreshold)
+-      : kJitDefaultWarmupThreshold;
++  jit_options->warmup_threshold_ = kJitDefaultWarmupThreshold;
+ 
+   if (options.Exists(RuntimeArgumentMap::JITOptimizeThreshold)) {
+     jit_options->optimize_threshold_ = *options.Get(RuntimeArgumentMap::JITOptimizeThreshold);

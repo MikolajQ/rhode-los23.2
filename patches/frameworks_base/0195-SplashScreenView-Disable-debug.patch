@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 9 May 2025 01:55:08 +0800
+Subject: [PATCH 195/226] SplashScreenView: Disable debug
+
+Change-Id: I6cdc634f7d992be7c8dfccd6530eddc8e3a0b98b
+---
+ core/java/android/window/SplashScreenView.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/java/android/window/SplashScreenView.java b/core/java/android/window/SplashScreenView.java
+index ea0d6b8c69..1317ae6ae0 100644
+--- a/core/java/android/window/SplashScreenView.java
++++ b/core/java/android/window/SplashScreenView.java
+@@ -81,7 +81,7 @@ import java.util.function.LongConsumer;
+  */
+ public final class SplashScreenView extends FrameLayout {
+     private static final String TAG = SplashScreenView.class.getSimpleName();
+-    private static final boolean DEBUG = Build.IS_DEBUGGABLE;
++    private static final boolean DEBUG = false;
+ 
+     private boolean mNotCopyable;
+     private boolean mIsCopied;

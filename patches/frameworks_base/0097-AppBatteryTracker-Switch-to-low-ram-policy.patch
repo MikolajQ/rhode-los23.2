@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Thu, 14 Nov 2024 10:37:27 +0800
+Subject: [PATCH 097/226] AppBatteryTracker: Switch to low ram policy
+
+---
+ .../java/com/android/server/am/AppBatteryTracker.java     | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/AppBatteryTracker.java b/services/core/java/com/android/server/am/AppBatteryTracker.java
+index 0bc816e78e..0851ba381c 100644
+--- a/services/core/java/com/android/server/am/AppBatteryTracker.java
++++ b/services/core/java/com/android/server/am/AppBatteryTracker.java
+@@ -1563,22 +1563,22 @@ final class AppBatteryTracker extends BaseAppStateTracker<AppBatteryPolicy>
+             float[] val = getFloatArray(resources.obtainTypedArray(
+                     R.array.config_bg_current_drain_threshold_to_restricted_bucket));
+             mDefaultBgCurrentDrainRestrictedBucket =
+-                    isLowRamDeviceStatic() ? val[1] : val[0];
++                    val[1];
+             val = getFloatArray(resources.obtainTypedArray(
+                     R.array.config_bg_current_drain_threshold_to_bg_restricted));
+             mDefaultBgCurrentDrainBgRestrictedThreshold =
+-                    isLowRamDeviceStatic() ? val[1] : val[0];
++                    val[1];
+             mDefaultBgCurrentDrainWindowMs = resources.getInteger(
+                     R.integer.config_bg_current_drain_window) * 1_000;
+             mDefaultBgCurrentDrainInteractionGracePeriodMs = mDefaultBgCurrentDrainWindowMs;
+             val = getFloatArray(resources.obtainTypedArray(
+                     R.array.config_bg_current_drain_high_threshold_to_restricted_bucket));
+             mDefaultBgCurrentDrainRestrictedBucketHighThreshold =
+-                    isLowRamDeviceStatic() ? val[1] : val[0];
++                    val[1];
+             val = getFloatArray(resources.obtainTypedArray(
+                     R.array.config_bg_current_drain_high_threshold_to_bg_restricted));
+             mDefaultBgCurrentDrainBgRestrictedHighThreshold =
+-                    isLowRamDeviceStatic() ? val[1] : val[0];
++                    val[1];
+             mDefaultBgCurrentDrainMediaPlaybackMinDuration = resources.getInteger(
+                     R.integer.config_bg_current_drain_media_playback_min_duration) * 1_000;
+             mDefaultBgCurrentDrainLocationMinDuration = resources.getInteger(

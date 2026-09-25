@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AndroidRul3z <ferrettidario@gmail.com>
+Date: Sun, 9 Nov 2014 18:34:05 +0100
+Subject: [PATCH 191/226] fwb: Turn off some debugs
+
+Change-Id: I36bd0034f6a0d7e674e97152ac35ec1961718527
+---
+ media/java/android/media/Ringtone.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/java/android/media/Ringtone.java b/media/java/android/media/Ringtone.java
+index 414876a895..bf3b57b4f5 100644
+--- a/media/java/android/media/Ringtone.java
++++ b/media/java/android/media/Ringtone.java
+@@ -58,7 +58,7 @@ import java.util.ArrayList;
+  */
+ public class Ringtone {
+     private static final String TAG = "Ringtone";
+-    private static final boolean LOGD = true;
++    private static final boolean LOGD = false;
+ 
+     private static final String[] MEDIA_COLUMNS = new String[] {
+         MediaStore.Audio.Media._ID,

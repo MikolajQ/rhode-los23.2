@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Thu, 29 May 2025 21:55:40 +0800
+Subject: [PATCH 134/226] ActivityManagerService: Adjust delay on boot system
+ compaction
+
+Change-Id: I4f77325c14d1bc78ed12c965537b8a1e1c9aae6d
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../java/com/android/server/am/ActivityManagerService.java  | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index 7c474fd4f3..b19a7e767a 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -5360,10 +5360,14 @@ public class ActivityManagerService extends IActivityManager.Stub
+                                 String data, Bundle extras, boolean ordered,
+                                 boolean sticky, int sendingUser) {
+                             mBootCompletedTimestamp = SystemClock.uptimeMillis();
+-                            // Defer the full Pss collection as the system is really busy now.
+                             mHandler.postDelayed(() -> {
+                                 synchronized (mProcLock) {
+                                     mCachedAppOptimizer.compactAllSystem();
++                                }
++                            }, 300000);
++                            // Defer the full Pss collection as the system is really busy now.
++                            mHandler.postDelayed(() -> {
++                                synchronized (mProcLock) {
+                                     mAppProfiler.requestPssAllProcsLPr(
+                                             SystemClock.uptimeMillis(), true, false);
+                                 }

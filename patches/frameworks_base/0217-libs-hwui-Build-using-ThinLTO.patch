@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mydongistiny <jaysonedson@gmail.com>
+Date: Sun, 29 Sep 2019 14:25:52 -0700
+Subject: [PATCH 217/226] libs: hwui: Build using ThinLTO
+
+Change-Id: Id9035e9cfb02009688fbf1e0ae592caee6965d24
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ libs/hwui/Android.bp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/libs/hwui/Android.bp b/libs/hwui/Android.bp
+index d87bbe98ec..5d5f4f0448 100644
+--- a/libs/hwui/Android.bp
++++ b/libs/hwui/Android.bp
+@@ -81,6 +81,10 @@ cc_defaults {
+         "external/skia/src/utils",
+     ],
+ 
++    lto: {
++        thin: true,
++    },
++
+     target: {
+         android: {
+             include_dirs: [

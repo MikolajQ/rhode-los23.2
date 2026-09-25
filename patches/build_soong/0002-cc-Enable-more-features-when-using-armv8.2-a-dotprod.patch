@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Edson <jaysonedson@gmail.com>
+Date: Fri, 20 May 2022 15:32:03 -0700
+Subject: [PATCH 02/23] cc: Enable more features when using armv8.2-a+dotprod
+
+Change-Id: I5165ed3dc90db4c71ba64bb065452a15c8ea2a09
+Signed-off-by: Jason Edson <jaysonedson@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ cc/config/arm64_device.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cc/config/arm64_device.go b/cc/config/arm64_device.go
+index 332c138c..9ed49852 100644
+--- a/cc/config/arm64_device.go
++++ b/cc/config/arm64_device.go
+@@ -31,7 +31,7 @@ var (
+ 		"armv8-a":            {"-march=armv8-a"},
+ 		"armv8-a-branchprot": {"-march=armv8-a"},
+ 		"armv8-2a":           {"-march=armv8.2-a"},
+-		"armv8-2a-dotprod":   {"-march=armv8.2-a+dotprod"},
++		"armv8-2a-dotprod":   {"-march=armv8.2-a+lse+fp16+dotprod"},
+ 		"armv8-5a":           {"-march=armv8.5-a"},
+ 		"armv8-7a":           {"-march=armv8.7-a"},
+ 		"armv9-a":            {"-march=armv9-a"},

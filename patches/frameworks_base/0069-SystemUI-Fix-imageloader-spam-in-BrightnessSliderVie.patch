@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Thu, 23 Oct 2025 01:53:41 +0530
+Subject: [PATCH 069/226] SystemUI: Fix imageloader spam in
+ BrightnessSliderViewModel
+
+* Image decoder cannot handle vector XML.
+
+Log:
+
+10-23 00:02:52.472 W/ImageLoader(2485): Failed to load source Resource{name=com.android.systemui:drawable/ic_brightness_medium}
+10-23 00:02:52.472 W/ImageLoader(2485): android.graphics.ImageDecoder$DecodeException: Failed to create image decoder with message 'unimplemented'Input contained an error.
+10-23 00:02:52.472 W/ImageLoader(2485): 	at android.graphics.ImageDecoder.nCreate(Native Method)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at android.graphics.ImageDecoder.createFromAsset(ImageDecoder.java:548)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at android.graphics.ImageDecoder.-$$Nest$smcreateFromAsset(Unknown Source:0)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at android.graphics.ImageDecoder$ResourceSource.createImageDecoder(ImageDecoder.java:525)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at android.graphics.ImageDecoder.decodeDrawableImpl(ImageDecoder.java:1750)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at android.graphics.ImageDecoder.decodeDrawable(ImageDecoder.java:1742)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at com.android.systemui.graphics.ImageLoader.loadDrawableSync(go/retraceme fa033e5bae99b59d8477124fa92133edcdefa6c9ebb8507171a3414e8dc9df78:3)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at com.android.systemui.graphics.ImageLoader.loadDrawableSync(go/retraceme fa033e5bae99b59d8477124fa92133edcdefa6c9ebb8507171a3414e8dc9df78:19)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at com.android.systemui.graphics.ImageLoader$loadDrawable$4.invokeSuspend(go/retraceme fa033e5bae99b59d8477124fa92133edcdefa6c9ebb8507171a3414e8dc9df78:25)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(go/retraceme fa033e5bae99b59d8477124fa92133edcdefa6c9ebb8507171a3414e8dc9df78:8)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at kotlinx.coroutines.DispatchedTask.run(go/retraceme fa033e5bae99b59d8477124fa92133edcdefa6c9ebb8507171a3414e8dc9df78:112)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:348)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+10-23 00:02:52.472 W/ImageLoader(2485): 	at java.lang.Thread.run(Thread.java:1119)
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../ui/viewmodel/BrightnessSliderViewModel.kt       | 13 ++++---------
+ 1 file changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/brightness/ui/viewmodel/BrightnessSliderViewModel.kt b/packages/SystemUI/src/com/android/systemui/brightness/ui/viewmodel/BrightnessSliderViewModel.kt
+index 36efeaa1bc..4082193657 100644
+--- a/packages/SystemUI/src/com/android/systemui/brightness/ui/viewmodel/BrightnessSliderViewModel.kt
++++ b/packages/SystemUI/src/com/android/systemui/brightness/ui/viewmodel/BrightnessSliderViewModel.kt
+@@ -21,6 +21,7 @@ import androidx.annotation.DrawableRes
+ import androidx.annotation.FloatRange
+ import androidx.annotation.StringRes
+ import androidx.compose.runtime.getValue
++import androidx.core.content.res.ResourcesCompat
+ import com.android.systemui.brightness.domain.interactor.BrightnessPolicyEnforcementInteractor
+ import com.android.systemui.brightness.domain.interactor.ScreenBrightnessInteractor
+ import com.android.systemui.brightness.shared.model.GammaBrightness
+@@ -28,7 +29,6 @@ import com.android.systemui.classifier.Classifier
+ import com.android.systemui.classifier.domain.interactor.FalsingInteractor
+ import com.android.systemui.common.shared.model.Icon
+ import com.android.systemui.common.shared.model.asIcon
+-import com.android.systemui.graphics.ImageLoader
+ import com.android.systemui.haptics.slider.compose.ui.SliderHapticsViewModel
+ import com.android.systemui.lifecycle.ExclusiveActivatable
+ import com.android.systemui.lifecycle.Hydrator
+@@ -62,7 +62,6 @@ constructor(
+     private val falsingInteractor: FalsingInteractor,
+     @Assisted private val supportsMirroring: Boolean,
+     private val brightnessWarningToast: BrightnessWarningToast,
+-    private val imageLoader: ImageLoader,
+ ) : ExclusiveActivatable() {
+ 
+     init {
+@@ -110,13 +109,9 @@ constructor(
+ 
+     suspend fun loadImage(@DrawableRes resId: Int, context: Context): Icon.Loaded? {
+         return withTimeoutOrNull(500L) {
+-            imageLoader
+-                .loadDrawable(
+-                    android.graphics.drawable.Icon.createWithResource(context, resId),
+-                    maxHeight = 200,
+-                    maxWidth = 200,
+-                )
+-                ?.asIcon(null, resId)
++        val d = ResourcesCompat.getDrawable(context.resources, resId, context.theme)
++            ?: error("Drawable $resId not found")
++        d.asIcon(null, resId)
+         }
+     }
+ 

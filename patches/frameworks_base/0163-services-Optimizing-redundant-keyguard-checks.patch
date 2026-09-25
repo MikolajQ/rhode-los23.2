@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 May 2026 06:19:03 +0800
+Subject: [PATCH 163/226] services: Optimizing redundant keyguard checks
+
+Change-Id: Ibb8406b95bdd87a1e2c3adcc3b8292bd3ef99d85
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../core/java/com/android/server/wm/DisplayPolicy.java   | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/DisplayPolicy.java b/services/core/java/com/android/server/wm/DisplayPolicy.java
+index b05de11ffc..1ffd4a7afd 100644
+--- a/services/core/java/com/android/server/wm/DisplayPolicy.java
++++ b/services/core/java/com/android/server/wm/DisplayPolicy.java
+@@ -388,6 +388,8 @@ public class DisplayPolicy {
+ 
+     private boolean mShowingDream;
+     private boolean mLastShowingDream;
++    private boolean mKeyguardShowingForPostLayout;
++    private boolean mKeyguardShowingAndNotOccludedForPostLayout;
+     private boolean mDreamingLockscreen;
+     private boolean mAllowLockscreenWhenOn;
+ 
+@@ -1510,6 +1512,9 @@ public class DisplayPolicy {
+ 
+         mAllowLockscreenWhenOn = false;
+         mShowingDream = false;
++        mKeyguardShowingForPostLayout = isKeyguardShowing();
++        mKeyguardShowingAndNotOccludedForPostLayout =
++                mService.mPolicy.isKeyguardShowingAndNotOccluded();
+         mIsFreeformWindowOverlappingWithNavBar = false;
+         mShowingTransientInsetsTypes = 0;
+         mImeInsetsConsumed = false;
+@@ -1764,7 +1769,7 @@ public class DisplayPolicy {
+         // started while the lockscreen was showing and remember this state
+         // while the dream is showing.
+         if (!mShowingDream) {
+-            mDreamingLockscreen = mService.mPolicy.isKeyguardShowingAndNotOccluded();
++            mDreamingLockscreen = mKeyguardShowingAndNotOccludedForPostLayout;
+         }
+ 
+         updateSystemBarAttributes();
+@@ -1810,7 +1815,7 @@ public class DisplayPolicy {
+ 
+     private boolean shouldBeHiddenByKeyguard(WindowState win,
+             @Nullable WindowState imeLayeringTarget) {
+-        if (!mDisplayContent.isDefaultDisplay || !isKeyguardShowing()) {
++        if (!mDisplayContent.isDefaultDisplay || !mKeyguardShowingForPostLayout) {
+             return false;
+         }
+ 

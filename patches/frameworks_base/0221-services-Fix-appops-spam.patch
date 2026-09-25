@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: shutter-cat <bankersenator@gmail.com>
+Date: Wed, 29 Apr 2026 17:13:26 +0300
+Subject: [PATCH 221/226] services: Fix appops spam
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ .../com/android/server/appop/AppOpsService.java | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/services/core/java/com/android/server/appop/AppOpsService.java b/services/core/java/com/android/server/appop/AppOpsService.java
+index 759bca11b1..e1cd08fd66 100644
+--- a/services/core/java/com/android/server/appop/AppOpsService.java
++++ b/services/core/java/com/android/server/appop/AppOpsService.java
+@@ -3418,7 +3418,7 @@ public class AppOpsService extends IAppOpsService.Stub {
+         } catch (SecurityException e) {
+             logVerifyAndGetBypassFailure(uid, e, "noteOperation");
+             // TODO(b/333931259): Remove extra logging after this issue is diagnosed.
+-            if (code == OP_BLUETOOTH_CONNECT) {
++            if (DEBUG && code == OP_BLUETOOTH_CONNECT) {
+                 Slog.e(TAG, "noting OP_BLUETOOTH_CONNECT returned MODE_ERRORED as"
+                         + " verifyAndGetBypass returned a SecurityException for package: "
+                         + packageName + " and uid: " + uid + " and attributionTag: "
+@@ -4227,10 +4227,12 @@ public class AppOpsService extends IAppOpsService.Stub {
+                 attributionTag = null;
+             }
+         } catch (SecurityException e) {
+-            if (Process.isIsolated(uid)) {
+-                Slog.e(TAG, "Cannot startOperation: isolated process");
+-            } else {
+-                Slog.e(TAG, "Cannot startOperation", e);
++            if (DEBUG) {
++                if (Process.isIsolated(uid)) {
++                    Slog.e(TAG, "Cannot startOperation: isolated process");
++                } else {
++                    Slog.e(TAG, "Cannot startOperation", e);
++                }
+             }
+             return new SyncNotedAppOp(AppOpsManager.MODE_ERRORED, code, attributionTag,
+                     packageName);
+@@ -4968,7 +4970,7 @@ public class AppOpsService extends IAppOpsService.Stub {
+             @Nullable String attributionTag, int proxyUid, @Nullable String proxyPackageName,
+             boolean isProxyTrusted) {
+         return verifyAndGetBypass(uid, packageName, attributionTag, proxyUid, proxyPackageName,
+-                isProxyTrusted, false);
++                isProxyTrusted, true);
+     }
+ 
+     /**
+@@ -5186,6 +5188,9 @@ public class AppOpsService extends IAppOpsService.Stub {
+ 
+     private void logVerifyAndGetBypassFailure(int uid, @NonNull SecurityException e,
+             @NonNull String methodName) {
++        if (!DEBUG) {
++            return;
++        }
+         if (Process.isIsolated(uid)) {
+             Slog.e(TAG, "Cannot " + methodName + ": isolated UID");
+         } else if (UserHandle.getAppId(uid) < Process.FIRST_APPLICATION_UID) {

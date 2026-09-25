@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Sim=C3=A3o=20Gomes=20Viana?= <devel@superboring.dev>
+Date: Fri, 15 Nov 2024 17:00:14 +0800
+Subject: [PATCH 088/226] LayoutInflater: remove less frequently used widgets
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The overhead of checking all strings and having so much additional code
+take up space and run is not worth the potential performance improvement
+gained through direct instantiation.
+
+Change-Id: I58cec6b01831c8a83f12fdb5876c49ffdebb8a1f
+Signed-off-by: Simão Gomes Viana <devel@superboring.dev>
+Signed-off-by: minaripenguin <minaripenguin@users.noreply.github.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ core/java/android/view/LayoutInflater.java | 59 ----------------------
+ 1 file changed, 59 deletions(-)
+
+diff --git a/core/java/android/view/LayoutInflater.java b/core/java/android/view/LayoutInflater.java
+index 3a06b96487..00a552153e 100644
+--- a/core/java/android/view/LayoutInflater.java
++++ b/core/java/android/view/LayoutInflater.java
+@@ -1311,65 +1311,6 @@ public abstract class LayoutInflater {
+                 return new android.view.NotificationHeaderView(context, attributeSet);
+             case "android.widget.ListView": // 58 occurrences
+                 return new android.widget.ListView(context, attributeSet);
+-            case "android.widget.QuickContactBadge": // 50 occurrences
+-                return new android.widget.QuickContactBadge(context, attributeSet);
+-            case "android.widget.SeekBar": // 40 occurrences
+-                return new android.widget.SeekBar(context, attributeSet);
+-            case "android.widget.CheckBox": // 38 occurrences
+-                return new android.widget.CheckBox(context, attributeSet);
+-            case "android.widget.GridLayout": // 16 occurrences
+-                return new android.widget.GridLayout(context, attributeSet);
+-            case "android.widget.TableRow": // 15 occurrences
+-                return new android.widget.TableRow(context, attributeSet);
+-            case "android.widget.RadioGroup": // 15 occurrences
+-                return new android.widget.RadioGroup(context, attributeSet);
+-            case "android.widget.Chronometer": // 15 occurrences
+-                return new android.widget.Chronometer(context, attributeSet);
+-            case "android.widget.ViewFlipper": // 13 occurrences
+-                return new android.widget.ViewFlipper(context, attributeSet);
+-            case "android.widget.Spinner": // 9 occurrences
+-                return new android.widget.Spinner(context, attributeSet);
+-            case "android.widget.ViewSwitcher": // 8 occurrences
+-                return new android.widget.ViewSwitcher(context, attributeSet);
+-            case "android.widget.TextSwitcher": // 8 occurrences
+-                return new android.widget.TextSwitcher(context, attributeSet);
+-            case "android.widget.SurfaceView": // 8 occurrences
+-            case "android.webkit.SurfaceView": // 1 occurrence
+-            case "android.view.SurfaceView": // 1 occurrence
+-            case "android.app.SurfaceView": // 1 occurrence
+-                return new android.view.SurfaceView(context, attributeSet);
+-            case "android.widget.CheckedTextView": // 8 occurrences
+-                return new android.widget.CheckedTextView(context, attributeSet);
+-            case "android.preference.PreferenceFrameLayout": // 8 occurrences
+-                return new android.preference.PreferenceFrameLayout(context, attributeSet);
+-            case "android.widget.TwoLineListItem": // 7 occurrences
+-                return new android.widget.TwoLineListItem(context, attributeSet);
+-            case "android.widget.TableLayout": // 5 occurrences
+-                return new android.widget.TableLayout(context, attributeSet);
+-            case "android.widget.EditText": // 5 occurrences
+-                return new android.widget.EditText(context, attributeSet);
+-            case "android.widget.TabWidget": // 3 occurrences
+-                return new android.widget.TabWidget(context, attributeSet);
+-            case "android.widget.TabHost": // 3 occurrences
+-                return new android.widget.TabHost(context, attributeSet);
+-            case "android.widget.ZoomButton": // 2 occurrences
+-                return new android.widget.ZoomButton(context, attributeSet);
+-            case "android.widget.TextureView": // 2 occurrences
+-            case "android.webkit.TextureView": // 2 occurrences
+-            case "android.app.TextureView": // 2 occurrences
+-            case "android.view.TextureView": // 2 occurrences
+-                return new android.view.TextureView(context, attributeSet);
+-            case "android.widget.ExpandableListView": // 2 occurrences
+-                return new android.widget.ExpandableListView(context, attributeSet);
+-            case "android.widget.ViewAnimator": // 1 occurrence
+-                return new android.widget.ViewAnimator(context, attributeSet);
+-            case "android.widget.TextClock": // 1 occurrence
+-                return new android.widget.TextClock(context, attributeSet);
+-            case "android.widget.AutoCompleteTextView": // 1 occurrence
+-                return new android.widget.AutoCompleteTextView(context, attributeSet);
+-            case "android.widget.WebView": // 1 occurrence
+-            case "android.webkit.WebView": // 1 occurrence
+-                return new android.webkit.WebView(context, attributeSet);
+         }
+ 
+         return null;

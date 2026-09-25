@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Mon, 16 Mar 2026 23:39:37 +0800
+Subject: [PATCH 155/226] services: Reducing foldable sensor polling rate
+
+hinge and hall sensors were registered at SENSOR_DELAY_FASTEST (~200Hz), completely unnecessary for detecting fold state transitions which are human-speed actions. dropping to SENSOR_DELAY_NORMAL (~5Hz) saves ~6% of system_server cpu on foldables
+
+Change-Id: Ia543bba6f3f69d7d138368102266822e73d2a29e
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../android/server/policy/FoldableDeviceStateProvider.java   | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/services/foldables/devicestateprovider/src/com/android/server/policy/FoldableDeviceStateProvider.java b/services/foldables/devicestateprovider/src/com/android/server/policy/FoldableDeviceStateProvider.java
+index 69e856de40..ed67f626ea 100644
+--- a/services/foldables/devicestateprovider/src/com/android/server/policy/FoldableDeviceStateProvider.java
++++ b/services/foldables/devicestateprovider/src/com/android/server/policy/FoldableDeviceStateProvider.java
+@@ -17,6 +17,7 @@
+ package com.android.server.policy;
+ 
+ import static android.hardware.SensorManager.SENSOR_DELAY_FASTEST;
++import static android.hardware.SensorManager.SENSOR_DELAY_NORMAL;
+ import static android.hardware.devicestate.DeviceState.PROPERTY_POLICY_UNSUPPORTED_WHEN_POWER_SAVE_MODE;
+ import static android.hardware.devicestate.DeviceState.PROPERTY_POLICY_UNSUPPORTED_WHEN_THERMAL_STATUS_CRITICAL;
+ import static android.hardware.devicestate.DeviceStateManager.INVALID_DEVICE_STATE_IDENTIFIER;
+@@ -150,9 +151,9 @@ public final class FoldableDeviceStateProvider implements DeviceStateProvider,
+         mConfigurations = deviceStatePredicateWrappers;
+         mIsDualDisplayBlockingEnabled = featureFlags.enableDualDisplayBlocking();
+ 
+-        sensorManager.registerListener(this, mHingeAngleSensor, SENSOR_DELAY_FASTEST);
++        sensorManager.registerListener(this, mHingeAngleSensor, SENSOR_DELAY_NORMAL);
+         if (hallSensor != null) {
+-            sensorManager.registerListener(this, mHallSensor, SENSOR_DELAY_FASTEST);
++            sensorManager.registerListener(this, mHallSensor, SENSOR_DELAY_NORMAL);
+         }
+ 
+         mOrderedStates = new DeviceState[deviceStatePredicateWrappers.length];

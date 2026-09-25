@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Sun, 26 Jan 2025 02:53:35 +0800
+Subject: [PATCH 22/23] gen_build_prop: Remove ro.kernel.android.checkjni
+
+* JNI, the Java Native Interface, provides a way for code written in the
+Java programming language interact with native (C/C++) code. The
+extended JNI checks will cause the system to run more slowly, but they
+can spot a variety of nasty bugs before they have a chance to cause
+problems.
+
+Change-Id: I7a9c8d4b5c21980950afe171c6eea363d4fa891a
+---
+ scripts/gen_build_prop.py | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
+index 26eeccde..85685977 100644
+--- a/scripts/gen_build_prop.py
++++ b/scripts/gen_build_prop.py
+@@ -381,8 +381,6 @@ def append_additional_system_props(args):
+     # Disallow mock locations by default for user builds
+     props.append("ro.allow.mock.location=0")
+   else:
+-    # Turn on checkjni for non-user builds.
+-    props.append("ro.kernel.android.checkjni=1")
+     # Set device insecure for non-user builds.
+     props.append("ro.secure=0")
+     # Allow mock locations by default for non user builds

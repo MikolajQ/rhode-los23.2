@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Sun, 19 Oct 2025 04:10:14 +0800
+Subject: [PATCH 188/226] SystemUI: Remove tracing in NoRemeasureMotionLayout
+
+Signed-off-by: minaripenguin <minaripenguin@users.noreply.github.com>
+---
+ .../src/com/android/systemui/util/NoRemeasureMotionLayout.kt   | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/util/NoRemeasureMotionLayout.kt b/packages/SystemUI/src/com/android/systemui/util/NoRemeasureMotionLayout.kt
+index f49d616181..532281917f 100644
+--- a/packages/SystemUI/src/com/android/systemui/util/NoRemeasureMotionLayout.kt
++++ b/packages/SystemUI/src/com/android/systemui/util/NoRemeasureMotionLayout.kt
+@@ -20,7 +20,6 @@ import android.content.Context
+ import android.util.AttributeSet
+ import android.view.Choreographer
+ import androidx.constraintlayout.motion.widget.MotionLayout
+-import com.android.app.tracing.traceSection
+ 
+ /**
+  * [MotionLayout] that avoids remeasuring with the same inputs in the same frame.
+@@ -48,11 +47,9 @@ class NoRemeasureMotionLayout @JvmOverloads constructor(
+             setMeasuredDimension(measuredWidth, measuredHeight)
+             return
+         }
+-        traceSection("NoRemeasureMotionLayout - measure") {
+             super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+             lastWidthSpec = widthMeasureSpec
+             lastHeightSpec = heightMeasureSpec
+             lastFrame = Choreographer.getMainThreadInstance()?.frameTime
+-        }
+     }
+ }

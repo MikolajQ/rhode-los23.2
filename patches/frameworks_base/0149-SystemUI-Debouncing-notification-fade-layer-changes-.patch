@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sun, 12 Apr 2026 16:23:41 +0800
+Subject: [PATCH 149/226] SystemUI: Debouncing notification fade layer changes
+ during fling
+
+setNotificationFaded was cascading LAYER_TYPE_HARDWARE to 75-120 notification children per expansion cycle causing 600+ flush layer calls on renderthread. debounced layer type changes by 150ms so layers only apply after alpha stabilizes, skipping entirely during continuous fling animation
+
+Change-Id: Ib589f6989ccc11bf1dbe0698f593be632ac9a462
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../notification/stack/ViewState.java         | 21 +++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/stack/ViewState.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/stack/ViewState.java
+index 1e04d947f7..8006657eb9 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/stack/ViewState.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/stack/ViewState.java
+@@ -25,6 +25,8 @@ import android.animation.AnimatorListenerAdapter;
+ import android.animation.ObjectAnimator;
+ import android.animation.PropertyValuesHolder;
+ import android.animation.ValueAnimator;
++import android.os.Handler;
++import android.os.Looper;
+ import android.util.Log;
+ import android.util.Property;
+ import android.view.View;
+@@ -48,6 +50,8 @@ import kotlin.Unit;
+ import kotlin.jvm.functions.Function1;
+ 
+ import java.io.PrintWriter;
++import java.util.Map;
++import java.util.WeakHashMap;
+ import java.lang.reflect.Field;
+ import java.lang.reflect.Modifier;
+ 
+@@ -58,6 +62,19 @@ import java.lang.reflect.Modifier;
+  */
+ public class ViewState implements Dumpable {
+ 
++    private static final Handler sLayerHandler = new Handler(Looper.getMainLooper());
++    private static final long LAYER_DEBOUNCE_MS = 150;
++    private static final Map<View, Runnable> sPendingLayerChanges = new WeakHashMap<>();
++
++    private static void debouncedSetFaded(View view, Runnable action) {
++        Runnable prev = sPendingLayerChanges.get(view);
++        if (prev != null) {
++            sLayerHandler.removeCallbacks(prev);
++        }
++        sPendingLayerChanges.put(view, action);
++        sLayerHandler.postDelayed(action, LAYER_DEBOUNCE_MS);
++    }
++
+     public ViewState() {
+         this(physicalNotificationMovement());
+     }
+@@ -337,7 +354,7 @@ public class ViewState implements Dumpable {
+                 FadeOptimizedNotification fadeOptimizedView = (FadeOptimizedNotification) view;
+                 boolean isFaded = fadeOptimizedView.isNotificationFaded();
+                 if (isFaded != becomesFaded) {
+-                    fadeOptimizedView.setNotificationFaded(becomesFaded);
++                    debouncedSetFaded(view, () -> fadeOptimizedView.setNotificationFaded(becomesFaded));
+                 }
+             } else {
+                 boolean newLayerTypeIsHardware = becomesFaded && view.hasOverlappingRendering();
+@@ -345,7 +362,7 @@ public class ViewState implements Dumpable {
+                 int newLayerType =
+                         newLayerTypeIsHardware ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_NONE;
+                 if (layerType != newLayerType) {
+-                    view.setLayerType(newLayerType, null);
++                    debouncedSetFaded(view, () -> view.setLayerType(newLayerType, null));
+                 }
+             }
+ 

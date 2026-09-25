@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Tue, 21 Nov 2023 21:38:58 +0530
+Subject: [PATCH 222/226] CachedAppOptimizer: Set thread group to background
+
+* Pulled from CAF
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../core/java/com/android/server/am/ActivityManagerService.java  | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index 0e9c8aa406..e58fcd5ebb 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -5375,6 +5375,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+                             // Defer the full Pss collection as the system is really busy now.
+                             mHandler.postDelayed(() -> {
+                                 synchronized (mProcLock) {
++                                    mCachedAppOptimizer.compactAllSystem();
+                                     mAppProfiler.requestPssAllProcsLPr(
+                                             SystemClock.uptimeMillis(), true, false);
+                                 }

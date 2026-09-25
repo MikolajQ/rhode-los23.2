@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Mon, 23 Feb 2026 16:46:26 +0100
+Subject: [PATCH 136/226] Stop white balance spam
+
+Change-Id: Ie0fab35e22506e5a56e37a53343b7f2f5bfe213b
+---
+ .../display/color/DisplayWhiteBalanceTintController.java       | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/services/core/java/com/android/server/display/color/DisplayWhiteBalanceTintController.java b/services/core/java/com/android/server/display/color/DisplayWhiteBalanceTintController.java
+index 15bcf3b426..1d3d6ddedb 100644
+--- a/services/core/java/com/android/server/display/color/DisplayWhiteBalanceTintController.java
++++ b/services/core/java/com/android/server/display/color/DisplayWhiteBalanceTintController.java
+@@ -258,9 +258,6 @@ final class DisplayWhiteBalanceTintController extends ColorTemperatureTintContro
+                 computeMatrixForCctLocked(cct);
+             }
+ 
+-            Slog.d(ColorDisplayService.TAG, "computeDisplayWhiteBalanceMatrix: cct =" + cct
+-                    + " matrix =" + matrixToString(mMatrixDisplayWhiteBalance, 16));
+-
+             return mMatrixDisplayWhiteBalance;
+         }
+     }

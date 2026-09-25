@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: luanzhuang <luanzhuang@xiaomi.corp-partner.google.com>
+Date: Thu, 14 May 2026 14:38:50 +0800
+Subject: [PATCH 176/226] AMS appDiedLocked killProcessQuiet is vulnerable to
+ PID reuse race, can SIGKILL Zygote/system_server.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ActivityManagerService.appDiedLocked() calls killProcessQuiet(pid) to clean up a process that AMS believes has died. Between AMS detecting the death (via Binder) and actually issuing the kill, there is a window in which the kernel can free and reuse the original PID. When kill(pid, SIGKILL) is finally issued, the signal lands on whatever currently owns that PID — often a thread of Zygote or system_server — causing the wrong process to die.
+
+For details on the reason for the change, please refer to the issue.
+
+Test: atest
+Bug: 513038379
+Change-Id: Ic242cb2616fed0f865be6a8b650b49a58fa90de1
+Signed-off-by: luanzhuang <luanzhuang@xiaomi.corp-partner.google.com>
+---
+ core/java/android/os/Process.java             | 25 +++++++++++
+ core/jni/android_util_Process.cpp             | 43 +++++++++++++++++++
+ .../server/am/ActivityManagerService.java     |  3 +-
+ 3 files changed, 70 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/os/Process.java b/core/java/android/os/Process.java
+index 793b05560d..cca05a2526 100644
+--- a/core/java/android/os/Process.java
++++ b/core/java/android/os/Process.java
+@@ -1519,6 +1519,31 @@ public class Process {
+         sendSignalQuiet(pid, SIGNAL_KILL);
+     }
+ 
++    /**
++     * @hide
++     * PID-reuse-safe variant of {@link #killProcessQuiet(int)} backed by
++     * pidfd_open + pidfd_send_signal. Pass {@code expectedUid < 0} to skip
++     * the uid check. Falls back to the legacy path on kernels without pidfd.
++     */
++    public static final void killProcessByPidfdQuiet(int pid, int expectedUid) {
++        if (pid <= 0) {
++            return;
++        }
++        if (supportsPidFd()) {
++            int rc = nativeKillProcessByPidfdQuiet(pid, SIGNAL_KILL, expectedUid);
++            if (rc >= 0) {
++                return;
++            }
++        }
++        // Fallback: re-check uid via /proc to avoid killing a recycled pid.
++        if (expectedUid >= 0 && getUidForPid(pid) != expectedUid) {
++            return;
++        }
++        sendSignalQuiet(pid, SIGNAL_KILL);
++    }
++
++    private static native int nativeKillProcessByPidfdQuiet(int pid, int signal, int expectedUid);
++
+     /**
+      * @hide
+      * Private impl for avoiding a log message...  DO NOT USE without doing
+diff --git a/core/jni/android_util_Process.cpp b/core/jni/android_util_Process.cpp
+index fe69dd9a21..62a7d0c83d 100644
+--- a/core/jni/android_util_Process.cpp
++++ b/core/jni/android_util_Process.cpp
+@@ -1337,6 +1337,47 @@ static jint android_os_Process_nativePidFdOpen(JNIEnv* env, jobject, jint pid, j
+     return fd;
+ }
+ 
++// Kill via pidfd to defeat PID-reuse races.
++// Returns: 0=delivered, 1=target gone, 2=uid mismatch (suppressed), -1=error.
++static jint android_os_Process_killProcessByPidfdQuiet(JNIEnv* /*env*/, jobject /*clazz*/,
++        jint pid, jint signal, jint expectedUid) {
++    if (pid <= 0) {
++        return -1;
++    }
++
++    int pfd = pidfd_open(pid, 0);
++    if (pfd < 0) {
++        if (errno == ESRCH) return 1;
++        if (errno == ENOSYS) {
++            ALOGW("pidfd_open(%d) ENOSYS, kernel too old for pidfd guard", pid);
++            return -1;
++        }
++        ALOGW("pidfd_open(%d) failed: %s", pid, strerror(errno));
++        return -1;
++    }
++
++    if (expectedUid >= 0) {
++        const int actualUid = uid_from_pid(pid);
++        if (actualUid != expectedUid) {
++            ALOGW("Skip kill: pid %d uid mismatch, expected=%d actual=%d (likely pid reuse)",
++                    pid, expectedUid, actualUid);
++            close(pfd);
++            return 2;
++        }
++    }
++
++    int rc = pidfd_send_signal(pfd, signal, nullptr, 0);
++    int saved_errno = errno;
++    close(pfd);
++
++    if (rc == 0) return 0;
++    if (saved_errno == ESRCH) return 1;
++    ALOGW("pidfd_send_signal(pid=%d, sig=%d) failed: %s",
++            pid, signal, strerror(saved_errno));
++    errno = saved_errno;
++    return -1;
++}
++
+ void android_os_Process_freezeCgroupUID(JNIEnv* env, jobject clazz, jint uid, jboolean freeze) {
+     if (uid < 0) {
+         jniThrowExceptionFmt(env, "java/lang/IllegalArgumentException", "uid is negative: %d", uid);
+@@ -1403,6 +1444,8 @@ static const JNINativeMethod methods[] = {
+         {"sendSignalToProcessGroup", "(III)Z", (void*)android_os_Process_sendSignalToProcessGroup},
+         {"removeAllProcessGroups", "()V", (void*)android_os_Process_removeAllProcessGroups},
+         {"nativePidFdOpen", "(II)I", (void*)android_os_Process_nativePidFdOpen},
++        {"nativeKillProcessByPidfdQuiet", "(III)I",
++         (void*)android_os_Process_killProcessByPidfdQuiet},
+         {"freezeCgroupUid", "(IZ)V", (void*)android_os_Process_freezeCgroupUID},
+ };
+ 
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index 90824cde09..0e9c8aa406 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -3477,7 +3477,8 @@ public class ActivityManagerService extends IActivityManager.Stub
+ 
+         if (!app.isKilled()) {
+             if (!fromBinderDied) {
+-                killProcessQuiet(pid);
++                // killProcessQuiet(pid);
++                Process.killProcessByPidfdQuiet(pid, app.info.uid);
+                 mProcessList.noteAppKill(app, ApplicationExitInfo.REASON_OTHER,
+                         ApplicationExitInfo.SUBREASON_UNKNOWN, reason);
+             }

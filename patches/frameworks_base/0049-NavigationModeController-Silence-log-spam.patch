@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: tejasvp25 <tejasvp25@gmail.com>
+Date: Mon, 3 Jan 2022 07:14:11 +0000
+Subject: [PATCH 049/226] NavigationModeController: Silence log spam
+
+---
+ .../navigationbar/NavigationModeController.java       | 11 -----------
+ 1 file changed, 11 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java b/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java
+index 99daf368c8..cf66e1596e 100644
+--- a/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java
++++ b/packages/SystemUI/src/com/android/systemui/navigationbar/NavigationModeController.java
+@@ -140,7 +140,6 @@ public class NavigationModeController implements Dumpable {
+                     Secure.NAVIGATION_MODE, String.valueOf(mode)));
+         if (DEBUG) {
+             Log.d(TAG, "updateCurrentInteractionMode: mode=" + mode);
+-            dumpAssetPaths(mCurrentUserContext);
+         }
+ 
+         if (notify) {
+@@ -205,15 +204,5 @@ public class NavigationModeController implements Dumpable {
+             defaultOverlays = "failed_to_fetch";
+         }
+         pw.println("  defaultOverlays=" + defaultOverlays);
+-        dumpAssetPaths(mCurrentUserContext);
+-    }
+-
+-    private void dumpAssetPaths(Context context) {
+-        Log.d(TAG, "  contextUser=" + mCurrentUserContext.getUserId());
+-        Log.d(TAG, "  assetPaths=");
+-        ApkAssets[] assets = context.getResources().getAssets().getApkAssets();
+-        for (ApkAssets a : assets) {
+-            Log.d(TAG, "    " + a.getDebugName());
+-        }
+     }
+ }

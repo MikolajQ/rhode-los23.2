@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Fri, 24 Jan 2025 23:42:01 +0200
+Subject: [PATCH 03/23] gen_build_prop: Set appcompat value of
+ ro.boot.verifiedbootstate to green on non-eng builds
+
+* at least one app (Revolut) refuses to work with yellow verifiedbootstate
+
+[Terminator-J]: Make it apply to both user & userdebug
+
+Reference: https://github.com/GrapheneOS/platform_build_soong/commit/66530edfaf7bb334cbc55a2cb7777fc06008db96
+---
+ scripts/gen_build_prop.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
+index 5790e783..560e9611 100644
+--- a/scripts/gen_build_prop.py
++++ b/scripts/gen_build_prop.py
+@@ -363,6 +363,8 @@ def append_additional_system_props(args):
+     # Target is secure in user builds.
+     props.append("ro.secure=1")
+     props.append("security.perf_harden=1")
++    # at least one app (Revolut) refuses to work with yellow verifiedbootstate
++    props.append("ro.appcompat_override.ro.boot.verifiedbootstate=green")
+ 
+     if config["BuildVariant"] == "user":
+       # Disable debugging in plain user builds.

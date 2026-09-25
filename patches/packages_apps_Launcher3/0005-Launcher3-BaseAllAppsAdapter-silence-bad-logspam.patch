@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Wed, 25 Feb 2026 14:29:29 -0500
+Subject: [PATCH 05/13] Launcher3: BaseAllAppsAdapter: silence bad logspam
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ src/com/android/launcher3/allapps/BaseAllAppsAdapter.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/com/android/launcher3/allapps/BaseAllAppsAdapter.java b/src/com/android/launcher3/allapps/BaseAllAppsAdapter.java
+index 3cb3be101..65b6a9817 100644
+--- a/src/com/android/launcher3/allapps/BaseAllAppsAdapter.java
++++ b/src/com/android/launcher3/allapps/BaseAllAppsAdapter.java
+@@ -280,6 +280,7 @@ public abstract class BaseAllAppsAdapter
+                                     privateProfileManager.getReadyToAnimate())
+                                 && privateProfileManager.getCurrentState() == STATE_ENABLED
+                                 ? 0 : 1);
++			/*
+                         Log.d(TAG, "onBindViewHolder: "
+                                 + "isPrivateSpaceItem: " + isPrivateSpaceItem
+                         + " isStateTransitioning: " + privateProfileManager.isStateTransitioning()
+@@ -287,6 +288,7 @@ public abstract class BaseAllAppsAdapter
+                         + " readyToAnimate: " + privateProfileManager.getReadyToAnimate()
+                         + " currentState: " + privateProfileManager.getCurrentState()
+                         + " currentAlpha: " + icon.getAlpha());
++			*/
+                     }
+                     // Views can still be bounded before the app list is updated hence showing icons
+                     // after collapsing.

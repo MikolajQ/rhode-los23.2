@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: beanstown106 <nbenis106@gmail.com>
+Date: Sun, 26 Jan 2025 02:55:18 +0800
+Subject: [PATCH 23/23] gen_build_prop: Disable Dalvik lock contention logging
+ as it isnt needed
+
+Change-Id: Ie2df691de4cfe7de229f32994fad50db9f1781a1
+---
+ scripts/gen_build_prop.py | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
+index 85685977..14dbac23 100644
+--- a/scripts/gen_build_prop.py
++++ b/scripts/gen_build_prop.py
+@@ -386,10 +386,6 @@ def append_additional_system_props(args):
+     # Allow mock locations by default for non user builds
+     props.append("ro.allow.mock.location=1")
+ 
+-  if enable_dalvik_lock_contention_logging:
+-    # Enable Dalvik lock contention logging.
+-    props.append("dalvik.vm.lockprof.threshold=500")
+-
+   if enable_target_debugging:
+     # Target is more debuggable and adbd is on by default
+     props.append("ro.debuggable=1")

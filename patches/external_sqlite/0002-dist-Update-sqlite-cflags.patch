@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Fri, 9 Feb 2024 23:07:07 +0800
+Subject: [PATCH 2/3] dist: Update sqlite cflags
+
+Always set HAVE_POSIX_FALLOCATE=1, it is present on all supported
+platforms (glibc, musl and bionic).
+
+Set SQLITE_ENABLE_DBSTAT_VTAB=1 and SQLITE_ENABLE_ICU=1, etc. instead
+of just defining SQLITE_ENABLE_DBSTAT_VTAB and SQLITE_ENABLE_ICU.
+sqlite uses a mixture of #if and #if defined on most of the configuration
+variables, and defining them without setting them to atrue value is
+treating them as partially enabled.
+
+This reapplies Ibf648e7cedf27912dc4b025eebcb8c02a3daf1cd with a fix for mac builds.
+
+Bug: 223257095
+Change-Id: I4c6df2e9bb65773d3a33ab89956ca8fca072a3dd
+Test: atest SQLiteSecurityTest
+Test: forrest mac build
+---
+ dist/Android.bp | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/dist/Android.bp b/dist/Android.bp
+index 88fb337..651ccd8 100644
+--- a/dist/Android.bp
++++ b/dist/Android.bp
+@@ -50,27 +50,27 @@ cc_defaults {
+     cflags: [
+         "-DNDEBUG=1",
+         "-DHAVE_USLEEP=1",
+-        "-DSQLITE_HAVE_ISNAN",
++        "-DSQLITE_HAVE_ISNAN=1",
+         "-DSQLITE_DEFAULT_JOURNAL_SIZE_LIMIT=1048576",
+         "-DSQLITE_THREADSAFE=2",
+         "-DSQLITE_TEMP_STORE=3",
+         "-DSQLITE_POWERSAFE_OVERWRITE=1",
+         "-DSQLITE_DEFAULT_FILE_FORMAT=4",
+         "-DSQLITE_DEFAULT_AUTOVACUUM=1",
+-        "-DSQLITE_ENABLE_DBSTAT_VTAB",
++        "-DSQLITE_ENABLE_DBSTAT_VTAB=1",
+         "-DSQLITE_ENABLE_MEMORY_MANAGEMENT=1",
+-        "-DSQLITE_ENABLE_FTS3",
+-        "-DSQLITE_ENABLE_FTS3_BACKWARDS",
+-        "-DSQLITE_ENABLE_FTS4",
+-        "-DSQLITE_OMIT_BUILTIN_TEST",
+-        "-DSQLITE_OMIT_COMPILEOPTION_DIAGS",
+-        "-DSQLITE_OMIT_LOAD_EXTENSION",
++        "-DSQLITE_ENABLE_FTS3=1",
++        "-DSQLITE_ENABLE_FTS3_BACKWARDS=1",
++        "-DSQLITE_ENABLE_FTS4=1",
++        "-DSQLITE_OMIT_BUILTIN_TEST=1",
++        "-DSQLITE_OMIT_COMPILEOPTION_DIAGS=1",
++        "-DSQLITE_OMIT_LOAD_EXTENSION=1",
+         "-DSQLITE_DEFAULT_FILE_PERMISSIONS=0600",
+-        "-DSQLITE_SECURE_DELETE",
+-        "-DSQLITE_ENABLE_BATCH_ATOMIC_WRITE",
++        "-DSQLITE_SECURE_DELETE=1",
++        "-DSQLITE_ENABLE_BATCH_ATOMIC_WRITE=1",
+         "-DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD",
+-        "-DSQLITE_DEFAULT_LEGACY_ALTER_TABLE",
+         "-DSQLITE_ALLOW_ROWID_IN_VIEW",
++        "-DSQLITE_DEFAULT_LEGACY_ALTER_TABLE=1",
+         "-DSQLITE_ENABLE_BYTECODE_VTAB",
+         "-Wno-unused-parameter",
+         "-Werror",
+@@ -92,7 +92,7 @@ cc_defaults {
+     target: {
+         android: {
+             cflags: [
+-                "-DUSE_PREAD64",
++                "-DUSE_PREAD64=1",
+                 "-Dfdatasync=fdatasync",
+                 "-DHAVE_MALLOC_H=1",
+             ],
+@@ -156,7 +156,7 @@ cc_library {
+                 "liblog",
+                 "libandroidicu",
+             ],
+-            cflags: ["-DSQLITE_ENABLE_ICU"],
++            cflags: ["-DSQLITE_ENABLE_ICU=1"],
+ 
+             // include android specific methods
+             whole_static_libs: ["libsqlite3_android"],

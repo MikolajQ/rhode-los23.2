@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 9 May 2025 01:59:07 +0800
+Subject: [PATCH 197/226] TelephonyUtils: Disable debug
+
+Change-Id: I2d0f3c5c0c66f4d6c2a0be30507acdd3fcd9b323
+---
+ .../com/android/internal/telephony/util/TelephonyUtils.java   | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/telephony/common/com/android/internal/telephony/util/TelephonyUtils.java b/telephony/common/com/android/internal/telephony/util/TelephonyUtils.java
+index 4224338918..ea9dfc1ac0 100644
+--- a/telephony/common/com/android/internal/telephony/util/TelephonyUtils.java
++++ b/telephony/common/com/android/internal/telephony/util/TelephonyUtils.java
+@@ -61,8 +61,8 @@ public final class TelephonyUtils {
+     private static final String LOG_TAG = "TelephonyUtils";
+ 
+     public static final boolean FORCE_VERBOSE_STATE_LOGGING = false; /* stopship if true */
+-    public static boolean IS_USER = "user".equals(android.os.Build.TYPE);
+-    public static boolean IS_DEBUGGABLE = SystemProperties.getInt("ro.debuggable", 0) == 1;
++    public static boolean IS_USER = true;
++    public static boolean IS_DEBUGGABLE = false;
+ 
+     public static final Executor DIRECT_EXECUTOR = Runnable::run;
+ 

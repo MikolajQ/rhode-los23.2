@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Tue, 28 Oct 2025 07:42:00 +0800
+Subject: [PATCH 05/42] increasing dalvik heap growth limit for 6gb+ targets
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+power apps that shows a lot of bitmaps needs more heap memory in order to avoid out of memory errors. The tuning is based on Qualcomm’s approach, where a script checks the display’s framebuffer width (fb_width) and assigns fixed vendor LCD density values. In their setup, a density of 640 usually maps to a 512MB heap growth limit. They combine this with custom Dalvik tuning. On newer Android versions, Qualcomm uses the default AOSP 6GB Dalvik config together with their LCD density–based tuning.
+
+Change-Id: I5bbca25363edffbc87105d2c83295fe8aceac0f7
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+---
+ build/phone-xhdpi-6144-dalvik-heap.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build/phone-xhdpi-6144-dalvik-heap.mk b/build/phone-xhdpi-6144-dalvik-heap.mk
+index f08830b..8d3e80d 100644
+--- a/build/phone-xhdpi-6144-dalvik-heap.mk
++++ b/build/phone-xhdpi-6144-dalvik-heap.mk
+@@ -18,7 +18,7 @@
+ 
+ PRODUCT_VENDOR_PROPERTIES += \
+     dalvik.vm.heapstartsize?=16m \
+-    dalvik.vm.heapgrowthlimit?=256m \
++    dalvik.vm.heapgrowthlimit?=384m \
+     dalvik.vm.heapsize?=512m \
+     dalvik.vm.heaptargetutilization?=0.5 \
+     dalvik.vm.heapminfree?=8m \

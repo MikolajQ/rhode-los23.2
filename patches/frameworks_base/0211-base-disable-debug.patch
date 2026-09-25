@@ -1,0 +1,162 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheHardGamer <gamelovr695@gmail.com>
+Date: Wed, 21 Dec 2022 11:04:16 +0530
+Subject: [PATCH 211/226] base: disable debug
+
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java    | 2 +-
+ .../src/com/android/systemui/shared/clocks/ClockRegistry.kt     | 1 +
+ .../controls/controller/ControlsProviderLifecycleManager.kt     | 2 +-
+ .../media/controls/domain/pipeline/LegacyMediaDataFilterImpl.kt | 2 +-
+ .../media/controls/domain/pipeline/MediaDeviceManager.kt        | 2 +-
+ .../com/android/systemui/qs/external/TileServiceManager.java    | 2 +-
+ .../progress/PhysicsBasedUnfoldTransitionProgressProvider.kt    | 2 +-
+ .../java/com/android/server/appwidget/AppWidgetServiceImpl.java | 2 +-
+ .../core/java/com/android/server/am/UserSwitchingDialog.java    | 2 +-
+ .../android/server/location/contexthub/NanoAppStateManager.java | 2 +-
+ .../android/server/notification/ScheduleConditionProvider.java  | 2 +-
+ 11 files changed, 11 insertions(+), 10 deletions(-)
+
+diff --git a/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java b/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java
+index cc3306c79d..472f370523 100644
+--- a/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java
++++ b/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java
+@@ -37,7 +37,7 @@ import com.android.soundpooltest.R;
+ public class SoundPoolTest extends Activity
+ {
+     private static final String LOG_TAG = "SoundPoolTest";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean VERBOSE = false;
+     private TestThread mThread;
+ 
+diff --git a/packages/SystemUI/customization/src/com/android/systemui/shared/clocks/ClockRegistry.kt b/packages/SystemUI/customization/src/com/android/systemui/shared/clocks/ClockRegistry.kt
+index a490ad21f1..263bd9040d 100644
+--- a/packages/SystemUI/customization/src/com/android/systemui/shared/clocks/ClockRegistry.kt
++++ b/packages/SystemUI/customization/src/com/android/systemui/shared/clocks/ClockRegistry.kt
+@@ -52,6 +52,7 @@ import kotlinx.coroutines.launch
+ import kotlinx.coroutines.withContext
+ import org.json.JSONObject
+ 
++private const val DEBUG = false
+ private val KEY_TIMESTAMP = "appliedTimestamp"
+ private val KNOWN_PLUGINS =
+     mapOf<String, List<ClockMetadata>>(
+diff --git a/packages/SystemUI/src/com/android/systemui/controls/controller/ControlsProviderLifecycleManager.kt b/packages/SystemUI/src/com/android/systemui/controls/controller/ControlsProviderLifecycleManager.kt
+index cb2476ce0e..d4b6405964 100644
+--- a/packages/SystemUI/src/com/android/systemui/controls/controller/ControlsProviderLifecycleManager.kt
++++ b/packages/SystemUI/src/com/android/systemui/controls/controller/ControlsProviderLifecycleManager.kt
+@@ -79,7 +79,7 @@ class ControlsProviderLifecycleManager(
+ 
+     companion object {
+         private const val LOAD_TIMEOUT_SECONDS = 20L // seconds
+-        private const val DEBUG = true
++        private const val DEBUG = false
+         private val BIND_FLAGS = Context.BIND_AUTO_CREATE or Context.BIND_FOREGROUND_SERVICE or
+             Context.BIND_NOT_PERCEPTIBLE
+         // Use BIND_NOT_PERCEPTIBLE so it will be at lower priority from SystemUI.
+diff --git a/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/LegacyMediaDataFilterImpl.kt b/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/LegacyMediaDataFilterImpl.kt
+index 945e5557ca..6df7ecb0e1 100644
+--- a/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/LegacyMediaDataFilterImpl.kt
++++ b/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/LegacyMediaDataFilterImpl.kt
+@@ -30,7 +30,7 @@ import javax.inject.Inject
+ import kotlin.collections.LinkedHashMap
+ 
+ private const val TAG = "MediaDataFilter"
+-private const val DEBUG = true
++private const val DEBUG = false
+ 
+ /**
+  * Filters data updates from [MediaDataCombineLatest] based on the current user ID, and handles user
+diff --git a/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDeviceManager.kt b/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDeviceManager.kt
+index d971d1065f..9c2c464dc4 100644
+--- a/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDeviceManager.kt
++++ b/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDeviceManager.kt
+@@ -59,7 +59,7 @@ import javax.inject.Inject
+ 
+ private const val PLAYBACK_TYPE_UNKNOWN = 0
+ private const val TAG = "MediaDeviceManager"
+-private const val DEBUG = true
++private const val DEBUG = false
+ 
+ /** Provides information about the route (ie. device) where playback is occurring. */
+ class MediaDeviceManager
+diff --git a/packages/SystemUI/src/com/android/systemui/qs/external/TileServiceManager.java b/packages/SystemUI/src/com/android/systemui/qs/external/TileServiceManager.java
+index 78743db064..363c3328ed 100644
+--- a/packages/SystemUI/src/com/android/systemui/qs/external/TileServiceManager.java
++++ b/packages/SystemUI/src/com/android/systemui/qs/external/TileServiceManager.java
+@@ -49,7 +49,7 @@ public class TileServiceManager {
+     private static final long MIN_BIND_TIME = 5000;
+     private static final long UNBIND_DELAY = 30000;
+ 
+-    public static final boolean DEBUG = true;
++    public static final boolean DEBUG = false;
+ 
+     private static final String TAG = "TileServiceManager";
+ 
+diff --git a/packages/SystemUI/unfold/src/com/android/systemui/unfold/progress/PhysicsBasedUnfoldTransitionProgressProvider.kt b/packages/SystemUI/unfold/src/com/android/systemui/unfold/progress/PhysicsBasedUnfoldTransitionProgressProvider.kt
+index 907bf46fb9..4b4dd38689 100644
+--- a/packages/SystemUI/unfold/src/com/android/systemui/unfold/progress/PhysicsBasedUnfoldTransitionProgressProvider.kt
++++ b/packages/SystemUI/unfold/src/com/android/systemui/unfold/progress/PhysicsBasedUnfoldTransitionProgressProvider.kt
+@@ -320,7 +320,7 @@ constructor(
+ }
+ 
+ private const val TAG = "PhysicsBasedUnfoldTransitionProgressProvider"
+-private const val DEBUG = true
++private const val DEBUG = false
+ 
+ private const val USE_CANNED_ANIMATION = true
+ private const val CANNED_ANIMATION_DURATION_MS = 1000
+diff --git a/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java b/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java
+index 03c8114090..99a514c24b 100644
+--- a/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java
++++ b/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java
+@@ -6755,7 +6755,7 @@ class AppWidgetServiceImpl extends IAppWidgetService.Stub implements WidgetBacku
+     final class BackupRestoreController {
+         private static final String TAG = "BackupRestoreController";
+ 
+-        private static final boolean DEBUG = AppWidgetServiceImpl.DEBUG;
++        private static final boolean DEBUG = false;
+ 
+         // Version of backed-up widget state.
+         private static final int WIDGET_STATE_VERSION = 2;
+diff --git a/services/core/java/com/android/server/am/UserSwitchingDialog.java b/services/core/java/com/android/server/am/UserSwitchingDialog.java
+index 5b018ad002..ca073cfcc2 100644
+--- a/services/core/java/com/android/server/am/UserSwitchingDialog.java
++++ b/services/core/java/com/android/server/am/UserSwitchingDialog.java
+@@ -68,7 +68,7 @@ class UserSwitchingDialog extends Dialog {
+ 
+     // User switching doesn't happen that frequently, so it doesn't hurt to have it always on
+     @SuppressWarnings("DebugTrue")
+-    protected static final boolean DEBUG = true;
++    protected static final boolean DEBUG = false;
+ 
+     private static final long DIALOG_SHOW_HIDE_ANIMATION_DURATION_MS = 300;
+     private final boolean mDisableAnimations;
+diff --git a/services/core/java/com/android/server/location/contexthub/NanoAppStateManager.java b/services/core/java/com/android/server/location/contexthub/NanoAppStateManager.java
+index b6d5496ca5..d2ac454b85 100644
+--- a/services/core/java/com/android/server/location/contexthub/NanoAppStateManager.java
++++ b/services/core/java/com/android/server/location/contexthub/NanoAppStateManager.java
+@@ -46,7 +46,7 @@ import java.util.function.Consumer;
+     /*
+      * Enables verbose debug logs for this class.
+      */
+-    private static final boolean ENABLE_LOG_DEBUG = true;
++    private static final boolean ENABLE_LOG_DEBUG = false;
+ 
+     /*
+      * Service cache maintaining of handle to nanoapp infos.
+diff --git a/services/core/java/com/android/server/notification/ScheduleConditionProvider.java b/services/core/java/com/android/server/notification/ScheduleConditionProvider.java
+index e704da7349..20e2a2dcac 100644
+--- a/services/core/java/com/android/server/notification/ScheduleConditionProvider.java
++++ b/services/core/java/com/android/server/notification/ScheduleConditionProvider.java
+@@ -52,7 +52,7 @@ import java.util.List;
+  */
+ public class ScheduleConditionProvider extends SystemConditionProviderService {
+     static final String TAG = "ConditionProviders.SCP";
+-    static final boolean DEBUG = true || Log.isLoggable("ConditionProviders", Log.DEBUG);
++    static final boolean DEBUG = false || Log.isLoggable("ConditionProviders", Log.DEBUG);
+ 
+     private static final String NOT_SHOWN = "...";
+     private static final String SIMPLE_NAME = ScheduleConditionProvider.class.getSimpleName();

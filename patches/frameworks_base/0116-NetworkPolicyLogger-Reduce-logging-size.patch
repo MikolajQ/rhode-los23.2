@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Fri, 1 Nov 2024 13:17:07 +0800
+Subject: [PATCH 116/226] NetworkPolicyLogger: Reduce logging size
+
+---
+ .../java/com/android/server/net/NetworkPolicyLogger.java    | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/services/core/java/com/android/server/net/NetworkPolicyLogger.java b/services/core/java/com/android/server/net/NetworkPolicyLogger.java
+index 681aa8aef2..a30008971c 100644
+--- a/services/core/java/com/android/server/net/NetworkPolicyLogger.java
++++ b/services/core/java/com/android/server/net/NetworkPolicyLogger.java
+@@ -66,10 +66,8 @@ public class NetworkPolicyLogger {
+     static final boolean LOGD = Log.isLoggable(TAG, Log.DEBUG);
+     static final boolean LOGV = Log.isLoggable(TAG, Log.VERBOSE);
+ 
+-    private static final int MAX_LOG_SIZE =
+-            ActivityManager.isLowRamDeviceStatic() ? 100 : 400;
+-    private static final int MAX_NETWORK_BLOCKED_LOG_SIZE =
+-            ActivityManager.isLowRamDeviceStatic() ? 100 : 400;
++    private static final int MAX_LOG_SIZE = 100;
++    private static final int MAX_NETWORK_BLOCKED_LOG_SIZE = 100;
+ 
+     private static final int EVENT_TYPE_GENERIC = 0;
+     private static final int EVENT_NETWORK_BLOCKED = 1;

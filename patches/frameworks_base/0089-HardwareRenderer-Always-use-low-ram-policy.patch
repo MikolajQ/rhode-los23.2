@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Wed, 15 Jan 2025 08:50:09 +0800
+Subject: [PATCH 089/226] HardwareRenderer: Always use low ram policy
+
+---
+ graphics/java/android/graphics/HardwareRenderer.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/graphics/java/android/graphics/HardwareRenderer.java b/graphics/java/android/graphics/HardwareRenderer.java
+index 2ad64817d6..768d1ad028 100644
+--- a/graphics/java/android/graphics/HardwareRenderer.java
++++ b/graphics/java/android/graphics/HardwareRenderer.java
+@@ -1460,7 +1460,7 @@ public class HardwareRenderer {
+             initDisplayInfo();
+ 
+             nSetIsHighEndGfx(ActivityManager.isHighEndGfx());
+-            nSetIsLowRam(ActivityManager.isLowRamDeviceStatic());
++            nSetIsLowRam(true);
+             // Defensively clear out the context in case we were passed a context that can leak
+             // if we live longer than it, e.g. an activity context.
+             mContext = null;

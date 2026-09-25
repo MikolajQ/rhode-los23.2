@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "nanxuan.liu" <nanxuan.liu@mediatek.com>
+Date: Mon, 12 Jan 2026 17:48:34 +0800
+Subject: [PATCH 04/42] Add check to prevent duplicate device registration
+
+[Description]
+Duplicate device registration can occur
+when the same input event node
+is noticed multiple times.
+
+[Root Cause]
+Occasionally, when resuming from Suspend to RAM,
+dumpsys input shows two identical Bluetooth devices.
+The path and MAC address are the same,
+but the Descriptor is different. Based on this information,
+it seems that the hasDeviceWithDescriptorLocked function
+has already performed a duplicate check.
+However, having two Bluetooth devices
+with the same MAC address is problematic,
+
+[Solution]
+so it's better to perform the duplicate check directly in openDeviceLocked to avoid this issue.
+
+Change-Id: If0ecd823394eb3287f1b29efa1e6f144bf1bacad
+---
+ services/inputflinger/reader/EventHub.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/services/inputflinger/reader/EventHub.cpp b/services/inputflinger/reader/EventHub.cpp
+index c6054e7..ed8d576 100644
+--- a/services/inputflinger/reader/EventHub.cpp
++++ b/services/inputflinger/reader/EventHub.cpp
+@@ -2336,6 +2336,12 @@ void EventHub::openDeviceLocked(const std::string& devicePath) {
+     // is possible that the same input event node (for example, /dev/input/event3) will be noticed
+     // in both 'inotify' callback and also in the 'scanDirLocked' pass. To prevent duplicate devices
+     // from getting registered, ensure that this path is not already covered by an existing device.
++    for (const auto& device : mOpeningDevices) {
++        if (device->path == devicePath) {
++            return; // device was already registered
++        }
++    }
++
+     for (const auto& [deviceId, device] : mDevices) {
+         if (device->path == devicePath) {
+             return; // device was already registered

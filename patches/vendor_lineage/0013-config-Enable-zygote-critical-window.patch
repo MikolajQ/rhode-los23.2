@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Woody Lin <woodylin@google.com>
+Date: Mon, 18 Nov 2024 11:39:30 +0800
+Subject: [PATCH 13/14] config: Enable zygote critical window
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Bug: 141948707
+Change-Id: I5dc57312118b0f6d95fc9fe164363ec7e15f1b51
+
+
+[MikolajQ: konflikt rozwiązany przy przenoszeniu na LineageOS lineage-23.2]
+---
+ config/common.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/config/common.mk b/config/common.mk
+index 5b94427..2669bf1 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -346,3 +346,7 @@ include vendor/lineage/config/version.mk
+ PRODUCT_VENDOR_PROPERTIES += \
+     ro.egl.blobcache.multifile=true \
+     ro.egl.blobcache.multifile_limit=33554432
++
++# Zygote
++PRODUCT_SYSTEM_EXT_PROPERTIES += \
++    zygote.critical_window.minute?=10

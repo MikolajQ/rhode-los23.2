@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Fri, 15 Sep 2023 10:16:29 +0000
+Subject: [PATCH 050/226] fwb: silence handwriting error spam
+
+E/HandwritingModeController(1258): Cannot get requestId: Handwriting was not initialized.
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../android/server/inputmethod/HandwritingModeController.java   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/inputmethod/HandwritingModeController.java b/services/core/java/com/android/server/inputmethod/HandwritingModeController.java
+index bc2121f0ed..9e086aec48 100644
+--- a/services/core/java/com/android/server/inputmethod/HandwritingModeController.java
++++ b/services/core/java/com/android/server/inputmethod/HandwritingModeController.java
+@@ -152,7 +152,7 @@ final class HandwritingModeController {
+ 
+     OptionalInt getCurrentRequestId() {
+         if (mHandwritingSurface == null) {
+-            Slog.e(TAG, "Cannot get requestId: Handwriting was not initialized.");
++            //Slog.e(TAG, "Cannot get requestId: Handwriting was not initialized.");
+             return OptionalInt.empty();
+         }
+         return OptionalInt.of(mCurrentRequestId);

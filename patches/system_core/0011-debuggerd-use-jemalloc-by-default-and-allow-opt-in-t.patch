@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Adithya R <gh0strider.2k18.reborn@gmail.com>
+Date: Sun, 2 Oct 2022 23:07:22 +0530
+Subject: [PATCH 11/19] debuggerd: use jemalloc by default and allow opt-in to
+ scudo (4/4)
+
+Since we have switched to jemalloc (bionic).
+
+Change-Id: Ie89f9a7be4e965abf346402084a2a2d032771d3e
+Signed-off-by: Gustavo Mendes <gusttavo.me@outlook.com>
+Signed-off-by: Juhyung Park <qkrwngud825@gmail.com>
+---
+ debuggerd/Android.bp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/debuggerd/Android.bp b/debuggerd/Android.bp
+index fe2b055..99ba58c 100644
+--- a/debuggerd/Android.bp
++++ b/debuggerd/Android.bp
+@@ -324,6 +324,11 @@ cc_library_static {
+             cflags: ["-UUSE_SCUDO"],
+             exclude_static_libs: ["libscudo"],
+         },
++
++        malloc_use_jemalloc: {
++            cflags: ["-UUSE_SCUDO"],
++            exclude_static_libs: ["libscudo"],
++        },
+     },
+     apex_available: [
+         "com.android.runtime",

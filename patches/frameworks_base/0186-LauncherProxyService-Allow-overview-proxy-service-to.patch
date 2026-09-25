@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 9 May 2025 19:41:17 +0800
+Subject: [PATCH 186/226] LauncherProxyService: Allow overview proxy service to
+ rebind faster
+
+high backoff time prevents launcher from binding overview service when it crashes. if there are more than four attempts the timeout drastically increases which is unacceptable
+e.g if there are four attempts
+
+the attempt backoff will be
+
+1000 -> 2000 -> 3000 -> 4000ms.
+
+this wastes 10000ms just to rebind the service
+
+Change-Id: Ifac3054d3bd983fedeedb1d4efae12cdca718b8b
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+---
+ .../SystemUI/src/com/android/systemui/LauncherProxyService.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/LauncherProxyService.java b/packages/SystemUI/src/com/android/systemui/LauncherProxyService.java
+index f0b13820de..6a61976dcf 100644
+--- a/packages/SystemUI/src/com/android/systemui/LauncherProxyService.java
++++ b/packages/SystemUI/src/com/android/systemui/LauncherProxyService.java
+@@ -160,7 +160,7 @@ public class LauncherProxyService implements CallbackController<LauncherProxyLis
+     static final String ACTION_QUICKSTEP = "android.intent.action.QUICKSTEP_SERVICE";
+ 
+     public static final String TAG_OPS = "LauncherProxyService";
+-    private static final long BACKOFF_MILLIS = 1000;
++    private static final long BACKOFF_MILLIS = 100;
+     private static final long DEFERRED_CALLBACK_MILLIS = 5000;
+     // Max backoff caps at 5 mins
+     private static final long MAX_BACKOFF_MILLIS = 10 * 60 * 1000;

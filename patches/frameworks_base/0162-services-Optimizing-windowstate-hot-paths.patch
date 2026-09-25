@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 May 2026 06:11:59 +0800
+Subject: [PATCH 162/226] services: Optimizing windowstate hot paths
+
+Change-Id: I8666eead41a04afb9f2efcea22ee5ac7919c5c24
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../java/com/android/server/wm/WindowState.java     | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/wm/WindowState.java b/services/core/java/com/android/server/wm/WindowState.java
+index e1e0f23693..3880935546 100644
+--- a/services/core/java/com/android/server/wm/WindowState.java
++++ b/services/core/java/com/android/server/wm/WindowState.java
+@@ -2190,7 +2190,10 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+         if (task != null && !task.fillsParent()) {
+             return false;
+         }
+-        return isOpaqueDrawn() && fillsDisplay();
++        if (!fillsDisplay()) {
++            return false;
++        }
++        return isOpaqueDrawn();
+     }
+ 
+     boolean fillsDisplay() {
+@@ -5289,6 +5292,14 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+             // up-to-date and thus can't be relied on.
+             return;
+         }
++        if (!mSurfacePlacementNeeded && !mIsChildWindow && mXOffset == 0 && mYOffset == 0
++                && mWallpaperScale == 1f && mSurfaceTranslationY == 0
++                && mWindowFrames.mRelFrame.top == mWindowFrames.mLastRelFrame.top
++                && mWindowFrames.mRelFrame.left == mWindowFrames.mLastRelFrame.left
++                && mLastSurfaceInsets.equals(mAttrs.surfaceInsets)
++                && mLastSurfacePosition.equals(mSurfacePosition)) {
++            return;
++        }
+ 
+         mSurfacePlacementNeeded = false;
+         transformFrameToSurfacePosition(mWindowFrames.mFrame.left, mWindowFrames.mFrame.top,

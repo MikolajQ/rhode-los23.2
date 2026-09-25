@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yi Kong <yikong@google.com>
+Date: Tue, 21 Nov 2023 14:31:02 +0900
+Subject: [PATCH 24/34] Re-enable LTO for libm
+
+The build breakage is now fixed by the current stable Clang, workaround
+is no longer needed.
+
+Test: presubmit
+Change-Id: I1bf6081c97fba54e5f21951b20cd4fd6dd152143
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libm/Android.bp | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/libm/Android.bp b/libm/Android.bp
+index 040606b..a406b18 100644
+--- a/libm/Android.bp
++++ b/libm/Android.bp
+@@ -469,10 +469,6 @@ cc_defaults {
+     apex_available: [
+         "com.android.runtime",
+     ],
+-
+-    lto: {
+-        never: true,
+-    },
+ }
+ 
+ cc_library {

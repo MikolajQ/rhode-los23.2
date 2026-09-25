@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Wed, 6 May 2026 12:22:26 +0800
+Subject: [PATCH 174/226] services: Skipping atom stats pulling on none eng
+ builds
+
+simpleperf shows that onPullAtom burns up to 22% cpu. skip the stats pull
+
+22.62%    0.00%  binder:1505_13   5428  __start_thread
+         |
+         -- __start_thread
+            |
+             -- __pthread_start(void*) (.__uniq.67847048707805468364044055584648682506)
+                 |
+                 |--98.45%-- android::IPCThreadState::executeCommand(int)
+                 |    |--0.26%-- [hit in function]
+                 |    |
+                 |    |--87.29%-- JavaBBinder::onTransact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int)
+                 |    |    |
+                 |    |     --97.74%-- art::JValue art::InvokeVirtualOrInterfaceWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+                 |    |         |
+                 |    |          --99.96%-- art_quick_invoke_stub
+                 |    |                     android.os.Binder.execTransact
+                 |    |                     android.os.Binder.execTransactInternal
+                 |    |              |
+                 |    |              |--82.14%-- android.os.IPullAtomCallback$Stub.onTransact
+                 |    |              |           NterpCommonInvokeInstance
+                 |    |              |           android.app.StatsManager$PullAtomCallbackInternal.onPullAtom
+                 |    |              |           NterpCommonInvokeInterface
+                 |    |              |           [DEDUPED] ?.execute
+                 |    |              |           android.app.StatsManager$PullAtomCallbackInternal$$ExternalSyntheticLambda0.run
+                 |    |              |           NterpCommonInvokeStatic
+                 |    |              |           android.app.StatsManager$PullAtomCallbackInternal.$r8$lambda$oIAiCNGFyxeWs0XtQyXXxYxjHhU
+
+Change-Id: I223988855b21e9877bca043315c1dad197664c1d
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ .../com/android/server/stats/pull/StatsPullAtomService.java    | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java b/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
+index 058b27c303..279581ce51 100644
+--- a/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
++++ b/services/core/java/com/android/server/stats/pull/StatsPullAtomService.java
+@@ -564,6 +564,9 @@ public class StatsPullAtomService extends SystemService {
+     private class StatsPullAtomCallbackImpl implements StatsManager.StatsPullAtomCallback {
+         @Override
+         public int onPullAtom(int atomTag, List<StatsEvent> data) {
++            if (!Build.IS_ENG) {
++                return StatsManager.PULL_SKIP;
++            }
+             if (Trace.isTagEnabled(Trace.TRACE_TAG_SYSTEM_SERVER)) {
+                 Trace.traceBegin(Trace.TRACE_TAG_SYSTEM_SERVER, "StatsPull-" + atomTag);
+             }

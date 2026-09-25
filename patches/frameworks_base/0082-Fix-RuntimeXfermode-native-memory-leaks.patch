@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: longyan xu <longyan.xu2@transsion.corp-partner.google.com>
+Date: Thu, 25 Dec 2025 19:01:50 -0800
+Subject: [PATCH 082/226] Fix RuntimeXfermode native memory leaks
+
+RuntimeXfermode's internal blender object ref count must be handled
+ correctly, sk_ref_sp will increment ref count, we should not
+ increment any ref count, if we pass it to paint,
+ then the paint will maintain the lifecycle of it.
+
+Bug: 471578330
+
+Test: new RuntimeXfermode object and set to paint and draw
+
+Change-Id: I2572ee7d929414ca2495d2875706ff10b383afc3
+---
+ libs/hwui/jni/Paint.cpp              | 4 +++-
+ libs/hwui/jni/RuntimeEffectUtils.cpp | 4 +++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/libs/hwui/jni/Paint.cpp b/libs/hwui/jni/Paint.cpp
+index f6fdec1c82..63b98606ee 100644
+--- a/libs/hwui/jni/Paint.cpp
++++ b/libs/hwui/jni/Paint.cpp
+@@ -920,7 +920,9 @@ namespace PaintGlue {
+                                    jlong xfermodeHandle) {
+         Paint* paint = reinterpret_cast<Paint*>(paintHandle);
+         SkBlender* blender = reinterpret_cast<SkBlender*>(xfermodeHandle);
+-        paint->setBlender(sk_ref_sp(blender));
++        sk_sp<SkBlender> blenderTemp = sk_ref_sp(blender);
++        blenderTemp->unref();
++        paint->setBlender(blenderTemp);
+     }
+ 
+     static jlong setPathEffect(CRITICAL_JNI_PARAMS_COMMA jlong objHandle, jlong effectHandle) {
+diff --git a/libs/hwui/jni/RuntimeEffectUtils.cpp b/libs/hwui/jni/RuntimeEffectUtils.cpp
+index ad0e540b5b..7e30e0242c 100644
+--- a/libs/hwui/jni/RuntimeEffectUtils.cpp
++++ b/libs/hwui/jni/RuntimeEffectUtils.cpp
+@@ -94,7 +94,9 @@ void UpdateChild(JNIEnv* env, SkRuntimeEffectBuilder* builder, const char* child
+         return;
+     }
+ 
+-    builderChild = sk_ref_sp(childEffect);
++    sk_sp<SkFlattenable> childEffectTemp = sk_ref_sp(childEffect);
++    childEffectTemp->unref();
++    builderChild = childEffectTemp;
+ }
+ 
+ }  // namespace uirenderer

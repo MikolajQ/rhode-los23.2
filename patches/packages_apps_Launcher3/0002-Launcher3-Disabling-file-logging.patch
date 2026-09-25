@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Tue, 11 Nov 2025 19:48:34 +0800
+Subject: [PATCH 02/13] Launcher3: Disabling file logging
+
+Change-Id: If64e3eeb5ddd706236d028d4f497f0e835c073b0
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ src/com/android/launcher3/logging/FileLog.kt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/launcher3/logging/FileLog.kt b/src/com/android/launcher3/logging/FileLog.kt
+index 2d3f04584..c1e855933 100644
+--- a/src/com/android/launcher3/logging/FileLog.kt
++++ b/src/com/android/launcher3/logging/FileLog.kt
+@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit
+  * but whose effect may not be visible immediately.
+  */
+ object FileLog {
+-    const val ENABLED: Boolean = true
++    const val ENABLED: Boolean = false
+     private const val FILE_NAME_PREFIX = "log-"
+     private const val MAX_LOG_FILE_SIZE = (8 shl 20 /** 8 mb **/ ).toLong()
+     public const val LOG_DAYS: Int = 4

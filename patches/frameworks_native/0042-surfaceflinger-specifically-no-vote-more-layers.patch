@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Mon, 15 Jun 2026 17:12:55 -0400
+Subject: [PATCH 42/42] surfaceflinger: specifically no vote more layers
+
+---
+ services/surfaceflinger/Scheduler/LayerHistory.cpp | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/Scheduler/LayerHistory.cpp b/services/surfaceflinger/Scheduler/LayerHistory.cpp
+index b3a407a..47dc70c 100644
+--- a/services/surfaceflinger/Scheduler/LayerHistory.cpp
++++ b/services/surfaceflinger/Scheduler/LayerHistory.cpp
+@@ -376,8 +376,17 @@ void LayerHistory::partitionLayers(nsecs_t now) {
+                 }
+             }
+ 
+-            if (layerUnsafe->getWindowType() == gui::WindowInfo::Type::STATUS_BAR) {
++            switch (layerUnsafe->getWindowType()) {
++            case gui::WindowInfo::Type::STATUS_BAR:
++            case gui::WindowInfo::Type::TOAST:
++            case gui::WindowInfo::Type::INPUT_METHOD:
++            case gui::WindowInfo::Type::INPUT_METHOD_DIALOG:
++            case gui::WindowInfo::Type::WALLPAPER:
++            case gui::WindowInfo::Type::NAVIGATION_BAR:
+                 info->setLayerVote({LayerVoteType::NoVote, Fps()});
++                break;
++            default:
++                break;
+             }
+ 
+             it++;

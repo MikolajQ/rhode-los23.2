@@ -1,0 +1,264 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Quince <quinceroms@gmail.com>
+Date: Wed, 11 Mar 2026 00:24:28 +0100
+Subject: [PATCH 139/226] base: mitigate system_server boot OOM on 512 MB heaps
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Insert three explicit GC passes at strategic points during
+system_server boot to relieve heap pressure from transient service
+allocations:
+
+  1. After PHASE_SYSTEM_SERVICES_READY — reclaims garbage accumulated
+     during startBootstrapServices and startCoreServices.
+
+  2. Before AMS.systemReady() — reclaims transient allocations from
+     startOtherServices before the heaviest boot phase begins.
+
+  3. Before PHASE_THIRD_PARTY_APPS_CAN_START — reclaims 100-300 MB
+     of garbage from service-ready callbacks that spike heap usage
+     after Phase 550, preventing OOM during app launch ramp-up.
+
+Additionally, tune the AppsFilter boot cache rebuild:
+
+  - Defer the initial cache build by 20 seconds so transient boot
+    allocations can be collected first.
+
+  - Build the cache in small chunks with brief lock releases between
+    them, preceded by an explicit GC, so the work does not spike
+    heap usage.
+
+  - Remove upfront setCapacity() from the boot path so the filter
+    matrix grows incrementally instead of pre-allocating.
+
+  - Avoid repeated ArraySet allocation in shouldFilterApplication()
+    for non-shared-user packages by using a static empty instance.
+
+On memory-constrained devices the boot allocation storm can exhaust
+a 512 MB system_server heap within 20 seconds.  These changes give
+the garbage collector enough breathing room to keep up.
+
+Tested: 6 consecutive reboots with zero OOM events, heap peak
+197/228 MB (vs. OOM crash within 20s pre-patch), PMS init ~31s.
+
+Change-Id: Iee1253f2b01d5d018f377bf10ff3fe338b240bac
+Signed-off-by: Quince <quinceroms@gmail.com>
+---
+ .../com/android/server/pm/AppsFilterBase.java | 24 ++++--
+ .../com/android/server/pm/AppsFilterImpl.java | 77 +++++++++++++++----
+ .../java/com/android/server/SystemServer.java | 26 +++++++
+ 3 files changed, 105 insertions(+), 22 deletions(-)
+
+diff --git a/services/core/java/com/android/server/pm/AppsFilterBase.java b/services/core/java/com/android/server/pm/AppsFilterBase.java
+index 721cc80f3d..7469b6bc2c 100644
+--- a/services/core/java/com/android/server/pm/AppsFilterBase.java
++++ b/services/core/java/com/android/server/pm/AppsFilterBase.java
+@@ -68,10 +68,19 @@ public abstract class AppsFilterBase implements AppsFilterSnapshot {
+     protected static final boolean DEBUG_LOGGING = false;
+     public static final boolean DEBUG_TRACING = false;
+ 
+-    // Allow some time for cache rebuilds.
+-    protected static final int CACHE_REBUILD_DELAY_MIN_MS = 10000;
+-    // With each new rebuild the delay doubles until it reaches max delay.
+-    protected static final int CACHE_REBUILD_DELAY_MAX_MS = 10000;
++    // Delay the initial boot cache build so transient boot-service allocations
++    // can be GC'd first, preventing OOM on memory-constrained devices (512 MB heap).
++    protected static final int CACHE_REBUILD_DELAY_MIN_MS = 20000;
++    // Fixed 20 s delay; MIN == MAX disables exponential backoff intentionally.
++    protected static final int CACHE_REBUILD_DELAY_MAX_MS = 20000;
++
++    // Shared immutable empty instance to avoid allocating a new ArraySet on
++    // every shouldFilterApplicationInternal() call for non-shared-user packages.
++    // This is accessed ~130 K times per cache build and must never be modified.
++    // ArraySet is final so we cannot override add/clear; immutability is enforced
++    // by convention — the non-shared-user code path only reads (size/valueAt/isEmpty).
++    private static final ArraySet<PackageStateInternal> EMPTY_SHARED_PKG_SETTINGS =
++            new ArraySet<>(0);
+ 
+     /**
+      * This contains a list of app UIDs that are implicitly queryable because another app explicitly
+@@ -428,7 +437,7 @@ public abstract class AppsFilterBase implements AppsFilterSnapshot {
+             if (DEBUG_TRACING) {
+                 Trace.traceBegin(TRACE_TAG_PACKAGE_MANAGER, "callingSetting instanceof");
+             }
+-            final ArraySet<PackageStateInternal> callingSharedPkgSettings = new ArraySet<>();
++            final ArraySet<PackageStateInternal> callingSharedPkgSettings;
+ 
+             if (callingSetting instanceof PackageStateInternal) {
+                 final PackageStateInternal packageState = (PackageStateInternal) callingSetting;
+@@ -437,13 +446,18 @@ public abstract class AppsFilterBase implements AppsFilterSnapshot {
+                     final SharedUserApi sharedUserApi =
+                             snapshot.getSharedUser(packageState.getSharedUserAppId());
+                     if (sharedUserApi != null) {
++                        callingSharedPkgSettings = new ArraySet<>();
+                         callingSharedPkgSettings.addAll(sharedUserApi.getPackageStates());
++                    } else {
++                        callingSharedPkgSettings = EMPTY_SHARED_PKG_SETTINGS;
+                     }
+                 } else {
+                     callingPkgSetting = packageState;
++                    callingSharedPkgSettings = EMPTY_SHARED_PKG_SETTINGS;
+                 }
+             } else {
+                 callingPkgSetting = null;
++                callingSharedPkgSettings = new ArraySet<>();
+                 callingSharedPkgSettings.addAll(
+                         ((SharedUserSetting) callingSetting).getPackageStates());
+             }
+diff --git a/services/core/java/com/android/server/pm/AppsFilterImpl.java b/services/core/java/com/android/server/pm/AppsFilterImpl.java
+index 135fb7b8b2..676b51337d 100644
+--- a/services/core/java/com/android/server/pm/AppsFilterImpl.java
++++ b/services/core/java/com/android/server/pm/AppsFilterImpl.java
+@@ -804,15 +804,56 @@ public final class AppsFilterImpl extends AppsFilterLocked implements Watchable,
+             ArrayMap<String, ? extends PackageStateInternal> settings,
+             UserInfo[] users,
+             int subjectUserId) {
++        final int settingsSize = settings.size();
++        // When mCacheReady is true (post-boot user creation/deletion), readers
++        // are actively using mShouldFilterCache under mCacheLock. We must hold
++        // the lock for the entire rebuild to guarantee atomicity — readers see
++        // either the old complete state or the new complete state, never partial.
++        // The OOM only happens during boot, when mCacheReady is still false and
++        // no readers exist, so the chunked path is safe there.
++        if (mCacheReady) {
++            synchronized (mCacheLock) {
++                if (subjectUserId == USER_ALL) {
++                    mShouldFilterCache.clear();
++                }
++                mShouldFilterCache.setCapacity(users.length * settingsSize);
++                for (int i = settingsSize - 1; i >= 0; i--) {
++                    updateShouldFilterCacheForPackage(snapshot,
++                            null /*skipPackage*/, settings.valueAt(i), settings,
++                            users, subjectUserId, i);
++                }
++            }
++            return;
++        }
++        // Boot path: mCacheReady is false, no readers exist yet.
++        // Do NOT call setCapacity() upfront — it forces a single large matrix
++        // allocation that competes with dozens of boot services for the 512 MB
++        // heap.  Instead, let the matrix grow incrementally as put() is called.
++        // Process in chunks to reduce peak memory during boot. Use wait(10)
++        // instead of Thread.sleep(10) so we temporarily release mCacheLock and
++        // allow concurrent GC a window to reclaim temporaries. During this phase
++        // mCacheReady is still false, so no readers consult mShouldFilterCache and
++        // it is acceptable for the cache to be in a partially-built state.
++        final int chunkSize = 10;
+         synchronized (mCacheLock) {
+             if (subjectUserId == USER_ALL) {
+                 mShouldFilterCache.clear();
+             }
+-            mShouldFilterCache.setCapacity(users.length * settings.size());
+-            for (int i = settings.size() - 1; i >= 0; i--) {
+-                updateShouldFilterCacheForPackage(snapshot,
+-                        null /*skipPackage*/, settings.valueAt(i), settings, users,
+-                        subjectUserId, i);
++            for (int chunkStart = settingsSize - 1; chunkStart >= 0;
++                    chunkStart -= chunkSize) {
++                final int chunkEnd = Math.max(chunkStart - chunkSize + 1, 0);
++                for (int i = chunkStart; i >= chunkEnd; i--) {
++                    updateShouldFilterCacheForPackage(snapshot,
++                            null /*skipPackage*/, settings.valueAt(i), settings,
++                            users, subjectUserId, i);
++                }
++                if (chunkEnd > 0) {
++                    try {
++                        mCacheLock.wait(10);
++                    } catch (InterruptedException e) {
++                        Thread.currentThread().interrupt();
++                    }
++                }
+             }
+         }
+     }
+@@ -829,24 +870,26 @@ public final class AppsFilterImpl extends AppsFilterLocked implements Watchable,
+                 return;
+             }
+ 
++            // During boot, dozens of services fill the heap to near its limit
++            // with transient objects that become garbage shortly after.  Running
++            // an explicit GC before the N² cache build reclaims those objects
++            // and prevents OOM during the heavy allocation phase that follows.
++            if (!mCacheReady) {
++                Runtime.getRuntime().gc();
++                try {
++                    Thread.sleep(200);
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                }
++            }
++
+             final long currentTimeUs = SystemClock.currentTimeMicro();
+-            final ArrayMap<String, AndroidPackage> packagesCache = new ArrayMap<>();
+-            final UserInfo[][] usersRef = new UserInfo[1][];
+             final Computer snapshot = (Computer) pmInternal.snapshot();
+             final ArrayMap<String, ? extends PackageStateInternal> settings =
+                     snapshot.getPackageStates();
+             final UserInfo[] users = snapshot.getUserInfos();
+ 
+-            packagesCache.ensureCapacity(settings.size());
+-            usersRef[0] = users;
+-            // store away the references to the immutable packages, since settings are retained
+-            // during updates.
+-            for (int i = 0, max = settings.size(); i < max; i++) {
+-                final AndroidPackage pkg = settings.valueAt(i).getPkg();
+-                packagesCache.put(settings.keyAt(i), pkg);
+-            }
+-
+-            updateEntireShouldFilterCacheInner(snapshot, settings, usersRef[0], USER_ALL);
++            updateEntireShouldFilterCacheInner(snapshot, settings, users, USER_ALL);
+             logCacheRebuilt(reason, SystemClock.currentTimeMicro() - currentTimeUs,
+                     users.length, settings.size());
+ 
+diff --git a/services/java/com/android/server/SystemServer.java b/services/java/com/android/server/SystemServer.java
+index a184d6a7ef..c2c2d9a349 100644
+--- a/services/java/com/android/server/SystemServer.java
++++ b/services/java/com/android/server/SystemServer.java
+@@ -3177,6 +3177,15 @@ public final class SystemServer implements Dumpable {
+         mSystemServiceManager.startBootPhase(t, SystemService.PHASE_SYSTEM_SERVICES_READY);
+         t.traceEnd();
+ 
++        // Relieve heap pressure from transient boot-service allocations before
++        // the next wave of init work.  On 512 MB heaps the boot storm can push
++        // usage close to the limit; an early GC here reclaims ~100-170 MB of
++        // garbage that accumulated during startBootstrapServices/startCoreServices.
++        t.traceBegin("BootGcAfterSystemServicesReady");
++        Slog.i(TAG, "Triggering GC after PHASE_SYSTEM_SERVICES_READY");
++        Runtime.getRuntime().gc();
++        t.traceEnd();
++
+         t.traceBegin("MakeWindowManagerServiceReady");
+         try {
+             wm.systemReady();
+@@ -3352,6 +3361,14 @@ public final class SystemServer implements Dumpable {
+         final ConnectivityManager connectivityF = (ConnectivityManager)
+                 context.getSystemService(Context.CONNECTIVITY_SERVICE);
+ 
++        // Second GC pass before AMS.systemReady() — the heaviest boot phase.
++        // By now all other-services have been created; reclaim their transient
++        // allocations so the AMS ready callback has headroom on 512 MB heaps.
++        t.traceBegin("BootGcBeforeAmsReady");
++        Slog.i(TAG, "Triggering GC before AMS.systemReady()");
++        Runtime.getRuntime().gc();
++        t.traceEnd();
++
+         // We now tell the activity manager it is okay to run third party
+         // code.  It will call back into us once it has gotten to the state
+         // where third party code can really run (but before it has actually
+@@ -3487,6 +3504,15 @@ public final class SystemServer implements Dumpable {
+             // Wait for all packages to be prepared
+             mPackageManagerService.waitForAppDataPrepared();
+ 
++            // Third GC pass before launching third-party apps.  After
++            // PHASE_ACTIVITY_MANAGER_READY the service-ready callbacks can
++            // spike heap usage to 300+ MB on 512 MB heaps; reclaim that
++            // garbage before the next wave of allocations.
++            t.traceBegin("BootGcBeforeThirdPartyApps");
++            Slog.i(TAG, "Triggering GC before PHASE_THIRD_PARTY_APPS_CAN_START");
++            Runtime.getRuntime().gc();
++            t.traceEnd();
++
+             // It is now okay to let the various system services start their
+             // third party code...
+             t.traceBegin("PhaseThirdPartyAppsCanStart");

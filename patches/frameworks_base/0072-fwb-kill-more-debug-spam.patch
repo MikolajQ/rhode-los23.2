@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Sat, 13 Jul 2024 14:14:58 +0000
+Subject: [PATCH 072/226] fwb: kill more debug spam
+
+useless
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ .../android/wm/shell/protolog/ShellProtoLogGroup.java  | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/protolog/ShellProtoLogGroup.java b/libs/WindowManager/Shell/src/com/android/wm/shell/protolog/ShellProtoLogGroup.java
+index fdca70849b..855512c2c7 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/protolog/ShellProtoLogGroup.java
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/protolog/ShellProtoLogGroup.java
+@@ -28,21 +28,21 @@ import java.util.UUID;
+ public enum ShellProtoLogGroup implements IProtoLogGroup {
+     // NOTE: Since we enable these from the same WM ShellCommand, these names should not conflict
+     // with those in the framework ProtoLogGroup
+-    WM_SHELL(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, true,
++    WM_SHELL(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             Consts.TAG_WM_SHELL),
+-    WM_SHELL_INIT(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, true,
++    WM_SHELL_INIT(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             Consts.TAG_WM_SHELL),
+     WM_SHELL_TASK_ORG(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, true,
+             "ShellTaskOrganizer"),
+     WM_SHELL_TASK_ORG_NOISY(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             "ShellTaskOrganizer"),
+-    WM_SHELL_TRANSITIONS(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, true,
++    WM_SHELL_TRANSITIONS(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             Consts.TAG_WM_SHELL),
+     WM_SHELL_IME_CONTROLLER(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             "ShellIme"),
+-    WM_SHELL_RECENTS_TRANSITION(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, true,
++    WM_SHELL_RECENTS_TRANSITION(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             "ShellRecents"),
+-    WM_SHELL_DRAG_AND_DROP(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, true,
++    WM_SHELL_DRAG_AND_DROP(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             "ShellDragAndDrop"),
+     WM_SHELL_STARTING_WINDOW(Consts.ENABLE_DEBUG, Consts.ENABLE_LOG_TO_PROTO_DEBUG, false,
+             Consts.TAG_WM_STARTING_WINDOW),

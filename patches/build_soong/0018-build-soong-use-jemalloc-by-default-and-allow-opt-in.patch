@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Juhyung Park <qkrwngud825@gmail.com>
+Date: Sun, 12 Jun 2022 02:45:42 +0900
+Subject: [PATCH 18/23] build: soong: use jemalloc by default and allow opt-in
+ to scudo (2/4)
+
+Also, clean up broken DisableScudo/PRODUCT_DISABLE_SCUDO.
+
+After these changes, malloc_not_svelte is only used to override cflags
+in external/jemalloc_new. Change accordingly.
+
+Detailed reason for switching to jemalloc by default is written in the
+bionic commit.
+
+Change-Id: Id5afcf064a5db6011676dc7141c71fd5bb0007cb
+Signed-off-by: Juhyung Park <qkrwngud825@gmail.com>
+---
+ android/config.go   |  2 +-
+ android/variable.go | 14 ++++++++++++--
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/android/config.go b/android/config.go
+index e820ec00..61c045b9 100644
+--- a/android/config.go
++++ b/android/config.go
+@@ -1560,7 +1560,7 @@ func (c *config) EnableCFI() bool {
+ }
+ 
+ func (c *config) DisableScudo() bool {
+-	return Bool(c.productVariables.DisableScudo)
++	return Bool(c.productVariables.Malloc_use_jemalloc)
+ }
+ 
+ func (c *config) Android64() bool {
+diff --git a/android/variable.go b/android/variable.go
+index 9ce91ad9..56a85aa7 100644
+--- a/android/variable.go
++++ b/android/variable.go
+@@ -75,6 +75,16 @@ type variableProperties struct {
+ 			Header_libs         []string `android:"arch_variant"`
+ 		} `android:"arch_variant"`
+ 
++		Malloc_use_jemalloc struct {
++			Cflags              []string `android:"arch_variant"`
++			Shared_libs         []string `android:"arch_variant"`
++			Whole_static_libs   []string `android:"arch_variant"`
++			Static_libs         []string `android:"arch_variant"`
++			Exclude_static_libs []string `android:"arch_variant"`
++			Srcs                []string `android:"arch_variant"`
++			Header_libs         []string `android:"arch_variant"`
++		} `android:"arch_variant"`
++
+ 		Malloc_zero_contents struct {
+ 			Cflags []string `android:"arch_variant"`
+ 		} `android:"arch_variant"`
+@@ -293,6 +303,7 @@ type ProductVariables struct {
+ 	Always_use_prebuilt_sdks     *bool    `json:",omitempty"`
+ 	Skip_boot_jars_check         *bool    `json:",omitempty"`
+ 	Malloc_low_memory            *bool    `json:",omitempty"`
++	Malloc_use_jemalloc          *bool    `json:",omitempty"`
+ 	Malloc_zero_contents         *bool    `json:",omitempty"`
+ 	Malloc_pattern_fill_contents *bool    `json:",omitempty"`
+ 	Safestack                    *bool    `json:",omitempty"`
+@@ -329,8 +340,6 @@ type ProductVariables struct {
+ 	CFIExcludePaths []string `json:",omitempty"`
+ 	CFIIncludePaths []string `json:",omitempty"`
+ 
+-	DisableScudo *bool `json:",omitempty"`
+-
+ 	MemtagHeapExcludePaths      []string `json:",omitempty"`
+ 	MemtagHeapAsyncIncludePaths []string `json:",omitempty"`
+ 	MemtagHeapSyncIncludePaths  []string `json:",omitempty"`
+@@ -858,6 +867,7 @@ func (v *ProductVariables) SetDefaultConfig() {
+ 		AAPTPrebuiltDPI:     []string{"xhdpi", "xxhdpi"},
+ 
+ 		Malloc_low_memory:            boolPtr(false),
++		Malloc_use_jemalloc:          boolPtr(true),
+ 		Malloc_zero_contents:         boolPtr(true),
+ 		Malloc_pattern_fill_contents: boolPtr(false),
+ 		Safestack:                    boolPtr(false),

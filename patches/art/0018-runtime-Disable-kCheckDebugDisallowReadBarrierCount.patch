@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Wed, 2 Apr 2025 12:13:15 +0800
+Subject: [PATCH 18/21] runtime: Disable kCheckDebugDisallowReadBarrierCount
+
+for performance concerns
+
+Change-Id: Ic29b0b2a16c2edc986f9bb5b9160b37956f63229
+---
+ runtime/read_barrier_config.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/runtime/read_barrier_config.h b/runtime/read_barrier_config.h
+index 5a5fc05..00af589 100644
+--- a/runtime/read_barrier_config.h
++++ b/runtime/read_barrier_config.h
+@@ -93,7 +93,7 @@ EXPORT extern const bool gUseUserfaultfd;
+ #endif
+ 
+ // Disabled for performance reasons.
+-static constexpr bool kCheckDebugDisallowReadBarrierCount = kIsDebugBuild;
++static constexpr bool kCheckDebugDisallowReadBarrierCount = false;
+ 
+ }  // namespace art
+ 

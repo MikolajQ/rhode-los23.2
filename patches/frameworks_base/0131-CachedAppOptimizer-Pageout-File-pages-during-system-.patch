@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Divyanand Rangu <quic_drangu@quicinc.com>
+Date: Wed, 28 Dec 2022 14:53:58 +0530
+Subject: [PATCH 131/226] CachedAppOptimizer: Pageout File pages during system
+ compaction
+
+During system compaction, mark File pages as MADVISE_PAGEOUT instead
+of MADVISE_COLD. This will drop clean pages and swap-out file pages
+mapped as private.
+This improves the bootup free memory.
+
+CRs-Fixed: 3365547
+Change-Id: I1311126d8fd551c48599e160360122c05cc8ea02
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../jni/com_android_server_am_CachedAppOptimizer.cpp   | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp b/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp
+index 98ee84a0a3..bea833d232 100644
+--- a/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp
++++ b/services/core/jni/com_android_server_am_CachedAppOptimizer.cpp
+@@ -85,6 +85,8 @@ namespace android {
+ // before starting next VMA batch
+ static std::atomic<bool> cancelRunningCompaction;
+ 
++static bool inSystemCompaction = false;
++
+ // A VmaBatch represents a set of VMAs that can be processed
+ // as VMAs are processed by client code it is expected that the
+ // VMAs get consumed which means they are discarded as they are
+@@ -328,12 +330,16 @@ static int getAnonPageAdvice(const Vma& vma) {
+     bool hasReadFlag = (vma.flags & PROT_READ) > 0;
+     bool hasWriteFlag = (vma.flags & PROT_WRITE) > 0;
+     bool hasExecuteFlag = (vma.flags & PROT_EXEC) > 0;
+-    if ((hasReadFlag || hasWriteFlag) && !hasExecuteFlag && !vma.is_shared) {
++    if ((hasReadFlag || hasWriteFlag) && !hasExecuteFlag) {
+         return MADV_PAGEOUT;
+     }
+     return -1;
+ }
+ static int getAnyPageAdvice(const Vma& vma) {
++    if (inSystemCompaction == true) {
++        return MADV_PAGEOUT;
++    }
++
+     if (vma.inode == 0 && !vma.is_shared) {
+         return MADV_PAGEOUT;
+     }
+@@ -461,6 +467,7 @@ static void compactMemcg(int uid, int pid, int compactionFlags) {
+ static void com_android_server_am_CachedAppOptimizer_compactSystem(JNIEnv *, jobject) {
+     std::unique_ptr<DIR, decltype(&closedir)> proc(opendir("/proc"), closedir);
+     struct dirent* current;
++    inSystemCompaction = true;
+     while ((current = readdir(proc.get()))) {
+         if (current->d_type != DT_DIR) {
+             continue;
+@@ -489,6 +496,7 @@ static void com_android_server_am_CachedAppOptimizer_compactSystem(JNIEnv *, job
+ 
+         compactMemcg(status_info.st_uid, pid, COMPACT_ACTION_ANON_FLAG | COMPACT_ACTION_FILE_FLAG);
+     }
++    inSystemCompaction = false;
+ }
+ 
+ static void com_android_server_am_CachedAppOptimizer_cancelCompaction(JNIEnv*, jobject) {

@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Till Kottmann <deletescape@gmail.com>
+Date: Mon, 4 Jun 2018 17:44:56 +0200
+Subject: [PATCH 037/226] Cache pin algorithms in PinSet
+
+Change-Id: I6c2cd0261885b656910feffe76d67e169d8523c8
+Signed-off-by: Pranav <npv12@iitbbs.ac.in>
+---
+ .../src/android/security/net/config/PinSet.java        | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java b/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java
+index d3c975eb31..87fcde943d 100644
+--- a/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java
++++ b/packages/NetworkSecurityConfig/platform/src/android/security/net/config/PinSet.java
+@@ -22,6 +22,7 @@ import java.util.Set;
+ 
+ /** @hide */
+ public final class PinSet {
++    private static Set<String> algorithms;
+     public static final PinSet EMPTY_PINSET =
+             new PinSet(Collections.<Pin>emptySet(), Long.MAX_VALUE);
+     public final long expirationTime;
+@@ -36,10 +37,11 @@ public final class PinSet {
+     }
+ 
+     Set<String> getPinAlgorithms() {
+-        // TODO: Cache this.
+-        Set<String> algorithms = new ArraySet<String>();
+-        for (Pin pin : pins) {
+-            algorithms.add(pin.digestAlgorithm);
++        if(algorithms == null){
++            algorithms = new ArraySet<String>();
++            for (Pin pin : pins) {
++                algorithms.add(pin.digestAlgorithm);
++            }
+         }
+         return algorithms;
+     }

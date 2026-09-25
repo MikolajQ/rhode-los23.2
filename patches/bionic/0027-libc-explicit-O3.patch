@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Sat, 17 May 2025 09:26:08 -0400
+Subject: [PATCH 27/34] libc: explicit O3
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libc/Android.bp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index cd5ffdd..e8d8b01 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -21,6 +21,7 @@ license {
+ 
+ libc_common_flags = [
+     "-D_LIBC=1",
++    "-O3",
+     "-Wall",
+     "-Wextra",
+     "-Wunused",
+@@ -57,6 +58,7 @@ cc_defaults {
+         "-DUSE_SCUDO",
+     ],
+     asflags: libc_common_flags,
++    ldflags: ["-Wl,-O3"],
+     conlyflags: ["-std=gnu99"],
+     cppflags: [],
+     include_dirs: [

@@ -1,0 +1,235 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Wed, 3 Apr 2024 11:54:15 -0400
+Subject: [PATCH 13/21] Revert "Add visibility attributes in runtime/arch"
+
+This reverts commit dc1794942e60f23bc3a22df33fefb7d6e7fc8bcb.
+
+Needed for arm64 instruction set fix
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ runtime/arch/arch_test.cc                     |  2 +-
+ runtime/arch/context-inl.h                    |  2 +-
+ runtime/arch/context.cc                       |  2 +-
+ runtime/arch/context.h                        |  4 ++--
+ runtime/arch/instruction_set_features.cc      |  2 +-
+ runtime/arch/instruction_set_features.h       | 23 ++++++++++---------
+ runtime/arch/instruction_set_features_test.cc |  2 +-
+ runtime/arch/memcmp16.cc                      |  2 +-
+ runtime/arch/memcmp16.h                       |  5 +---
+ runtime/arch/stub_test.cc                     |  2 +-
+ 10 files changed, 22 insertions(+), 24 deletions(-)
+
+diff --git a/runtime/arch/arch_test.cc b/runtime/arch/arch_test.cc
+index 57df3c8..83fd986 100644
+--- a/runtime/arch/arch_test.cc
++++ b/runtime/arch/arch_test.cc
+@@ -22,7 +22,7 @@
+ #include "entrypoints/quick/callee_save_frame.h"
+ #include "quick/quick_method_frame_info.h"
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ class ArchTest : public CommonArtTest {};
+ 
+diff --git a/runtime/arch/context-inl.h b/runtime/arch/context-inl.h
+index 087075e..0710415 100644
+--- a/runtime/arch/context-inl.h
++++ b/runtime/arch/context-inl.h
+@@ -29,7 +29,7 @@
+ #include "x86/context_x86.h"
+ #include "x86_64/context_x86_64.h"
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ namespace detail {
+ 
+diff --git a/runtime/arch/context.cc b/runtime/arch/context.cc
+index f09b8ef..0d18c3a 100644
+--- a/runtime/arch/context.cc
++++ b/runtime/arch/context.cc
+@@ -16,7 +16,7 @@
+ 
+ #include "context-inl.h"
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ Context* Context::Create() {
+   return new RuntimeContextType;
+diff --git a/runtime/arch/context.h b/runtime/arch/context.h
+index 55988d0..6d77592 100644
+--- a/runtime/arch/context.h
++++ b/runtime/arch/context.h
+@@ -24,7 +24,7 @@
+ #include "base/macros.h"
+ #include "entrypoints/quick/runtime_entrypoints_list.h"
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ class QuickMethodFrameInfo;
+ 
+@@ -33,7 +33,7 @@ class QuickMethodFrameInfo;
+ class Context {
+  public:
+   // Creates a context for the running architecture
+-  EXPORT static Context* Create();
++  static Context* Create();
+ 
+   virtual ~Context() {}
+ 
+diff --git a/runtime/arch/instruction_set_features.cc b/runtime/arch/instruction_set_features.cc
+index 3ab9856..17b9dc3 100644
+--- a/runtime/arch/instruction_set_features.cc
++++ b/runtime/arch/instruction_set_features.cc
+@@ -28,7 +28,7 @@
+ #include "x86/instruction_set_features_x86.h"
+ #include "x86_64/instruction_set_features_x86_64.h"
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ std::unique_ptr<const InstructionSetFeatures> InstructionSetFeatures::FromVariant(
+     InstructionSet isa, const std::string& variant, std::string* error_msg) {
+diff --git a/runtime/arch/instruction_set_features.h b/runtime/arch/instruction_set_features.h
+index b31f30d..1cb0fbb 100644
+--- a/runtime/arch/instruction_set_features.h
++++ b/runtime/arch/instruction_set_features.h
+@@ -24,7 +24,7 @@
+ #include "arch/instruction_set.h"
+ #include "base/macros.h"
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ class ArmInstructionSetFeatures;
+ class Arm64InstructionSetFeatures;
+@@ -36,21 +36,22 @@ class X86_64InstructionSetFeatures;
+ class InstructionSetFeatures {
+  public:
+   // Process a CPU variant string for the given ISA and create an InstructionSetFeatures.
+-  EXPORT static std::unique_ptr<const InstructionSetFeatures> FromVariant(
+-      InstructionSet isa, const std::string& variant, std::string* error_msg);
++  static std::unique_ptr<const InstructionSetFeatures> FromVariant(InstructionSet isa,
++                                                                   const std::string& variant,
++                                                                   std::string* error_msg);
+ 
+   // Process a CPU variant string for the given ISA and make sure the features advertised
+   // are supported by the hardware. This is needed for Pixel3a which wrongly
+   // reports itself as cortex-a75.
+-  EXPORT static std::unique_ptr<const InstructionSetFeatures> FromVariantAndHwcap(
++  static std::unique_ptr<const InstructionSetFeatures> FromVariantAndHwcap(
+       InstructionSet isa, const std::string& variant, std::string* error_msg);
+ 
+   // Parse a bitmap for the given isa and create an InstructionSetFeatures.
+-  EXPORT static std::unique_ptr<const InstructionSetFeatures> FromBitmap(InstructionSet isa,
+-                                                                         uint32_t bitmap);
++  static std::unique_ptr<const InstructionSetFeatures> FromBitmap(InstructionSet isa,
++                                                                  uint32_t bitmap);
+ 
+   // Turn C pre-processor #defines into the equivalent instruction set features for kRuntimeISA.
+-  EXPORT static std::unique_ptr<const InstructionSetFeatures> FromCppDefines();
++  static std::unique_ptr<const InstructionSetFeatures> FromCppDefines();
+ 
+   // Check if run-time detection of instruction set features is supported.
+   //
+@@ -82,7 +83,7 @@ class InstructionSetFeatures {
+ 
+   // Parse a string of the form "div,-atomic_ldrd_strd" adding and removing these features to
+   // create a new InstructionSetFeatures.
+-  EXPORT std::unique_ptr<const InstructionSetFeatures> AddFeaturesFromString(
++  std::unique_ptr<const InstructionSetFeatures> AddFeaturesFromString(
+       const std::string& feature_list, std::string* error_msg) const WARN_UNUSED;
+ 
+   // Are these features the same as the other given features?
+@@ -119,10 +120,10 @@ class InstructionSetFeatures {
+   const ArmInstructionSetFeatures* AsArmInstructionSetFeatures() const;
+ 
+   // Down cast this Arm64InstructionFeatures.
+-  EXPORT const Arm64InstructionSetFeatures* AsArm64InstructionSetFeatures() const;
++  const Arm64InstructionSetFeatures* AsArm64InstructionSetFeatures() const;
+ 
+   // Down cast this Riscv64InstructionFeatures.
+-  EXPORT const Riscv64InstructionSetFeatures* AsRiscv64InstructionSetFeatures() const;
++  const Riscv64InstructionSetFeatures* AsRiscv64InstructionSetFeatures() const;
+ 
+   // Down cast this X86InstructionFeatures.
+   const X86InstructionSetFeatures* AsX86InstructionSetFeatures() const;
+@@ -151,7 +152,7 @@ class InstructionSetFeatures {
+  private:
+   DISALLOW_COPY_AND_ASSIGN(InstructionSetFeatures);
+ };
+-EXPORT std::ostream& operator<<(std::ostream& os, const InstructionSetFeatures& rhs);
++std::ostream& operator<<(std::ostream& os, const InstructionSetFeatures& rhs);
+ 
+ }  // namespace art
+ 
+diff --git a/runtime/arch/instruction_set_features_test.cc b/runtime/arch/instruction_set_features_test.cc
+index fbd2137..82b8242 100644
+--- a/runtime/arch/instruction_set_features_test.cc
++++ b/runtime/arch/instruction_set_features_test.cc
+@@ -28,7 +28,7 @@
+ #include <android-base/logging.h>
+ #include <android-base/stringprintf.h>
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ #ifdef ART_TARGET_ANDROID
+ 
+diff --git a/runtime/arch/memcmp16.cc b/runtime/arch/memcmp16.cc
+index 614a878..e714cfc 100644
+--- a/runtime/arch/memcmp16.cc
++++ b/runtime/arch/memcmp16.cc
+@@ -29,7 +29,7 @@ int32_t memcmp16_generic_static(const uint16_t* s0, const uint16_t* s1, size_t c
+   return 0;
+ }
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ namespace testing {
+ 
+diff --git a/runtime/arch/memcmp16.h b/runtime/arch/memcmp16.h
+index 1e857db..0226c4e 100644
+--- a/runtime/arch/memcmp16.h
++++ b/runtime/arch/memcmp16.h
+@@ -20,8 +20,6 @@
+ #include <cstddef>
+ #include <cstdint>
+ 
+-#include "base/macros.h"
+-
+ // memcmp16 support.
+ //
+ // This can either be optimized assembly code, in which case we expect a function __memcmp16,
+@@ -49,11 +47,10 @@ static inline int32_t MemCmp16(const uint16_t* s0, const uint16_t* s1, size_t co
+   return 0;
+ }
+ 
+-// TODO(260881207): decide whether to hide this symbol.
+ extern "C" int32_t memcmp16_generic_static(const uint16_t* s0, const uint16_t* s1, size_t count);
+ #endif
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ namespace testing {
+ 
+diff --git a/runtime/arch/stub_test.cc b/runtime/arch/stub_test.cc
+index 69f65c0..511edde 100644
+--- a/runtime/arch/stub_test.cc
++++ b/runtime/arch/stub_test.cc
+@@ -32,7 +32,7 @@
+ #include "mirror/object_array-alloc-inl.h"
+ #include "scoped_thread_state_change-inl.h"
+ 
+-namespace art HIDDEN {
++namespace art {
+ 
+ 
+ class StubTest : public CommonRuntimeTest {

@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 May 2026 06:32:29 +0800
+Subject: [PATCH 168/226] services: Optimizing redundant
+ updateLockscreenTimeout updates
+
+Change-Id: I128b8442ed1b1e2be900c0f15820a9e8aaabe2b0
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../com/android/server/policy/PhoneWindowManager.java  | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+index 69fefe33bf..a0b0465d77 100644
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -6921,12 +6921,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 && mUserManagerInternal.getUserAssignedToDisplay(displayId) != mCurrentUserId) {
+             return;
+         }
+-        if (allow) {
+-            mAllowLockscreenWhenOnDisplays.add(displayId);
+-        } else {
+-            mAllowLockscreenWhenOnDisplays.remove(displayId);
++        final boolean changed = allow
++                ? mAllowLockscreenWhenOnDisplays.add(displayId)
++                : mAllowLockscreenWhenOnDisplays.remove(displayId);
++        if (changed) {
++            updateLockScreenTimeout();
+         }
+-        updateLockScreenTimeout();
+     }
+ 
+     private void updateLockScreenTimeout() {

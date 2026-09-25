@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Tue, 17 Mar 2026 13:28:36 +0800
+Subject: [PATCH 27/42] build: Optimizing dalvik heap configs for lower ram
+ tiers
+
+6gb: utilization 0.5->0.6 with usap/madvise/pinner, 4gb: bumping growthlimit and maxfree with usap/madvise, 2gb/1gb: raising minfree from 512k to reduce micro-gc churn
+Change-Id: I4495ee8708a100db9e13c00120bb94735f50a744
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ build/phone-xhdpi-1024-dalvik-heap.mk |  2 +-
+ build/phone-xhdpi-2048-dalvik-heap.mk |  4 ++--
+ build/phone-xhdpi-4096-dalvik-heap.mk | 10 +++++++---
+ build/phone-xhdpi-6144-dalvik-heap.mk |  8 ++++++--
+ 4 files changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/build/phone-xhdpi-1024-dalvik-heap.mk b/build/phone-xhdpi-1024-dalvik-heap.mk
+index a522a7d..1a56a83 100644
+--- a/build/phone-xhdpi-1024-dalvik-heap.mk
++++ b/build/phone-xhdpi-1024-dalvik-heap.mk
+@@ -21,5 +21,5 @@ PRODUCT_VENDOR_PROPERTIES += \
+     dalvik.vm.heapgrowthlimit?=96m \
+     dalvik.vm.heapsize?=256m \
+     dalvik.vm.heaptargetutilization?=0.75 \
+-    dalvik.vm.heapminfree?=512k \
++    dalvik.vm.heapminfree?=2m \
+     dalvik.vm.heapmaxfree?=8m
+diff --git a/build/phone-xhdpi-2048-dalvik-heap.mk b/build/phone-xhdpi-2048-dalvik-heap.mk
+index f38d2f2..b033acd 100644
+--- a/build/phone-xhdpi-2048-dalvik-heap.mk
++++ b/build/phone-xhdpi-2048-dalvik-heap.mk
+@@ -22,5 +22,5 @@ PRODUCT_VENDOR_PROPERTIES += \
+     dalvik.vm.heapgrowthlimit?=192m \
+     dalvik.vm.heapsize?=512m \
+     dalvik.vm.heaptargetutilization?=0.75 \
+-    dalvik.vm.heapminfree?=512k \
+-    dalvik.vm.heapmaxfree?=8m
++    dalvik.vm.heapminfree?=2m \
++    dalvik.vm.heapmaxfree?=12m
+diff --git a/build/phone-xhdpi-4096-dalvik-heap.mk b/build/phone-xhdpi-4096-dalvik-heap.mk
+index a6ff5a8..e81012a 100644
+--- a/build/phone-xhdpi-4096-dalvik-heap.mk
++++ b/build/phone-xhdpi-4096-dalvik-heap.mk
+@@ -17,9 +17,13 @@
+ # Provides overrides to configure the Dalvik heap for a 4GB phone
+ 
+ PRODUCT_VENDOR_PROPERTIES += \
+-    dalvik.vm.heapstartsize?=8m \
+-    dalvik.vm.heapgrowthlimit?=192m \
++    dalvik.vm.heapstartsize?=12m \
++    dalvik.vm.heapgrowthlimit?=256m \
+     dalvik.vm.heapsize?=512m \
+     dalvik.vm.heaptargetutilization?=0.6 \
+     dalvik.vm.heapminfree?=8m \
+-    dalvik.vm.heapmaxfree?=16m
++    dalvik.vm.heapmaxfree?=24m \
++    dalvik.vm.usap_pool_enabled?=true \
++    dalvik.vm.usap_pool_size_max?=2 \
++    dalvik.vm.madvise.vdexfile.size?=83886080 \
++    dalvik.vm.madvise.odexfile.size?=83886080
+diff --git a/build/phone-xhdpi-6144-dalvik-heap.mk b/build/phone-xhdpi-6144-dalvik-heap.mk
+index f08830b..a01fdc1 100644
+--- a/build/phone-xhdpi-6144-dalvik-heap.mk
++++ b/build/phone-xhdpi-6144-dalvik-heap.mk
+@@ -20,6 +20,10 @@ PRODUCT_VENDOR_PROPERTIES += \
+     dalvik.vm.heapstartsize?=16m \
+     dalvik.vm.heapgrowthlimit?=256m \
+     dalvik.vm.heapsize?=512m \
+-    dalvik.vm.heaptargetutilization?=0.5 \
++    dalvik.vm.heaptargetutilization?=0.6 \
+     dalvik.vm.heapminfree?=8m \
+-    dalvik.vm.heapmaxfree?=32m
++    dalvik.vm.heapmaxfree?=32m \
++    dalvik.vm.usap_pool_enabled?=true \
++    dalvik.vm.usap_pool_size_max?=2 \
++    dalvik.vm.madvise.vdexfile.size?=104857600 \
++    dalvik.vm.madvise.odexfile.size?=104857600

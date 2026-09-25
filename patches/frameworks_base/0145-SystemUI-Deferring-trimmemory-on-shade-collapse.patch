@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sun, 12 Apr 2026 15:49:26 +0800
+Subject: [PATCH 145/226] SystemUI: Deferring trimmemory on shade collapse
+
+trimMemory was firing synchronously in makeExpandedInvisible while collapse animation still running, evicting skia gpu cache on renderthread mid-fling. deferred 500ms to fire after animation settles, canceled on re-expand to prevent stale trim
+
+Change-Id: I1cb9dace8bfafe6a981532fccb1ef7d6652f23b1
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../systemui/shade/ShadeControllerImpl.java      | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/shade/ShadeControllerImpl.java b/packages/SystemUI/src/com/android/systemui/shade/ShadeControllerImpl.java
+index 2ae98d3358..de1958becf 100644
+--- a/packages/SystemUI/src/com/android/systemui/shade/ShadeControllerImpl.java
++++ b/packages/SystemUI/src/com/android/systemui/shade/ShadeControllerImpl.java
+@@ -17,6 +17,7 @@
+ package com.android.systemui.shade;
+ 
+ import android.content.ComponentCallbacks2;
++import android.os.Handler;
+ import android.os.Looper;
+ import android.util.Log;
+ import android.view.MotionEvent;
+@@ -69,10 +70,14 @@ public final class ShadeControllerImpl extends BaseShadeControllerImpl {
+     private final Lazy<AssistManager> mAssistManagerLazy;
+     private final Lazy<NotificationGutsManager> mGutsManager;
+ 
++    private static final long TRIM_MEMORY_DELAY_MS = 500;
++
+     private boolean mExpandedVisible;
+     private boolean mLockscreenOrShadeVisible;
+ 
+     private ShadeVisibilityListener mShadeVisibilityListener;
++    private final Handler mHandler = new Handler(Looper.getMainLooper());
++    private final Runnable mTrimMemoryRunnable = this::performDeferredTrimMemory;
+ 
+     @Inject
+     public ShadeControllerImpl(
+@@ -287,6 +292,7 @@ public final class ShadeControllerImpl extends BaseShadeControllerImpl {
+         }
+ 
+         mExpandedVisible = true;
++        mHandler.removeCallbacks(mTrimMemoryRunnable);
+ 
+         // Expand the window to encompass the full screen in anticipation of the drag.
+         // It's only possible to do atomically because the status bar is at the top of the screen!
+@@ -333,8 +339,14 @@ public final class ShadeControllerImpl extends BaseShadeControllerImpl {
+ 
+         // Trimming will happen later if Keyguard is showing - doing it here might cause a jank in
+         // the bouncer appear animation.
+-        if (!mKeyguardStateController.isShowing()) {
+-            WindowManagerGlobal.getInstance().trimMemory(ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN);
++        mHandler.removeCallbacks(mTrimMemoryRunnable);
++        mHandler.postDelayed(mTrimMemoryRunnable, TRIM_MEMORY_DELAY_MS);
++    }
++
++    private void performDeferredTrimMemory() {
++        if (!mExpandedVisible && !mKeyguardStateController.isShowing()) {
++            WindowManagerGlobal.getInstance().trimMemory(
++                    ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN);
+         }
+     }
+ 

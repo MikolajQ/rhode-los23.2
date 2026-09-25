@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 1582130940 <19632674+1582130940@users.noreply.github.com>
+Date: Fri, 9 Feb 2024 23:15:19 +0800
+Subject: [PATCH 3/3] dist: Tune flags from SQLite Compile-time Options
+
+* Tune flags according to docs
+Andrzej Perczak <linux@andrzejperczak.com>
+
+Co-authored-by: Andrzej Perczak <linux@andrzejperczak.com>
+---
+ dist/Android.bp | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/dist/Android.bp b/dist/Android.bp
+index 651ccd8..2a22204 100644
+--- a/dist/Android.bp
++++ b/dist/Android.bp
+@@ -57,21 +57,42 @@ cc_defaults {
+         "-DSQLITE_POWERSAFE_OVERWRITE=1",
+         "-DSQLITE_DEFAULT_FILE_FORMAT=4",
+         "-DSQLITE_DEFAULT_AUTOVACUUM=1",
++        "-DSQLITE_DEFAULT_CACHE_SIZE=-8192",
++        "-DSQLITE_DEFAULT_MEMSTATUS=0",
++        "-DSQLITE_ENABLE_CARRAY=1",
++        "-DSQLITE_ENABLE_COLUMN_METADATA=1",
+         "-DSQLITE_ENABLE_DBSTAT_VTAB=1",
+         "-DSQLITE_ENABLE_MEMORY_MANAGEMENT=1",
+         "-DSQLITE_ENABLE_FTS3=1",
+         "-DSQLITE_ENABLE_FTS3_BACKWARDS=1",
++        "-DSQLITE_ENABLE_FTS3_PARENTHESIS=1",
+         "-DSQLITE_ENABLE_FTS4=1",
++        "-DSQLITE_ENABLE_FTS5=1",
++        "-DSQLITE_ENABLE_GEOPOLY=1",
++        "-DSQLITE_ENABLE_HIDDEN_COLUMNS=1",
++        "-DSQLITE_ENABLE_NULL_TRIM=1",
++        "-DSQLITE_ENABLE_PERCENTILE=1",
++        "-DSQLITE_ENABLE_RTREE=1",
++        "-DSQLITE_ENABLE_SNAPSHOT=1",
++        "-DSQLITE_ENABLE_SORTER_REFERENCES=1",
++        "-DSQLITE_ENABLE_STAT4=1",
++        "-DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1",
++        "-DSQLITE_MAX_MMAP_SIZE=536870912",
+         "-DSQLITE_OMIT_BUILTIN_TEST=1",
+         "-DSQLITE_OMIT_COMPILEOPTION_DIAGS=1",
+         "-DSQLITE_OMIT_LOAD_EXTENSION=1",
++        "-DSQLITE_OMIT_SHARED_CACHE=1",
++        "-DSQLITE_UNTESTABLE=1",
+         "-DSQLITE_DEFAULT_FILE_PERMISSIONS=0600",
+         "-DSQLITE_SECURE_DELETE=1",
++        "-DSQLITE_SOUNDEX=1",
+         "-DSQLITE_ENABLE_BATCH_ATOMIC_WRITE=1",
+         "-DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD",
+         "-DSQLITE_ALLOW_ROWID_IN_VIEW",
+         "-DSQLITE_DEFAULT_LEGACY_ALTER_TABLE=1",
++        "-DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1",
+         "-DSQLITE_ENABLE_BYTECODE_VTAB",
++        "-DSQLITE_LIKE_DOESNT_MATCH_BLOBS=1",
+         "-Wno-unused-parameter",
+         "-Werror",
+ 
+@@ -94,7 +115,13 @@ cc_defaults {
+             cflags: [
+                 "-DUSE_PREAD64=1",
+                 "-Dfdatasync=fdatasync",
++                "-DHAVE_FDATASYNC=1",
++                "-DHAVE_LOCALTIME_R=1",
+                 "-DHAVE_MALLOC_H=1",
++                "-DHAVE_STRCHRNUL=1",
++                "-DHAVE_USLEEP=1",
++                "-DHAVE_UTIME=1",
++                "-DSQLITE_USE_ALLOCA=1",
+             ],
+         },
+     },

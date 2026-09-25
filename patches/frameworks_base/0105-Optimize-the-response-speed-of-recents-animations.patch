@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: wenbo wang <wenbo.wang@transsion.com>
+Date: Wed, 20 Aug 2025 06:08:23 -0700
+Subject: [PATCH 105/226] Optimize the response speed of recents animations
+
+In the recent animation scene, we don't need to wait for the launcher to draw, we just need the wallpaper to finish drawing and start the animation.
+
+Bug: 422656135
+Test:Three key navigation and gesture swipe up to recent to test for any issues.
+Change-Id: I9d9433434e334ee68cb5b2dd2cc182a584207c7f
+---
+ .../android/server/wm/BLASTSyncEngine.java    | 25 ++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/BLASTSyncEngine.java b/services/core/java/com/android/server/wm/BLASTSyncEngine.java
+index 70f075658d..25adf74fd2 100644
+--- a/services/core/java/com/android/server/wm/BLASTSyncEngine.java
++++ b/services/core/java/com/android/server/wm/BLASTSyncEngine.java
+@@ -20,6 +20,7 @@ import static android.os.Trace.TRACE_TAG_WINDOW_MANAGER;
+ 
+ import static com.android.internal.protolog.WmProtoLogGroups.WM_DEBUG_SYNC_ENGINE;
+ import static com.android.server.wm.WindowState.BLAST_TIMEOUT_DURATION;
++import static android.view.WindowManager.TRANSIT_TO_FRONT;
+ 
+ import android.annotation.NonNull;
+ import android.annotation.Nullable;
+@@ -207,9 +208,14 @@ class BLASTSyncEngine {
+             for (int i = mRootMembers.size() - 1; i >= 0; --i) {
+                 final WindowContainer wc = mRootMembers.valueAt(i);
+                 if (!wc.isSyncFinished(this)) {
+-                    ProtoLog.v(WM_DEBUG_SYNC_ENGINE, "SyncGroup %d:  Unfinished container: %s",
+-                            mSyncId, wc);
+-                    return false;
++                    if(canIgnoreFromRecents(wc)){
++                        //if wallpaper has drawn, ignore unfinished container when window is animating by recents.
++                        Slog.w(TAG, "Sync group " + mSyncId + " ignoring " + wc + "when wallpaper has drawn");
++                    } else {
++                        ProtoLog.v(WM_DEBUG_SYNC_ENGINE, "SyncGroup %d:  Unfinished container: %s",
++                                mSyncId, wc);
++                        return false;
++                    }
+                 }
+             }
+             finishNow();
+@@ -656,4 +662,17 @@ class BLASTSyncEngine {
+     void addOnIdleListener(Runnable onIdleListener) {
+         mOnIdleListeners.add(onIdleListener);
+     }
++
++    /** @return {@code true} if wallpaper has drawn when window is animating by recents.*/
++    private boolean canIgnoreFromRecents(WindowContainer wc){
++
++        if(wc.asActivityRecord() != null && wc.getDisplayContent() != null
++            && wc.asActivityRecord().isActivityTypeHomeOrRecents()
++            && mWm.mAtmService.getTransitionController().getCollectingTransitionType() == TRANSIT_TO_FRONT
++            && wc.getDisplayContent().mWallpaperController.wallpaperTransitionReady()
++            && wc.getDisplayContent().mWallpaperController.getTopVisibleWallpaper() != null){
++            return true;
++        }
++        return false;
++    }
+ }

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Tue, 30 Apr 2024 10:21:54 -0400
+Subject: [PATCH 092/226] libandroid_defaults: explicitly enable ThinLTO
+
+To utilize more optimization than just DCE
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ native/android/Android.bp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/native/android/Android.bp b/native/android/Android.bp
+index 0baa5104e4..3f4cd85afb 100644
+--- a/native/android/Android.bp
++++ b/native/android/Android.bp
+@@ -39,6 +39,10 @@ cc_defaults {
+         "-Wunreachable-code",
+         "-Wthread-safety",
+     ],
++    lto: {
++        thin: true,
++    },
++    whole_program_vtables: true, // Requires LTO
+ }
+ 
+ cc_library_shared {

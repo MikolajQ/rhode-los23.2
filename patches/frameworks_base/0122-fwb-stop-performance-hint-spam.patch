@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Tue, 20 Jan 2026 00:22:29 +0000
+Subject: [PATCH 122/226] fwb: stop performance hint spam
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ native/android/performance_hint.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/native/android/performance_hint.cpp b/native/android/performance_hint.cpp
+index 1e48c1f6d7..97da7b8577 100644
+--- a/native/android/performance_hint.cpp
++++ b/native/android/performance_hint.cpp
+@@ -443,7 +443,7 @@ int APerformanceHintManager::createSessionUsingConfig(ASessionCreationConfig* se
+     sessionCreationConfig->layerTokens.clear();
+ 
+     if (!ret.isOk() || !returnValue.session) {
+-        ALOGE("%s: PerformanceHint cannot create session. %s", __FUNCTION__, ret.getMessage());
++        //ALOGE("%s: PerformanceHint cannot create session. %s", __FUNCTION__, ret.getMessage());
+         switch (ret.getExceptionCode()) {
+             case binder::Status::EX_UNSUPPORTED_OPERATION:
+                 return ENOTSUP;

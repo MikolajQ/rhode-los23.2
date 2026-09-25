@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fred Underwood <underwoodfred@proton.me>
+Date: Thu, 12 Jun 2025 09:42:00 +1000
+Subject: [PATCH 17/23] remove cross-version ABI dump difference check
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ cc/library.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cc/library.go b/cc/library.go
+index aab5fc3d..20f95a7f 100644
+--- a/cc/library.go
++++ b/cc/library.go
+@@ -1652,7 +1652,7 @@ func (library *libraryDecorator) linkSAbiDumpFiles(ctx ModuleContext, deps PathD
+ 			}
+ 			prevDumpDir := filepath.Join(dumpDir, prevVersion, binderBitness)
+ 			prevDumpFile := getRefAbiDumpFile(ctx, prevDumpDir, fileName)
+-			if prevDumpFile.Valid() {
++			if prevDumpFile.Valid() && false {
+ 				library.crossVersionAbiDiff(ctx, sourceDump, prevDumpFile.Path(),
+ 					fileName, nameExt+prevVersion, isLlndk, currVersion, prevDumpDir)
+ 			}

@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sultan Alsawaf <sultan@kerneltoast.com>
+Date: Sat, 3 Apr 2021 16:43:42 -0700
+Subject: [PATCH 044/226] Don't enable extra StrictMode features for userdebug
+ builds
+
+On userdebug builds, StrictMode becomes more invasive and can produce
+screen flashes when violations are detected. Let's treat userdebug
+builds the same as user builds and skip the extra StrictMode features
+for userdebug.
+
+Change-Id: Idd9443ac1f5c1db5071e706e013a676c2f179db4
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ core/java/android/os/StrictMode.java | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/core/java/android/os/StrictMode.java b/core/java/android/os/StrictMode.java
+index a1b0d9586a..12928596ef 100644
+--- a/core/java/android/os/StrictMode.java
++++ b/core/java/android/os/StrictMode.java
+@@ -1526,9 +1526,9 @@ public final class StrictMode {
+             builder.penaltyDeathOnNetwork();
+         }
+ 
+-        if (Build.IS_USER || DISABLE || SystemProperties.getBoolean(DISABLE_PROPERTY, false)) {
++        if (Build.IS_USER || Build.IS_USERDEBUG || DISABLE || SystemProperties.getBoolean(DISABLE_PROPERTY, false)) {
+             // Detect nothing extra
+-        } else if (Build.IS_USERDEBUG || Build.IS_ENG) {
++        } else if (Build.IS_ENG) {
+             // Detect everything in bundled apps
+             if (isBundledSystemApp(ai)) {
+                 builder.detectAll();
+@@ -1561,16 +1561,8 @@ public final class StrictMode {
+             builder.penaltyDeathOnFileUriExposure();
+         }
+ 
+-        if (Build.IS_USER || DISABLE || SystemProperties.getBoolean(DISABLE_PROPERTY, false)) {
++        if (Build.IS_USER || Build.IS_USERDEBUG || DISABLE || SystemProperties.getBoolean(DISABLE_PROPERTY, false)) {
+             // Detect nothing extra
+-        } else if (Build.IS_USERDEBUG) {
+-            // Detect everything in bundled apps (except activity leaks, which
+-            // are expensive to track)
+-            if (isBundledSystemApp(ai)) {
+-                builder.detectAll();
+-                builder.permitActivityLeaks();
+-                builder.penaltyDropBox();
+-            }
+         } else if (Build.IS_ENG) {
+             // Detect everything in bundled apps
+             if (isBundledSystemApp(ai)) {
+@@ -2922,7 +2914,7 @@ public final class StrictMode {
+      */
+     @UnsupportedAppUsage
+     public static Span enterCriticalSpan(String name) {
+-        if (Build.IS_USER) {
++        if (Build.IS_USER || Build.IS_USERDEBUG) {
+             return NO_OP_SPAN;
+         }
+         if (name == null || name.isEmpty()) {

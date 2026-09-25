@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Danny Lin <danny@kdrag0n.dev>
+Date: Sun, 2 Feb 2025 21:25:49 +0800
+Subject: [PATCH 14/14] config: Downscale task snapshots to 80%
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This saves memory without a noticeable loss in quality.
+
+Extracted from the Pixel stock ROM.
+
+Signed-off-by: minaripenguin <minaripenguin@users.noreply.github.com>
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+
+
+[MikolajQ: konflikt rozwiązany przy przenoszeniu na LineageOS lineage-23.2]
+---
+ overlay/common/frameworks/base/core/res/res/values/config.xml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/overlay/common/frameworks/base/core/res/res/values/config.xml b/overlay/common/frameworks/base/core/res/res/values/config.xml
+index 8ef82b4..83fcda7 100644
+--- a/overlay/common/frameworks/base/core/res/res/values/config.xml
++++ b/overlay/common/frameworks/base/core/res/res/values/config.xml
+@@ -178,4 +178,7 @@
+ 
+     <!-- Whether glanceable hub is enabled by default. -->
+     <bool name="config_glanceableHubEnabledByDefault">true</bool>
++    
++    <!-- The amount to scale fullscreen snapshots for Overview and snapshot starting windows. -->
++    <item name="config_highResTaskSnapshotScale" format="float" type="dimen">0.8</item>
+ </resources>

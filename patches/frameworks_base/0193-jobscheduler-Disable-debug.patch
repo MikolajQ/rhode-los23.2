@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheHardGamer <gamelovr695@gmail.com>
+Date: Fri, 9 May 2025 02:02:36 +0800
+Subject: [PATCH 193/226] jobscheduler: Disable debug
+
+---
+ .../java/com/android/server/job/JobSchedulerService.java      | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/apex/jobscheduler/service/java/com/android/server/job/JobSchedulerService.java b/apex/jobscheduler/service/java/com/android/server/job/JobSchedulerService.java
+index 54b9e6a430..dbaa420507 100644
+--- a/apex/jobscheduler/service/java/com/android/server/job/JobSchedulerService.java
++++ b/apex/jobscheduler/service/java/com/android/server/job/JobSchedulerService.java
+@@ -180,8 +180,8 @@ import java.util.function.Predicate;
+ public class JobSchedulerService extends com.android.server.SystemService
+         implements StateChangedListener, JobCompletedListener {
+     public static final String TAG = "JobScheduler";
+-    public static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+-    public static final boolean DEBUG_STANDBY = DEBUG || false;
++    public static final boolean DEBUG = false;
++    public static final boolean DEBUG_STANDBY = false;
+ 
+     public static final String TRACE_TRACK_NAME = "JobScheduler";
+ 

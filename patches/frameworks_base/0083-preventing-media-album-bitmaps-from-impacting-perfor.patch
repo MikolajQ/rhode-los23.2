@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Thu, 27 Nov 2025 16:39:18 +0800
+Subject: [PATCH 083/226] preventing media album bitmaps from impacting
+ performance
+
+targets the same approach as minari's: https://github.com/AxionAOSP/android_frameworks_base/commit/b59b6f3eef4a8b216da48a1313284795024206e3. but dont force 500px, this approach prevents media bitmaps from impacting performance on high dpi devices without increasing the max bitmap size on low pixel devices and touching unnecessary stuffs
+
+Change-Id: I3fae0e9671893566dd402a221e04f44b5f073329
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ media/java/android/media/session/MediaSession.java        | 6 +++++-
+ .../media/controls/domain/pipeline/MediaDataLoader.kt     | 8 ++++++--
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/media/java/android/media/session/MediaSession.java b/media/java/android/media/session/MediaSession.java
+index 8989ae8eeb..a0bf7faa31 100644
+--- a/media/java/android/media/session/MediaSession.java
++++ b/media/java/android/media/session/MediaSession.java
+@@ -200,8 +200,12 @@ public final class MediaSession {
+         }
+ 
+         mContext = context;
+-        mMaxBitmapSize = context.getResources().getDimensionPixelSize(
++
++        int bitmapSize = context.getResources().getDimensionPixelSize(
+                 com.android.internal.R.dimen.config_mediaMetadataBitmapMaxSize);
++
++        mMaxBitmapSize = Math.min(bitmapSize, 500); 
++
+         mCbStub = new CallbackStub(this);
+         MediaSessionManager manager = (MediaSessionManager) context
+                 .getSystemService(Context.MEDIA_SESSION_SERVICE);
+diff --git a/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDataLoader.kt b/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDataLoader.kt
+index 3d1cad0da0..b2e7fe0012 100644
+--- a/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDataLoader.kt
++++ b/packages/SystemUI/src/com/android/systemui/media/controls/domain/pipeline/MediaDataLoader.kt
+@@ -71,6 +71,7 @@ import kotlinx.coroutines.Job
+ import kotlinx.coroutines.cancel
+ import kotlinx.coroutines.delay
+ import kotlinx.coroutines.ensureActive
++import kotlin.math.min
+ 
+ /** Loads media information from media style [StatusBarNotification] classes. */
+ @SysUISingleton
+@@ -89,8 +90,11 @@ constructor(
+     private val mediaProcessingJobs = ConcurrentHashMap<String, Job>()
+ 
+     private val artworkWidth: Int =
+-        context.resources.getDimensionPixelSize(
+-            com.android.internal.R.dimen.config_mediaMetadataBitmapMaxSize
++        min(
++            context.resources.getDimensionPixelSize(
++                com.android.internal.R.dimen.config_mediaMetadataBitmapMaxSize
++            ),
++            500
+         )
+     private val artworkHeight: Int =
+         context.resources.getDimensionPixelSize(R.dimen.qs_media_session_height_expanded)

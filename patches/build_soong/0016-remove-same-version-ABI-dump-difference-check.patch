@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Fri, 24 Jan 2025 23:39:46 +0200
+Subject: [PATCH 16/23] remove same-version ABI dump difference check
+
+It always fails on GrapheneOS due to compiler flag differences and due to added symbols. This means
+that both platform and vndk ABI dumps have to be updated for multiple libraries and ABIs during each
+quarterly/yearly port, which slows it down significantly.
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ cc/library.go | 36 ------------------------------------
+ 1 file changed, 36 deletions(-)
+
+diff --git a/cc/library.go b/cc/library.go
+index d2ff9c27..aab5fc3d 100644
+--- a/cc/library.go
++++ b/cc/library.go
+@@ -1536,22 +1536,6 @@ func (library *libraryDecorator) crossVersionAbiDiff(ctx android.ModuleContext,
+ 		isLlndk, true /* allowExtensions */, sourceVersion, errorMessage)
+ }
+ 
+-func (library *libraryDecorator) sameVersionAbiDiff(ctx android.ModuleContext,
+-	sourceDump, referenceDump android.Path,
+-	baseName, nameExt string, isLlndk bool, lsdumpTagName string) {
+-
+-	libName := strings.TrimSuffix(baseName, filepath.Ext(baseName))
+-	errorMessage := "error: Please update ABI references with: $$ANDROID_BUILD_TOP/development/vndk/tools/header-checker/utils/create_reference_dumps.py --lib " + libName + " --lib-variant " + lsdumpTagName
+-
+-	targetRelease := ctx.Config().Getenv("TARGET_RELEASE")
+-	if targetRelease != "" {
+-		errorMessage += " --release " + targetRelease
+-	}
+-
+-	library.sourceAbiDiff(ctx, sourceDump, referenceDump, baseName, nameExt,
+-		isLlndk, false /* allowExtensions */, "current", errorMessage)
+-}
+-
+ func (library *libraryDecorator) optInAbiDiff(ctx android.ModuleContext,
+ 	sourceDump, referenceDump android.Path,
+ 	baseName, nameExt string, refDumpDir string, lsdumpTagName string) {
+@@ -1672,26 +1656,6 @@ func (library *libraryDecorator) linkSAbiDumpFiles(ctx ModuleContext, deps PathD
+ 				library.crossVersionAbiDiff(ctx, sourceDump, prevDumpFile.Path(),
+ 					fileName, nameExt+prevVersion, isLlndk, currVersion, prevDumpDir)
+ 			}
+-			// Check against the current version.
+-			sourceDump = implDump
+-			if isLlndk && currVendorVersion != "" {
+-				currVersion = currVendorVersion
+-				if android.IsTrunkStableVendorApiLevel(currVersion) {
+-					sourceDump = llndkDump
+-				}
+-			} else {
+-				currVersion = currSdkVersion
+-				if isApex && (!ctx.Config().PlatformSdkFinal() ||
+-					ctx.Config().PlatformSdkVersion().FinalInt() > 34) {
+-					sourceDump = apexVariantDump
+-				}
+-			}
+-			currDumpDir := filepath.Join(dumpDir, currVersion, binderBitness)
+-			currDumpFile := getRefAbiDumpFile(ctx, currDumpDir, fileName)
+-			if currDumpFile.Valid() {
+-				library.sameVersionAbiDiff(ctx, sourceDump, currDumpFile.Path(),
+-					fileName, nameExt, isLlndk, string(tag))
+-			}
+ 		}
+ 
+ 		// Assert that a module is tagged with at most one of platformLsdumpTag, productLsdumpTag, or vendorLsdumpTag.

@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sun, 5 Oct 2025 14:27:37 +0800
+Subject: [PATCH 3/4] skip mediametrics when statsd is not available
+
+Change-Id: I23a25f11eab0126d0dab3c200af8934de734d54b
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+---
+ services/mediametrics/statsd_codec.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/services/mediametrics/statsd_codec.cpp b/services/mediametrics/statsd_codec.cpp
+index 256ce8b..bcc2a82 100644
+--- a/services/mediametrics/statsd_codec.cpp
++++ b/services/mediametrics/statsd_codec.cpp
+@@ -180,7 +180,8 @@ static void parseVector(const std::string &str, std::vector<int32_t> *vector) {
+ bool statsd_codec(const std::shared_ptr<const mediametrics::Item>& item,
+         const std::shared_ptr<mediametrics::StatsdLog>& statsdLog)
+ {
+-    if (item == nullptr) return false;
++    bool statsd_enabled = false;
++    if (item == nullptr || !statsd_enabled) return false;
+ 
+     AStatsEvent* event = AStatsEvent_obtain();
+     AStatsEvent_setAtomId(event, stats::media_metrics::MEDIA_CODEC_REPORTED);

@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: jiayongqiang <jiayongqiang@xiaomi.com>
+Date: Thu, 8 May 2025 14:11:15 +0800
+Subject: [PATCH 33/42] surfaceflinger: Optimize transformhint updates to aviod
+ buffer reallocation in BBQ
+
+If a invisible parent layer set a fixedTransformHint, the sub layers
+of this parent layer should be updated in time, especially in the
+occation that when a landscape Activity exit and return to vertical
+Activity.
+
+It can optimize performance by avoiding unnecessary buffer
+reallocation while dequeuBuffer for sub layers.
+
+Change-Id: I5327591af6c2a4ba290d2ea2059a407171e47ecf
+Signed-off-by: jiayongqiang <jiayongqiang@xiaomi.com>
+---
+ .../FrontEnd/LayerSnapshotBuilder.cpp         | 32 +++++++++----------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/services/surfaceflinger/FrontEnd/LayerSnapshotBuilder.cpp b/services/surfaceflinger/FrontEnd/LayerSnapshotBuilder.cpp
+index 813656a..5cda508 100644
+--- a/services/surfaceflinger/FrontEnd/LayerSnapshotBuilder.cpp
++++ b/services/surfaceflinger/FrontEnd/LayerSnapshotBuilder.cpp
+@@ -789,6 +789,22 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
+         }
+     }
+ 
++    if (forceUpdate || snapshot.clientChanges & layer_state_t::eFixedTransformHintChanged ||
++        args.displayChanges) {
++        snapshot.fixedTransformHint = requested.fixedTransformHint != ui::Transform::ROT_INVALID
++                ? requested.fixedTransformHint
++                : parentSnapshot.fixedTransformHint;
++
++        if (snapshot.fixedTransformHint != ui::Transform::ROT_INVALID) {
++            snapshot.transformHint = snapshot.fixedTransformHint;
++        } else {
++            const auto display = args.displays.get(snapshot.outputFilter.layerStack);
++            snapshot.transformHint = display.has_value()
++                    ? std::make_optional<>(display->get().transformHint)
++                    : std::nullopt;
++        }
++    }
++
+     if (snapshot.isHiddenByPolicyFromParent &&
+         !snapshot.changes.test(RequestedLayerState::Changes::Created)) {
+         if (forceUpdate ||
+@@ -884,22 +900,6 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
+         updateMetadataAndGameMode(snapshot, requested, args, parentSnapshot);
+     }
+ 
+-    if (forceUpdate || snapshot.clientChanges & layer_state_t::eFixedTransformHintChanged ||
+-        args.displayChanges) {
+-        snapshot.fixedTransformHint = requested.fixedTransformHint != ui::Transform::ROT_INVALID
+-                ? requested.fixedTransformHint
+-                : parentSnapshot.fixedTransformHint;
+-
+-        if (snapshot.fixedTransformHint != ui::Transform::ROT_INVALID) {
+-            snapshot.transformHint = snapshot.fixedTransformHint;
+-        } else {
+-            const auto display = args.displays.get(snapshot.outputFilter.layerStack);
+-            snapshot.transformHint = display.has_value()
+-                    ? std::make_optional<>(display->get().transformHint)
+-                    : std::nullopt;
+-        }
+-    }
+-
+     if (forceUpdate ||
+         args.layerLifecycleManager.getGlobalChanges().any(
+                 RequestedLayerState::Changes::Hierarchy) ||

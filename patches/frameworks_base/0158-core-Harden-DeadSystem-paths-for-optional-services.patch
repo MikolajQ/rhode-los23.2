@@ -1,0 +1,165 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Quince <quinceroms@gmail.com>
+Date: Sat, 4 Apr 2026 10:23:06 +0200
+Subject: [PATCH 158/226] core: Harden DeadSystem paths for optional services
+
+Some devices legitimately ship without persistent data block / OEM lock, and
+those services can also be transiently absent while system_server is still
+coming up or already tearing down. Treating them like mandatory services routes
+lookups through onServiceNotFound() and emits extra WTF noise right in the same
+DeadSystem failure paths we are trying to contain.
+
+ActivityManagerService also should not assume DropBox remains usable once the
+system is already failing, and LockSettingsStorage should quietly skip FRP
+helpers when the persistent data block service is absent instead of turning
+that into another fatal-looking report.
+
+Use nullable lookups for the optional services, whitelist them in
+getSystemService(), and wrap DropBox queries/writes so these reporting paths
+fail closed instead of recursively amplifying the original failure.
+
+Signed-off-by: Quince <quinceroms@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../android/app/SystemServiceRegistry.java    | 12 ++++++--
+ .../server/am/ActivityManagerService.java     | 28 ++++++++++++++++---
+ .../locksettings/LockSettingsStorage.java     | 20 ++++---------
+ 3 files changed, 39 insertions(+), 21 deletions(-)
+
+diff --git a/core/java/android/app/SystemServiceRegistry.java b/core/java/android/app/SystemServiceRegistry.java
+index 6d02cb0cfa..cc1996d668 100644
+--- a/core/java/android/app/SystemServiceRegistry.java
++++ b/core/java/android/app/SystemServiceRegistry.java
+@@ -1201,7 +1201,10 @@ public final class SystemServiceRegistry {
+                 new StaticServiceFetcher<PersistentDataBlockManager>() {
+             @Override
+             public PersistentDataBlockManager createService() throws ServiceNotFoundException {
+-                IBinder b = ServiceManager.getServiceOrThrow(Context.PERSISTENT_DATA_BLOCK_SERVICE);
++                IBinder b = ServiceManager.getService(Context.PERSISTENT_DATA_BLOCK_SERVICE);
++                if (b == null) {
++                    return null;
++                }
+                 IPersistentDataBlockService persistentDataBlockService =
+                         IPersistentDataBlockService.Stub.asInterface(b);
+                 if (persistentDataBlockService != null) {
+@@ -1217,7 +1220,10 @@ public final class SystemServiceRegistry {
+                 new StaticServiceFetcher<OemLockManager>() {
+             @Override
+             public OemLockManager createService() throws ServiceNotFoundException {
+-                IBinder b = ServiceManager.getServiceOrThrow(Context.OEM_LOCK_SERVICE);
++                IBinder b = ServiceManager.getService(Context.OEM_LOCK_SERVICE);
++                if (b == null) {
++                    return null;
++                }
+                 IOemLockService oemLockService = IOemLockService.Stub.asInterface(b);
+                 if (oemLockService != null) {
+                     return new OemLockManager(oemLockService);
+@@ -2075,6 +2081,8 @@ public final class SystemServiceRegistry {
+                 case Context.VIRTUALIZATION_SERVICE:
+                 case Context.VIRTUAL_DEVICE_SERVICE:
+                 case Context.DROPBOX_SERVICE:
++                case Context.PERSISTENT_DATA_BLOCK_SERVICE:
++                case Context.OEM_LOCK_SERVICE:
+                     return null;
+                 case Context.VCN_MANAGEMENT_SERVICE:
+                     if (!hasSystemFeatureOpportunistic(ctx,
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index a8ec32343c..14e3675237 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -9566,7 +9566,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+ 
+         // Exit early if the dropbox isn't configured to accept this report type.
+         final String dropboxTag = processClass(process) + "_strictmode";
+-        if (dbox == null || !dbox.isTagEnabled(dropboxTag)) return;
++        if (!isDropBoxTagEnabled(dbox, dropboxTag)) return;
+ 
+         final StringBuilder sb = new StringBuilder(1024);
+         synchronized (sb) {
+@@ -9607,10 +9607,30 @@ public class ActivityManagerService extends IActivityManager.Stub
+ 
+         final String res = sb.toString();
+         IoThread.getHandler().post(() -> {
+-            dbox.addText(dropboxTag, res);
++            addTextToDropBox(dbox, dropboxTag, res);
+         });
+     }
+ 
++    private boolean isDropBoxTagEnabled(DropBoxManager dbox, String dropboxTag) {
++        if (dbox == null) {
++            return false;
++        }
++        try {
++            return dbox.isTagEnabled(dropboxTag);
++        } catch (RuntimeException e) {
++            Slog.w(TAG, "Unable to query DropBox tag " + dropboxTag, e);
++            return false;
++        }
++    }
++
++    private void addTextToDropBox(DropBoxManager dbox, String dropboxTag, String data) {
++        try {
++            dbox.addText(dropboxTag, data);
++        } catch (RuntimeException e) {
++            Slog.w(TAG, "Unable to write DropBox entry " + dropboxTag, e);
++        }
++    }
++
+     /**
+      * Used by {@link Log} via {@link com.android.internal.os.RuntimeInit} to report serious errors.
+      * @param app object of the crashing app, null for the system server
+@@ -9881,7 +9901,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+ 
+         // Exit early if the dropbox isn't configured to accept this report type.
+         final String dropboxTag = processClass(process) + "_" + eventType;
+-        if (dbox == null || !dbox.isTagEnabled(dropboxTag)) return;
++        if (!isDropBoxTagEnabled(dbox, dropboxTag)) return;
+ 
+         // Check if we should rate limit and abort early if needed.
+         final DropboxRateLimiter.RateLimitResult rateLimitResult =
+@@ -10036,7 +10056,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+                     }
+                 }
+ 
+-                dbox.addText(dropboxTag, sb.toString());
++                addTextToDropBox(dbox, dropboxTag, sb.toString());
+             }
+         };
+ 
+diff --git a/services/core/java/com/android/server/locksettings/LockSettingsStorage.java b/services/core/java/com/android/server/locksettings/LockSettingsStorage.java
+index 468fd58897..08fcf5d0c5 100644
+--- a/services/core/java/com/android/server/locksettings/LockSettingsStorage.java
++++ b/services/core/java/com/android/server/locksettings/LockSettingsStorage.java
+@@ -624,27 +624,17 @@ class LockSettingsStorage {
+ 
+     public void deactivateFactoryResetProtectionWithoutSecret() {
+         PersistentDataBlockManagerInternal persistentDataBlock = getPersistentDataBlockManager();
+-        if (persistentDataBlock != null) {
+-            persistentDataBlock.deactivateFactoryResetProtectionWithoutSecret();
+-        } else {
+-            Slog.wtf(TAG, "Failed to get PersistentDataBlockManagerInternal");
++        if (persistentDataBlock == null) {
++            return;
+         }
++        persistentDataBlock.deactivateFactoryResetProtectionWithoutSecret();
+     }
+ 
+     public boolean isFactoryResetProtectionActive() {
+         PersistentDataBlockManager persistentDataBlockManager =
+                 mContext.getSystemService(PersistentDataBlockManager.class);
+-        if (persistentDataBlockManager != null) {
+-            return persistentDataBlockManager.isFactoryResetProtectionActive();
+-        } else {
+-            Slog.wtf(TAG, "Failed to get PersistentDataBlockManager");
+-            // This should never happen, but in the event it does, let's not block the user.  This
+-            // may be the wrong call, since if an attacker can find a way to prevent us from
+-            // getting the PersistentDataBlockManager they can defeat FRP, but if they can block
+-            // access to PersistentDataBlockManager they must have compromised the system and we've
+-            // probably already lost this battle.
+-            return false;
+-        }
++        return persistentDataBlockManager != null
++                && persistentDataBlockManager.isFactoryResetProtectionActive();
+     }
+ 
+     /**

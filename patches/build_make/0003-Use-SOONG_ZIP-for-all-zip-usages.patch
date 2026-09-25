@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simao Gomes Viana <simao@halogenos.org>
+Date: Sat, 23 Jul 2022 20:34:38 +0200
+Subject: [PATCH 03/10] Use SOONG_ZIP for all zip usages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Multithreaded
+
+Change-Id: I1a7ce79edd8e4f2bbe400b9aeac1c0edcc368f8c
+Signed-off-by: Simão Gomes Viana <devel@superboring.dev>
+---
+ core/definitions.mk | 4 ++--
+ core/jacoco.mk      | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/core/definitions.mk b/core/definitions.mk
+index ad70366..162cd61 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -3375,9 +3375,9 @@ endef
+ # files and we should not strip.
+ define dexpreopt-remove-classes.dex
+ $(hide) if (zipinfo $1 '*.dex' 2>/dev/null | grep -v ' stor ' >/dev/null) ; then \
+-zip --quiet --delete $(1) classes.dex; \
++$(SOONG_ZIP) --quiet --delete $(1) classes.dex; \
+ dex_index=2; \
+-while zip --quiet --delete $(1) classes$${dex_index}.dex > /dev/null; do \
++while $(SOONG_ZIP) --quiet --delete $(1) classes$${dex_index}.dex > /dev/null; do \
+   let dex_index=dex_index+1; \
+ done \
+ fi
+diff --git a/core/jacoco.mk b/core/jacoco.mk
+index 4b635ca..0adb420 100644
+--- a/core/jacoco.mk
++++ b/core/jacoco.mk
+@@ -69,7 +69,7 @@ $(my_unzipped_timestamp_path): $(LOCAL_FULL_CLASSES_PRE_JACOCO_JAR)
+ $(my_classes_to_report_on_path): PRIVATE_UNZIPPED_PATH := $(my_unzipped_path)
+ $(my_classes_to_report_on_path): $(my_unzipped_timestamp_path)
+ 	rm -f $@
+-	zip -q $@ \
++	$(SOONG_ZIP) -q $@ \
+ 	  -r $(PRIVATE_UNZIPPED_PATH)
+ 
+ ALL_MODULES.$(my_register_name).JACOCO_REPORT_FILES := $(my_classes_to_report_on_path)

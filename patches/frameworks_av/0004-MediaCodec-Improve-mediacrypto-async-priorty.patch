@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "shipeng.sun" <shipeng.sun@amlogic.com>
+Date: Mon, 15 Dec 2025 11:05:43 +0800
+Subject: [PATCH 4/4] MediaCodec: Improve mediacrypto async priorty
+
+The decryption priority of MediaCrypto is determined by the priority of the Client's Binder call.
+For asynchronous decryption threads, the priority needs to be increased to ANDROID_PRIORITY_AUDIO.
+
+Bug: 468888713
+
+Change-Id: I5069a79c9f313d2c761c433aff8bd202e171502f
+Signed-off-by: shipeng.sun <shipeng.sun@amlogic.com>
+---
+ media/libstagefright/MediaCodec.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index 87c2cff..e66ccba 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -5616,7 +5616,8 @@ void MediaCodec::onMessageReceived(const sp<AMessage> &msg) {
+                     mCryptoLooper = new ALooper();
+                     mCryptoLooper->setName("CryptoAsyncLooper");
+                     mCryptoLooper->registerHandler(mCryptoAsync);
+-                    status_t err = mCryptoLooper->start();
++                    status_t err = mCryptoLooper->start(false /* runOnCallingThread */,
++                        false /* canCallJava */, ANDROID_PRIORITY_AUDIO);
+                     if (err != OK) {
+                         ALOGE("Crypto Looper failed to start");
+                         mCryptoAsync = nullptr;

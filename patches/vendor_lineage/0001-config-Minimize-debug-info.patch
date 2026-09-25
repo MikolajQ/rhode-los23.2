@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Tue, 10 Jan 2023 21:01:07 +0530
+Subject: [PATCH 01/14] config: Minimize debug info
+
+Change-Id: I8e68782b9737d29c0c2639ae13d088d743ff5e3e
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ config/common.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/config/common.mk b/config/common.mk
+index f927424..7433c34 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -110,6 +110,8 @@ endif
+ 
+ # Do not include art debug targets
+ PRODUCT_ART_TARGET_INCLUDE_DEBUG_BUILD := false
++PRODUCT_SYSTEM_SERVER_DEBUG_INFO := false
++WITH_DEXPREOPT_DEBUG_INFO := false
+ 
+ # Strip the local variable table and the local variable type table to reduce
+ # the size of the system image. This has no bearing on stack traces, but will

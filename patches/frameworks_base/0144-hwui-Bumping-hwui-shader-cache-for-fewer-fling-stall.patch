@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Wed, 15 Apr 2026 06:57:40 +0800
+Subject: [PATCH 144/226] hwui: Bumping hwui shader cache for fewer fling
+ stalls
+
+Change-Id: I84842e8e67ab3736108fb77ddc6e875011d4f7e5
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libs/hwui/pipeline/skia/ShaderCache.cpp | 4 ++--
+ libs/hwui/pipeline/skia/ShaderCache.h   | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/libs/hwui/pipeline/skia/ShaderCache.cpp b/libs/hwui/pipeline/skia/ShaderCache.cpp
+index 9edd42fd78..dff954e231 100644
+--- a/libs/hwui/pipeline/skia/ShaderCache.cpp
++++ b/libs/hwui/pipeline/skia/ShaderCache.cpp
+@@ -36,8 +36,8 @@ namespace skiapipeline {
+ 
+ // Cache size limits.
+ static const size_t kMaxKeySize = 1024;
+-static const size_t kMaxValueSize = 2 * 1024 * 1024;
+-static const size_t kMaxTotalSize = 4 * 1024 * 1024;
++static const size_t kMaxValueSize = 4 * 1024 * 1024;
++static const size_t kMaxTotalSize = 32 * 1024 * 1024;
+ static_assert(kMaxKeySize + kMaxValueSize < kMaxTotalSize);
+ 
+ ShaderCache::ShaderCache() {
+diff --git a/libs/hwui/pipeline/skia/ShaderCache.h b/libs/hwui/pipeline/skia/ShaderCache.h
+index 4c01161371..0f76e2ff72 100644
+--- a/libs/hwui/pipeline/skia/ShaderCache.h
++++ b/libs/hwui/pipeline/skia/ShaderCache.h
+@@ -170,7 +170,7 @@ private:
+      *
+      *  WARNING: setting this to 0 will disable writing the cache to disk.
+      */
+-    unsigned int mDeferredSaveDelayMs = 4 * 1000;
++    unsigned int mDeferredSaveDelayMs = 10 * 1000;
+ 
+     /**
+      * "mMutex" is the shared mutex used to prevent concurrent access to the member

@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ayushigupta <quic_ayugup@quicinc.com>
+Date: Tue, 2 Jul 2024 14:56:58 +0530
+Subject: [PATCH 130/226] CachedAppOptimizer: Initialize compactProfile and
+ compactTime
+
+CRs-Fixed: 3858822
+Change-Id: I6f06176d8e5e40a5fd2afb53b9417005f2e26b2a
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../core/java/com/android/server/am/CachedAppOptimizer.java    | 2 +-
+ .../com/android/server/am/ProcessCachedOptimizerRecord.java    | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/CachedAppOptimizer.java b/services/core/java/com/android/server/am/CachedAppOptimizer.java
+index 8a86b66739..75ca8260df 100644
+--- a/services/core/java/com/android/server/am/CachedAppOptimizer.java
++++ b/services/core/java/com/android/server/am/CachedAppOptimizer.java
+@@ -278,7 +278,7 @@ public class CachedAppOptimizer {
+     @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_1 = 5_000;
+     @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_2 = 10_000;
+     @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_3 = 500;
+-    @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_4 = 10_000;
++    @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_4 = 5*60*1000;
+     @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_5 = 10 * 60 * 1000;
+     @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_6 = 10 * 60 * 1000;
+     @VisibleForTesting static final long DEFAULT_COMPACT_THROTTLE_MIN_OOM_ADJ =
+diff --git a/services/core/java/com/android/server/am/ProcessCachedOptimizerRecord.java b/services/core/java/com/android/server/am/ProcessCachedOptimizerRecord.java
+index 2152551418..7b2e731083 100644
+--- a/services/core/java/com/android/server/am/ProcessCachedOptimizerRecord.java
++++ b/services/core/java/com/android/server/am/ProcessCachedOptimizerRecord.java
+@@ -214,7 +214,7 @@ public final class ProcessCachedOptimizerRecord {
+     CachedAppOptimizer.CompactProfile getLastCompactProfile() {
+         if (mLastCompactProfile == null) {
+             // The first compaction won't have a previous one, so assign one to avoid crashing.
+-            mLastCompactProfile = CachedAppOptimizer.CompactProfile.SOME;
++            mLastCompactProfile = CachedAppOptimizer.CompactProfile.FULL;
+         }
+ 
+         return mLastCompactProfile;
+@@ -403,6 +403,7 @@ public final class ProcessCachedOptimizerRecord {
+ 
+     void init(long nowUptime) {
+         mFreezeUnfreezeTime = nowUptime;
++        mLastCompactTime = nowUptime;
+     }
+ 
+     @GuardedBy("mProcLock")

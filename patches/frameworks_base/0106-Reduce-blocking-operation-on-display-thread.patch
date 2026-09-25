@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riddle Hsu <riddlehsu@google.com>
+Date: Fri, 29 Aug 2025 14:40:07 +0800
+Subject: [PATCH 106/226] Reduce blocking operation on display thread
+
+For example, thread A acquires wm lock 20ms and it posts a
+message to another thread B that also needs to enter wm lock.
+Then B will need to wait for the 20ms operation to finish.
+
+Currently the common cases are the message of task-layer-rank
+and idle-check. For rank, it can be done with deferred scope
+without posting a message. For idle-check, it can post a
+regular 10ms timeout rather than an immediate message if the
+activity is in a transition because when transition is finished,
+scheduleProcessStoppingAndFinishingActivitiesIfNeeded will also
+check idle.
+
+Bug: 422656135
+Test: Return to home from an app by pressing home key.
+      Check trace about the timestamp of setProcessGroup.
+Change-Id: I9f455f1063ef04c049c5743eda9f6c175ec3a0ba
+---
+ .../core/java/com/android/server/wm/ActivityRecord.java     | 4 ++--
+ .../com/android/server/wm/ActivityTaskManagerService.java   | 5 +++++
+ .../java/com/android/server/wm/RootWindowContainer.java     | 6 ++++--
+ 3 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/ActivityRecord.java b/services/core/java/com/android/server/wm/ActivityRecord.java
+index bd9ed05f97..c02f8b8074 100644
+--- a/services/core/java/com/android/server/wm/ActivityRecord.java
++++ b/services/core/java/com/android/server/wm/ActivityRecord.java
+@@ -6048,8 +6048,8 @@ final class ActivityRecord extends WindowToken {
+                 case PAUSING:
+                 case PAUSED:
+                 case STARTED:
+-                    addToStopping(true /* scheduleIdle */,
+-                            canEnterPictureInPicture /* idleDelayed */, "makeInvisible");
++                    final boolean idleDelayed = canEnterPictureInPicture || inTransition();
++                    addToStopping(true /* scheduleIdle */, idleDelayed, "makeInvisible");
+                     break;
+ 
+                 default:
+diff --git a/services/core/java/com/android/server/wm/ActivityTaskManagerService.java b/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
+index d5fb5e564b..7f8e50c423 100644
+--- a/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
++++ b/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
+@@ -5477,6 +5477,11 @@ public class ActivityTaskManagerService extends IActivityTaskManager.Stub {
+         // ClientTransactions is queued during #deferWindowLayout() for performance.
+         // Notify to continue.
+         mLifecycleManager.onLayoutContinued();
++
++        if (mRootWindowContainer.mTaskLayersChanged
++                && !mWindowManager.mWindowPlacerLocked.isLayoutDeferred()) {
++            mRootWindowContainer.rankTaskLayers();
++        }
+     }
+ 
+     /**
+diff --git a/services/core/java/com/android/server/wm/RootWindowContainer.java b/services/core/java/com/android/server/wm/RootWindowContainer.java
+index 79f33fa948..d322f744b1 100644
+--- a/services/core/java/com/android/server/wm/RootWindowContainer.java
++++ b/services/core/java/com/android/server/wm/RootWindowContainer.java
+@@ -253,7 +253,7 @@ class RootWindowContainer extends WindowContainer<DisplayContent>
+     DeviceStateAutoRotateSettingController mDeviceStateAutoRotateSettingController;
+ 
+     // Whether tasks have moved and we need to rank the tasks before next OOM scoring
+-    private boolean mTaskLayersChanged = true;
++    boolean mTaskLayersChanged = true;
+     private int mTmpTaskLayerRank;
+     private final RankTaskLayersRunnable mRankTaskLayersRunnable = new RankTaskLayersRunnable();
+     private Region mTmpOccludingRegion;
+@@ -2991,7 +2991,9 @@ class RootWindowContainer extends WindowContainer<DisplayContent>
+     void invalidateTaskLayers() {
+         if (!mTaskLayersChanged) {
+             mTaskLayersChanged = true;
+-            mService.mH.post(mRankTaskLayersRunnable);
++            if (!mWindowManager.mWindowPlacerLocked.isLayoutDeferred()) {
++                mService.mH.post(mRankTaskLayersRunnable);
++            }
+         }
+     }
+ 

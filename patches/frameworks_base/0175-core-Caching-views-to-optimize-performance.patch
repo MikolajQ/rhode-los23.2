@@ -1,0 +1,462 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sat, 2 May 2026 11:16:35 +0800
+Subject: [PATCH 175/226] core: Caching views to optimize performance
+
+Change-Id: Ia4d67a5ba70bd66d9711c46494b3c7492b8c2eac
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ core/java/android/view/LayoutInflater.java    |  30 ++++
+ .../android/view/ViewBackgroundThread.java    |  83 +++++++++++
+ core/java/android/view/ViewRootImpl.java      |   6 +
+ .../android/internal/util/ViewCacheData.java  | 134 ++++++++++++++++++
+ .../internal/util/ViewCacheManager.java       | 129 +++++++++++++++++
+ 5 files changed, 382 insertions(+)
+ create mode 100644 core/java/android/view/ViewBackgroundThread.java
+ create mode 100644 core/java/com/android/internal/util/ViewCacheData.java
+ create mode 100644 core/java/com/android/internal/util/ViewCacheManager.java
+
+diff --git a/core/java/android/view/LayoutInflater.java b/core/java/android/view/LayoutInflater.java
+index 00a552153e..7a2e57cd52 100644
+--- a/core/java/android/view/LayoutInflater.java
++++ b/core/java/android/view/LayoutInflater.java
+@@ -39,6 +39,7 @@ import android.util.Xml;
+ import android.widget.FrameLayout;
+ 
+ import com.android.internal.R;
++import com.android.internal.util.ViewCacheManager;
+ 
+ import org.xmlpull.v1.XmlPullParser;
+ import org.xmlpull.v1.XmlPullParserException;
+@@ -457,6 +458,35 @@ public abstract class LayoutInflater {
+                   + Integer.toHexString(resource) + ")");
+         }
+ 
++        ViewCacheManager cache = ViewCacheManager.getInstance();
++        cache.recordLayoutRes(resource);
++        if (cache.isEnable()) {
++            View cached = cache.tryGet(resource);
++            if (cached != null) {
++                if (root != null) {
++                    try {
++                        XmlResourceParser parser = res.getLayout(resource);
++                        try {
++                            AttributeSet attrs = Xml.asAttributeSet(parser);
++                            advanceToRootNode(parser);
++                            ViewGroup.LayoutParams params = root.generateLayoutParams(attrs);
++                            if (!attachToRoot) {
++                                cached.setLayoutParams(params);
++                                return cached;
++                            }
++                            root.addView(cached, params);
++                            return root;
++                        } finally {
++                            parser.close();
++                        }
++                    } catch (Exception e) {
++                    }
++                } else {
++                    return cached;
++                }
++            }
++        }
++
+         XmlResourceParser parser = res.getLayout(resource);
+         try {
+             return inflate(parser, root, attachToRoot);
+diff --git a/core/java/android/view/ViewBackgroundThread.java b/core/java/android/view/ViewBackgroundThread.java
+new file mode 100644
+index 0000000000..bf7a0ae303
+--- /dev/null
++++ b/core/java/android/view/ViewBackgroundThread.java
+@@ -0,0 +1,83 @@
++/*
++ * Copyright (C) 2025-2026 AxionOS
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package android.view;
++
++import android.os.Handler;
++import android.os.HandlerExecutor;
++import android.os.HandlerThread;
++import android.os.Looper;
++import android.os.Process;
++
++import java.util.concurrent.Executor;
++
++/**
++ * @hide
++ */
++public final class ViewBackgroundThread extends HandlerThread {
++    private static final long SLOW_DELIVERY_THRESHOLD_MS = 30000;
++    private static final long SLOW_DISPATCH_THRESHOLD_MS = 10000;
++    private static volatile Handler sHandler;
++    private static HandlerExecutor sHandlerExecutor;
++    private static volatile ViewBackgroundThread sInstance;
++
++    private ViewBackgroundThread() {
++        super("view.bg", Process.THREAD_PRIORITY_BACKGROUND);
++    }
++
++    private static void ensureThreadLocked() {
++        if (sInstance == null) {
++            sInstance = new ViewBackgroundThread();
++            sInstance.start();
++        }
++        if (sHandler == null) {
++            Looper looper = sInstance.getLooper();
++            looper.setSlowLogThresholdMs(SLOW_DISPATCH_THRESHOLD_MS,
++                    SLOW_DELIVERY_THRESHOLD_MS);
++            sHandler = new Handler(sInstance.getLooper());
++            sHandlerExecutor = new HandlerExecutor(sHandler);
++        }
++    }
++
++    public static void init() {
++        synchronized (ViewBackgroundThread.class) {
++            if (sInstance == null) {
++                sInstance = new ViewBackgroundThread();
++                sInstance.start();
++            }
++        }
++    }
++
++    public static ViewBackgroundThread get() {
++        synchronized (ViewBackgroundThread.class) {
++            ensureThreadLocked();
++            return sInstance;
++        }
++    }
++
++    public static Handler getHandler() {
++        synchronized (ViewBackgroundThread.class) {
++            ensureThreadLocked();
++            return sHandler;
++        }
++    }
++
++    public static Executor getExecutor() {
++        synchronized (ViewBackgroundThread.class) {
++            ensureThreadLocked();
++            return sHandlerExecutor;
++        }
++    }
++}
+diff --git a/core/java/android/view/ViewRootImpl.java b/core/java/android/view/ViewRootImpl.java
+index 44ac084791..4a913966b0 100644
+--- a/core/java/android/view/ViewRootImpl.java
++++ b/core/java/android/view/ViewRootImpl.java
+@@ -297,6 +297,7 @@ import com.android.internal.policy.DecorView;
+ import com.android.internal.policy.PhoneFallbackEventHandler;
+ import com.android.internal.protolog.ProtoLog;
+ import com.android.internal.util.FastPrintWriter;
++import com.android.internal.util.ViewCacheManager;
+ import com.android.internal.view.BaseSurfaceHolder;
+ import com.android.internal.view.RootViewSurfaceTaker;
+ import com.android.internal.view.SurfaceCallbackHelper;
+@@ -642,6 +643,7 @@ public final class ViewRootImpl implements ViewParent,
+     private boolean mPendingDragResizing;
+     private boolean mDragResizing;
+     private boolean mInvalidateRootRequested;
++    private boolean mFirstFrameDrawn = true;
+     private int mCanvasOffsetX;
+     private int mCanvasOffsetY;
+     CompatibilityInfo.Translator mTranslator;
+@@ -3148,6 +3150,10 @@ public final class ViewRootImpl implements ViewParent,
+             mTraversalScheduled = false;
+             mQueue.removeSyncBarrier(mTraversalBarrier);
+             performTraversals();
++            if (mFirstFrameDrawn) {
++                ViewCacheManager.getInstance().onTraversalEnd(this);
++                mFirstFrameDrawn = false;
++            }
+         }
+     }
+ 
+diff --git a/core/java/com/android/internal/util/ViewCacheData.java b/core/java/com/android/internal/util/ViewCacheData.java
+new file mode 100644
+index 0000000000..5c91696345
+--- /dev/null
++++ b/core/java/com/android/internal/util/ViewCacheData.java
+@@ -0,0 +1,134 @@
++/*
++ * Copyright (C) 2025-2026 AxionOS
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.android.internal.util;
++
++import android.app.ActivityThread;
++import android.content.Context;
++import android.content.SharedPreferences;
++import android.util.Log;
++
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++
++public class ViewCacheData {
++    private static final String FILE_NAME = "view-cache-data";
++    private static final String KEY_DEPEND_UI = "depend_ui";
++
++    private final SharedPreferences mPrefs;
++    private final Map<String, String> mCachedData = new HashMap<>();
++    private StringBuilder mPendingBuilder = new StringBuilder();
++    private String mPendingActivity;
++    private boolean mDirty;
++    private final List<Integer> mDependUiList = new ArrayList<>();
++
++    public ViewCacheData(Context context) {
++        mPrefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE);
++        load();
++    }
++
++    private void load() {
++        Map<String, ?> all = mPrefs.getAll();
++        for (Map.Entry<String, ?> e : all.entrySet()) {
++            String val = (String) e.getValue();
++            if (val != null) {
++                String key = e.getKey();
++                if (KEY_DEPEND_UI.equals(key)) {
++                    parseDependUi(val);
++                } else {
++                    mCachedData.put(key, val);
++                }
++            }
++        }
++    }
++
++    private void parseDependUi(String val) {
++        for (String s : val.split("/")) {
++            try {
++                mDependUiList.add(Integer.parseInt(s));
++            } catch (NumberFormatException ignored) {
++            }
++        }
++    }
++
++    public synchronized List<Integer> getLayoutsForActivity(String activityName) {
++        String val = mCachedData.get(activityName);
++        if (val == null) return null;
++        List<Integer> ids = new ArrayList<>();
++        for (String s : val.split("/")) {
++            try {
++                ids.add(Integer.parseInt(s));
++            } catch (NumberFormatException ignored) {
++            }
++        }
++        return ids;
++    }
++
++    public synchronized boolean isValid(int layoutId) {
++        return !mDependUiList.contains(layoutId);
++    }
++
++    public synchronized void recordDependUi(int layoutId) {
++        if (!mDependUiList.contains(layoutId)) {
++            mDependUiList.add(layoutId);
++            String current = mDependUiList.isEmpty() ? "" : joinIds(mDependUiList);
++            mPrefs.edit().putString(KEY_DEPEND_UI, current).apply();
++        }
++    }
++
++    public synchronized void record(int layoutId) {
++        if (mPendingActivity == null) {
++            mPendingActivity = resolveProcessName();
++        }
++        if (mPendingBuilder.length() > 0) {
++            mPendingBuilder.append("/");
++        }
++        mPendingBuilder.append(layoutId);
++        mDirty = true;
++    }
++
++    public synchronized void sync() {
++        if (!mDirty || mPendingActivity == null) return;
++        String current = mPendingBuilder.toString();
++        String old = mCachedData.get(mPendingActivity);
++        if (!current.equals(old)) {
++            mCachedData.put(mPendingActivity, current);
++            mPrefs.edit().putString(mPendingActivity, current).apply();
++        }
++        mPendingBuilder.setLength(0);
++        mPendingActivity = null;
++        mDirty = false;
++    }
++
++    private static String resolveProcessName() {
++        try {
++            ActivityThread at = ActivityThread.currentActivityThread();
++            return at != null ? at.getProcessName() : null;
++        } catch (Exception e) {
++            return null;
++        }
++    }
++
++    private static String joinIds(List<Integer> ids) {
++        StringBuilder sb = new StringBuilder();
++        for (int i = 0; i < ids.size(); i++) {
++            if (i > 0) sb.append("/");
++            sb.append(ids.get(i));
++        }
++        return sb.toString();
++    }
++}
+diff --git a/core/java/com/android/internal/util/ViewCacheManager.java b/core/java/com/android/internal/util/ViewCacheManager.java
+new file mode 100644
+index 0000000000..df2863c6b8
+--- /dev/null
++++ b/core/java/com/android/internal/util/ViewCacheManager.java
+@@ -0,0 +1,129 @@
++/*
++ * Copyright (C) 2025-2026 AxionOS
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.android.internal.util;
++
++import android.content.ComponentName;
++import android.content.Context;
++import android.os.SystemProperties;
++import android.util.SparseArray;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.view.ViewRootImpl;
++import android.view.ViewBackgroundThread;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class ViewCacheManager {
++    private static final String TAG = "ViewCacheManager";
++    private static final boolean ENABLED = SystemProperties.getBoolean(
++            "persist.sys.perf.view_cache", true);
++    private static volatile ViewCacheManager sInstance;
++
++    private final SparseArray<List<View>> mViewCache = new SparseArray<>();
++    private final Object mLock = new Object();
++    private ViewCacheData mData;
++    private boolean mActive;
++    private String mCurrentActivity;
++
++    public static ViewCacheManager getInstance() {
++        if (sInstance == null) {
++            sInstance = new ViewCacheManager();
++        }
++        return sInstance;
++    }
++
++    public boolean isEnable() {
++        return ENABLED && mActive;
++    }
++
++    public void onActivityAttached(Context context, ComponentName component) {
++        if (!ENABLED || component == null) return;
++        mActive = false;
++        mCurrentActivity = component.getClassName();
++        synchronized (mLock) {
++            mViewCache.clear();
++        }
++        if (mData == null) {
++            mData = new ViewCacheData(context);
++        }
++        List<Integer> layoutIds = mData.getLayoutsForActivity(mCurrentActivity);
++        if (layoutIds == null || layoutIds.isEmpty()) return;
++        mActive = true;
++        ViewBackgroundThread.getHandler().post(() -> {
++            preInflateLayouts(context, layoutIds);
++        });
++    }
++
++    private void preInflateLayouts(Context context, List<Integer> layoutIds) {
++        LayoutInflater inflater = LayoutInflater.from(context)
++                .cloneInContext(context);
++        for (int id : layoutIds) {
++            if (Thread.interrupted()) break;
++            if (mData != null && !mData.isValid(id)) continue;
++            try {
++                View view = inflater.inflate(id, null, false);
++                if (view != null) {
++                    put(id, view);
++                }
++            } catch (Exception e) {
++                if (mData != null) {
++                    mData.recordDependUi(id);
++                }
++            }
++        }
++    }
++
++    public View tryGet(int layoutId) {
++        if (!ENABLED) return null;
++        synchronized (mLock) {
++            List<View> entries = mViewCache.get(layoutId);
++            if (entries != null && !entries.isEmpty()) {
++                return entries.remove(0);
++            }
++        }
++        return null;
++    }
++
++    public void put(int layoutId, View view) {
++        synchronized (mLock) {
++            List<View> entries = mViewCache.get(layoutId);
++            if (entries == null) {
++                entries = new ArrayList<>();
++                mViewCache.put(layoutId, entries);
++            }
++            entries.add(view);
++        }
++    }
++
++    public void recordLayoutRes(int resource) {
++        if (mData != null) {
++            mData.record(resource);
++        }
++    }
++
++    public void onTraversalEnd(ViewRootImpl vri) {
++        if (mData != null) {
++            mData.sync();
++        }
++        mActive = false;
++        mCurrentActivity = null;
++        synchronized (mLock) {
++            mViewCache.clear();
++        }
++    }
++}

@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Wed, 11 Oct 2023 11:50:56 +0300
+Subject: [PATCH 104/226] do not delete compiled code (OAT files) of hibernated
+ apps
+
+---
+ core/res/res/values/config.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 487bb3b416..4ddebf5ca1 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -6890,7 +6890,7 @@
+     <bool name="config_earcFeatureDisabled_default">false</bool>
+ 
+     <!-- Whether app hibernation deletes OAT artifact files as part of global hibernation. -->
+-    <bool name="config_hibernationDeletesOatArtifactsEnabled">true</bool>
++    <bool name="config_hibernationDeletesOatArtifactsEnabled">false</bool>
+ 
+     <!-- Package name of the on-device intelligent processor for system UI
+          features. Examples include the search functionality or the app

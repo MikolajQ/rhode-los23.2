@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Galt <johngaltfirstrun@gmail.com>
+Date: Tue, 14 May 2024 10:38:12 -0400
+Subject: [PATCH 06/23] cc/lto: add property for not restricting instr limit
+
+There are cases where the 40 instr limit harms performance, thus far
+seen with libbinder and app launch times. The minimal increase in memory
+usage is a worthy trade off in this case.
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ cc/lto.go | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/cc/lto.go b/cc/lto.go
+index 5acaf4a4..e144e8d4 100644
+--- a/cc/lto.go
++++ b/cc/lto.go
+@@ -57,6 +57,7 @@ type LTOProperties struct {
+ 
+ 	// Use --lto-O0 flag.
+ 	Lto_O0 *bool
++	Lto_Instr100 *bool
+ }
+ 
+ type lto struct {
+@@ -137,7 +138,7 @@ func (lto *lto) flags(ctx ModuleContext, flags Flags) Flags {
+ 
+ 		// Reduce the inlining threshold for a better balance of binary size and
+ 		// performance.
+-		if !ctx.Darwin() {
++		if !ctx.Darwin() && !Bool(lto.Properties.Lto_Instr100) {
+ 			if ctx.isAfdoCompile(ctx) || lto.ThinLTO() {
+ 				ltoLdFlags = append(ltoLdFlags, "-Wl,-plugin-opt,-import-instr-limit=40")
+ 			} else {

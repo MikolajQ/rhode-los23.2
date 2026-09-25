@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "xingyun.wang" <xingyun.wang@unisoc.com>
+Date: Wed, 21 May 2025 21:06:00 +0800
+Subject: [PATCH 125/226] system: Postpone NetworkWatchlistService scan during
+ boot
+
+Avoids ANRs and excessive I/O by delaying the system APK summary scan, which was previously triggered inappropriately during the boot phase. The scan will now initiate 1 minute after boot if triggered within the initial 30 seconds.
+
+Test: test steps are:
+1.Install 60 APKs; All Logs, Data filled to 95%;
+2.Close watchdog, open Sysdump;
+3.Repeated restart for a long time (120h)
+
+Bug: 414507692
+Change-Id: I1d329484ac12d4763248bd9c650d15e8741aea5d
+---
+ .../net/watchlist/WatchlistLoggingHandler.java       | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/net/watchlist/WatchlistLoggingHandler.java b/services/core/java/com/android/server/net/watchlist/WatchlistLoggingHandler.java
+index c863cbf327..54ce837ef2 100644
+--- a/services/core/java/com/android/server/net/watchlist/WatchlistLoggingHandler.java
++++ b/services/core/java/com/android/server/net/watchlist/WatchlistLoggingHandler.java
+@@ -35,6 +35,7 @@ import android.os.UserManager;
+ import android.provider.Settings;
+ import android.text.TextUtils;
+ import android.util.Slog;
++import android.os.SystemClock;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
+ import com.android.internal.util.ArrayUtils;
+@@ -69,6 +70,9 @@ class WatchlistLoggingHandler extends Handler {
+     private static final long ONE_DAY_MS = TimeUnit.DAYS.toMillis(1);
+     private static final String DROPBOX_TAG = "network_watchlist_report";
+ 
++    private static final long BOOT_TIME_THRESHOLD_MILLIS = TimeUnit.SECONDS.toMillis(30);
++    private static final long INITIAL_CHECK_DELAY_MILLIS = TimeUnit.MINUTES.toMillis(1);
++
+     private final Context mContext;
+     private final @Nullable DropBoxManager mDropBoxManager;
+     private final ContentResolver mResolver;
+@@ -178,8 +182,14 @@ class WatchlistLoggingHandler extends Handler {
+      * Report network watchlist records if we collected enough data.
+      */
+     public void reportWatchlistIfNecessary() {
++        long uptimeMillis = SystemClock.elapsedRealtime();
+         final Message msg = obtainMessage(REPORT_RECORDS_IF_NECESSARY_MSG);
+-        sendMessage(msg);
++
++        if(uptimeMillis < BOOT_TIME_THRESHOLD_MILLIS) {
++            sendMessageDelayed(msg, INITIAL_CHECK_DELAY_MILLIS);
++        } else {
++            sendMessage(msg);
++        }
+     }
+ 
+     public void forceReportWatchlistForTest(long lastReportTime) {

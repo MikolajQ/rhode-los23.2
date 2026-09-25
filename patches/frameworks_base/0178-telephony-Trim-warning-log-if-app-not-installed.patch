@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Mon, 14 Apr 2025 13:29:35 +0530
+Subject: [PATCH 178/226] telephony: Trim warning log if app not installed
+
+* Some google apps are not shipped/installed. It's okay.
+  We do not need scary log like below.
+
+Log:
+
+W CarrierAppUtils: Could not reach PackageManager
+W CarrierAppUtils: android.content.pm.PackageManager$NameNotFoundException: com.google.android.apps.tycho
+W CarrierAppUtils: 	at android.app.ApplicationPackageManager.getApplicationInfoAsUser(ApplicationPackageManager.java:541)
+W CarrierAppUtils: 	at android.app.ApplicationPackageManager.getApplicationInfo(ApplicationPackageManager.java:524)
+W CarrierAppUtils: 	at android.app.ApplicationPackageManager.getApplicationInfo(ApplicationPackageManager.java:518)
+W CarrierAppUtils: 	at com.android.internal.telephony.CarrierAppUtils.getApplicationInfoIfSystemApp(CarrierAppUtils.java:449)
+W CarrierAppUtils: 	at com.android.internal.telephony.CarrierAppUtils.getDefaultCarrierAppCandidatesHelper(CarrierAppUtils.java:407)
+W CarrierAppUtils: 	at com.android.internal.telephony.CarrierAppUtils.disableCarrierAppsUntilPrivileged(CarrierAppUtils.java:147)
+W CarrierAppUtils: 	at com.android.internal.telephony.CarrierAppUtils.disableCarrierAppsUntilPrivileged(CarrierAppUtils.java:90)
+W CarrierAppUtils: 	at com.android.internal.telephony.GsmCdmaPhone.initializeCarrierApps(GsmCdmaPhone.java:669)
+W CarrierAppUtils: 	at com.android.internal.telephony.GsmCdmaPhone.initOnce(GsmCdmaPhone.java:573)
+W CarrierAppUtils: 	at com.android.internal.telephony.GsmCdmaPhone.<init>(GsmCdmaPhone.java:357)
+W CarrierAppUtils: 	at com.android.internal.telephony.GsmCdmaPhone.<init>(GsmCdmaPhone.java:339)
+W CarrierAppUtils: 	at com.android.internal.telephony.GsmCdmaPhone.<init>(GsmCdmaPhone.java:331)
+W CarrierAppUtils: 	at com.android.internal.telephony.TelephonyComponentFactory.makePhone(TelephonyComponentFactory.java:505)
+W CarrierAppUtils: 	at com.android.internal.telephony.PhoneFactory.createPhone(PhoneFactory.java:356)
+W CarrierAppUtils: 	at com.android.internal.telephony.PhoneFactory.makeDefaultPhone(PhoneFactory.java:226)
+W CarrierAppUtils: 	at com.android.internal.telephony.PhoneFactory.makeDefaultPhones(PhoneFactory.java:122)
+W CarrierAppUtils: 	at com.android.phone.PhoneGlobals.onCreate(PhoneGlobals.java:565)
+W CarrierAppUtils: 	at com.android.phone.PhoneApp.onCreate(PhoneApp.java:39)
+W CarrierAppUtils: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1395)
+W CarrierAppUtils: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:7698)
+W CarrierAppUtils: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+W CarrierAppUtils: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2500)
+W CarrierAppUtils: 	at android.os.Handler.dispatchMessage(Handler.java:109)
+W CarrierAppUtils: 	at android.os.Looper.loopOnce(Looper.java:232)
+W CarrierAppUtils: 	at android.os.Looper.loop(Looper.java:317)
+W CarrierAppUtils: 	at android.app.ActivityThread.main(ActivityThread.java:8934)
+W CarrierAppUtils: 	at java.lang.reflect.Method.invoke(Native Method)
+W CarrierAppUtils: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:594)
+W CarrierAppUtils: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:911)
+D GsmCdmaPhone: [0] Precise phone type 1
+04-13 16:08:14.519 12685 12685 D RILJ    : setPhoneType=1 old value=0 [PHONE0]
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../common/com/android/internal/telephony/CarrierAppUtils.java  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/telephony/common/com/android/internal/telephony/CarrierAppUtils.java b/telephony/common/com/android/internal/telephony/CarrierAppUtils.java
+index b69a25d8fd..979be34a6e 100644
+--- a/telephony/common/com/android/internal/telephony/CarrierAppUtils.java
++++ b/telephony/common/com/android/internal/telephony/CarrierAppUtils.java
+@@ -483,7 +483,7 @@ public final class CarrierAppUtils {
+                 return ai;
+             }
+         } catch (PackageManager.NameNotFoundException e) {
+-            Log.w(TAG, "Could not reach PackageManager", e);
++            Log.i(TAG, "Not installed: " + packageName);
+         }
+         return null;
+     }

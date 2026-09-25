@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Caitlin Shkuratov <caitlinshk@google.com>
+Date: Thu, 30 Oct 2025 19:07:36 +0000
+Subject: [PATCH 208/226] Remove extra shade expansion trace markers.
+
+We were logging the shade expansion value in 3 different places, when we
+only need to log it once. ShadeStateTraceLogger will be responsible for
+logging the value.
+
+Fixes: 456478477
+Flag: EXEMPT PURE_REFACTOR
+Test: Take trace -> verify only one shade expansion track
+Change-Id: I50eb14a4e4d698bfcc6848235dddddd97c6da2e5
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../com/android/systemui/shade/ShadeExpansionStateManager.kt    | 2 --
+ .../shade/domain/interactor/ShadeInteractorLegacyImpl.kt        | 2 --
+ .../domain/interactor/ShadeInteractorSceneContainerImpl.kt      | 2 --
+ 3 files changed, 6 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/shade/ShadeExpansionStateManager.kt b/packages/SystemUI/src/com/android/systemui/shade/ShadeExpansionStateManager.kt
+index 67fd70a814..50b39ace1e 100644
+--- a/packages/SystemUI/src/com/android/systemui/shade/ShadeExpansionStateManager.kt
++++ b/packages/SystemUI/src/com/android/systemui/shade/ShadeExpansionStateManager.kt
+@@ -23,7 +23,6 @@ import android.util.Log
+ import androidx.annotation.FloatRange
+ import com.android.app.tracing.TraceStateLogger
+ import com.android.app.tracing.TrackGroupUtils.trackGroup
+-import com.android.app.tracing.coroutines.TrackTracer
+ import com.android.systemui.dagger.SysUISingleton
+ import com.android.systemui.util.Compile
+ import java.util.concurrent.CopyOnWriteArrayList
+@@ -114,7 +113,6 @@ class ShadeExpansionStateManager @Inject constructor() {
+         )
+ 
+         if (Trace.isTagEnabled(TRACE_TAG)) {
+-            TrackTracer.instantForGroup("shade", "panel_expansion", fraction)
+             stateLogger.log(state.panelStateToString())
+         }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorLegacyImpl.kt b/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorLegacyImpl.kt
+index ef714f040f..8c56896b31 100644
+--- a/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorLegacyImpl.kt
++++ b/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorLegacyImpl.kt
+@@ -17,7 +17,6 @@
+ package com.android.systemui.shade.domain.interactor
+ 
+ import android.graphics.Rect
+-import com.android.app.tracing.FlowTracing.traceAsCounter
+ import com.android.compose.animation.scene.TransitionKey
+ import com.android.systemui.dagger.SysUISingleton
+ import com.android.systemui.dagger.qualifiers.Application
+@@ -82,7 +81,6 @@ constructor(
+                 }
+             }
+             .distinctUntilChanged()
+-            .traceAsCounter("panel_expansion") { (it * 100f).toInt() }
+             .stateIn(scope, SharingStarted.Eagerly, 0f)
+ 
+     @Deprecated("Do not use. isNotificationsExpanded is only relevant in SceneContainer")
+diff --git a/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt b/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt
+index 0ebc62da69..a83931c7aa 100644
+--- a/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt
++++ b/packages/SystemUI/src/com/android/systemui/shade/domain/interactor/ShadeInteractorSceneContainerImpl.kt
+@@ -17,7 +17,6 @@
+ package com.android.systemui.shade.domain.interactor
+ 
+ import android.graphics.Rect
+-import com.android.app.tracing.FlowTracing.traceAsCounter
+ import com.android.compose.animation.scene.ContentKey
+ import com.android.compose.animation.scene.ObservableTransitionState
+ import com.android.compose.animation.scene.OverlayKey
+@@ -68,7 +67,6 @@ constructor(
+             .flatMapLatest { shadeMode ->
+                 transitionProgressExpansion(shadeMode.notificationsContentKey)
+             }
+-            .traceAsCounter("panel_expansion") { (it * 100f).toInt() }
+             .stateIn(scope, SharingStarted.Eagerly, 0f)
+ 
+     override val isNotificationsExpanded: StateFlow<Boolean> =

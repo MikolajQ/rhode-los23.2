@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheHardGamer <gamelovr695@gmail.com>
+Date: Thu, 22 Dec 2022 10:18:11 +0530
+Subject: [PATCH 212/226] fixup! Trace: Disable debug tracing on production
+ builds
+
+Restore protologgroup since it breaks art's method verifier
+
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ core/java/android/os/Trace.java | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/core/java/android/os/Trace.java b/core/java/android/os/Trace.java
+index b9345c8deb..7ac0cb0fb5 100644
+--- a/core/java/android/os/Trace.java
++++ b/core/java/android/os/Trace.java
+@@ -180,10 +180,7 @@ public final class Trace {
+     @UnsupportedAppUsage
+     @SystemApi(client = MODULE_LIBRARIES)
+     public static boolean isTagEnabled(long traceTag) {
+-        if (!Build.IS_ENG) {
+             return false;
+-        }
+-        return nativeIsTagEnabled(traceTag);
+     }
+ 
+     /**

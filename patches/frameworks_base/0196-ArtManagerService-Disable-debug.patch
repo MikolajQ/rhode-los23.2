@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 9 May 2025 01:57:12 +0800
+Subject: [PATCH 196/226] ArtManagerService: Disable debug
+
+Change-Id: I58b52daa6cb54e7a4fc2e031b47c0dd7de1cb5cc
+---
+ .../java/com/android/server/pm/dex/ArtManagerService.java     | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/pm/dex/ArtManagerService.java b/services/core/java/com/android/server/pm/dex/ArtManagerService.java
+index b67b3fa7b0..a63c42edb7 100644
+--- a/services/core/java/com/android/server/pm/dex/ArtManagerService.java
++++ b/services/core/java/com/android/server/pm/dex/ArtManagerService.java
+@@ -73,7 +73,7 @@ import java.util.Objects;
+  */
+ public class ArtManagerService extends android.content.pm.dex.IArtManager.Stub {
+     private static final String TAG = "ArtManagerService";
+-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
++    private static final boolean DEBUG = false;
+ 
+     private final Context mContext;
+     private IPackageManager mPackageManager;
+@@ -267,7 +267,7 @@ public class ArtManagerService extends android.content.pm.dex.IArtManager.Stub {
+                 boolean profileBootClassPath = SystemProperties.getBoolean(
+                         "persist.device_config.runtime_native_boot.profilebootclasspath",
+                         SystemProperties.getBoolean("dalvik.vm.profilebootclasspath", false));
+-                return (Build.IS_USERDEBUG || Build.IS_ENG) && profileBootClassPath;
++                return (Build.IS_ENG) && profileBootClassPath;
+             default:
+                 throw new IllegalArgumentException("Invalid profile type:" + profileType);
+         }

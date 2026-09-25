@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: cjh1249131356 <cjh1249131356@gmail.com>
+Date: Wed, 24 Jan 2024 15:33:37 +0800
+Subject: [PATCH 07/42] HWComposer: Silence duplicate VSYNC logspam
+
+Signed-off-by: cjh1249131356 <cjh1249131356@gmail.com>
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ services/surfaceflinger/DisplayHardware/HWComposer.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index f732d25..e0d0274 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -172,8 +172,6 @@ std::optional<PhysicalDisplayId> HWComposer::onVsync(hal::HWDisplayId hwcDisplay
+         // is a bug in the HWC implementation, but filter the extra events
+         // out here so they don't cause havoc downstream.
+         if (timestamp == displayData.lastPresentTimestamp) {
+-            ALOGW("Ignoring duplicate VSYNC event from HWC for display %s (t=%" PRId64 ")",
+-                  to_string(*displayIdOpt).c_str(), timestamp);
+             return {};
+         }
+ 

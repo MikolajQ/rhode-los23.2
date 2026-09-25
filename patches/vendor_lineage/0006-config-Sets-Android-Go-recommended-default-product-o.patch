@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 1582130940 <19632674+1582130940@users.noreply.github.com>
+Date: Mon, 17 Jul 2023 17:24:09 +0800
+Subject: [PATCH 06/14] config: Sets Android Go recommended default product
+ options
+
+* Speed profile services and wifi-service to reduce RAM and storage
+Mathieu Chartier <mathieuc@google.com>
+
+* Inherit several Android Go configurations
+Albert I <kras@raphielgang.org>
+
+Co-authored-by: Mathieu Chartier <mathieuc@google.com>
+Co-authored-by: Albert I <kras@raphielgang.org>
+Change-Id: I40aa35f42f0ca6a2730bd87c9ea2aafd76a9fe72
+Signed-off-by: Tommaso Fonda <fondatommaso2@gmail.com>
+---
+ config/common.mk | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/config/common.mk b/config/common.mk
+index 595e375..7b14e3e 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -139,6 +139,17 @@ ifneq ($(TARGET_DISABLE_EPPE),true)
+ $(call enforce-product-packages-exist-internal,$(lastword $(_include_stack)),product_manifest.xml rild Calendar android.hidl.memory@1.0-impl.vendor vndk_apex_snapshot_package)
+ endif
+ 
++# Speed profile services and wifi-service to reduce RAM and storage.
++PRODUCT_SYSTEM_SERVER_COMPILER_FILTER := speed-profile
++
++# Use a profile based boot image for this device. Note that this is currently a
++# generic profile and not Android Go optimized.
++PRODUCT_USE_PROFILE_FOR_BOOT_IMAGE := true
++PRODUCT_DEX_PREOPT_BOOT_IMAGE_PROFILE_LOCATION := frameworks/base/config/boot-image-profile.txt
++
++# Dedupe VNDK libraries with identical core variants.
++TARGET_VNDK_USE_CORE_VARIANT := true
++
+ # Bootanimation
+ TARGET_SCREEN_WIDTH ?= 1080
+ TARGET_SCREEN_HEIGHT ?= 1920

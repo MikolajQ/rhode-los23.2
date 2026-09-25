@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 May 2026 06:10:37 +0800
+Subject: [PATCH 173/226] services: Optimizing wallpaper zoom
+
+Change-Id: I1549ec25043b749d86d3a806e83f6004090cd96d
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+---
+ .../java/com/android/server/wm/Session.java   | 28 ++++++++++++++--
+ .../server/wm/WallpaperController.java        | 32 ++++++++++---------
+ 2 files changed, 43 insertions(+), 17 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/Session.java b/services/core/java/com/android/server/wm/Session.java
+index d591ec3e4c..23b9d03507 100644
+--- a/services/core/java/com/android/server/wm/Session.java
++++ b/services/core/java/com/android/server/wm/Session.java
+@@ -65,6 +65,7 @@ import android.os.Trace;
+ import android.os.UserHandle;
+ import android.permission.PermissionManager;
+ import android.text.TextUtils;
++import android.util.ArrayMap;
+ import android.util.ArraySet;
+ import android.util.Slog;
+ import android.view.IWindow;
+@@ -129,6 +130,9 @@ class Session extends IWindowSession.Stub implements IBinder.DeathRecipient {
+     private String mRelayoutTag;
+     private final InsetsSourceControl.Array mDummyControls =  new InsetsSourceControl.Array();
+     final boolean mSetsUnrestrictedKeepClearAreas;
++    private final ArrayMap<IBinder, Float> mPendingWallpaperZoomOut = new ArrayMap<>();
++    private final Runnable mApplyPendingWallpaperZoomOut = this::applyPendingWallpaperZoomOut;
++    private boolean mApplyWallpaperZoomOutPending;
+ 
+     public Session(WindowManagerService service, IWindowSessionCallback callback) {
+         this(service, callback, Binder.getCallingPid(), Binder.getCallingUid());
+@@ -603,10 +607,30 @@ class Session extends IWindowSession.Stub implements IBinder.DeathRecipient {
+                     + zoom);
+         }
+         synchronized (mService.mGlobalLock) {
++            mPendingWallpaperZoomOut.put(window, zoom);
++            if (!mApplyWallpaperZoomOutPending) {
++                mApplyWallpaperZoomOutPending = true;
++                mService.mH.post(mApplyPendingWallpaperZoomOut);
++            }
++        }
++    }
++
++    private void applyPendingWallpaperZoomOut() {
++        synchronized (mService.mGlobalLock) {
++            mApplyWallpaperZoomOutPending = false;
++            final int size = mPendingWallpaperZoomOut.size();
++            if (size == 0) {
++                return;
++            }
++            final ArrayMap<IBinder, Float> pending = new ArrayMap<>(mPendingWallpaperZoomOut);
++            mPendingWallpaperZoomOut.clear();
+             final long ident = Binder.clearCallingIdentity();
+             try {
+-                actionOnWallpaper(window, (wpController, windowState) ->
+-                        wpController.setWallpaperZoomOut(windowState, zoom));
++                for (int i = 0; i < size; i++) {
++                    final float zoom = pending.valueAt(i);
++                    actionOnWallpaper(pending.keyAt(i), (wpController, windowState) ->
++                            wpController.setWallpaperZoomOut(windowState, zoom));
++                }
+             } finally {
+                 Binder.restoreCallingIdentity(ident);
+             }
+diff --git a/services/core/java/com/android/server/wm/WallpaperController.java b/services/core/java/com/android/server/wm/WallpaperController.java
+index 8ad9f85af8..04bcfa35dd 100644
+--- a/services/core/java/com/android/server/wm/WallpaperController.java
++++ b/services/core/java/com/android/server/wm/WallpaperController.java
+@@ -80,6 +80,7 @@ class WallpaperController {
+     // to another, and this is the previous wallpaper target.
+     private WindowState mPrevWallpaperTarget = null;
+ 
++    private static final float WALLPAPER_ZOOM_EPSILON = 0.003f;
+     private float mLastWallpaperZoomOut = 0;
+     private WindowState mMaxZoomOutWindow = null;
+ 
+@@ -529,22 +530,23 @@ class WallpaperController {
+     }
+ 
+     void setWallpaperZoomOut(WindowState window, float zoom) {
+-        if (Float.compare(window.mWallpaperZoomOut, zoom) != 0) {
+-            float oldMaxZoom = mLastWallpaperZoomOut;
+-            window.mWallpaperZoomOut = zoom;
+-
+-            if (Float.compare(zoom, mLastWallpaperZoomOut) > 0) {
+-                mLastWallpaperZoomOut = zoom;
+-                mMaxZoomOutWindow = window;
+-            } else if (window == mMaxZoomOutWindow || Float.compare(oldMaxZoom, mLastWallpaperZoomOut) == 0) {
+-                computeLastWallpaperZoomOut();
+-            }
++        if (Math.abs(window.mWallpaperZoomOut - zoom) < WALLPAPER_ZOOM_EPSILON) {
++            return;
++        }
++        final float oldMaxZoom = mLastWallpaperZoomOut;
++        window.mWallpaperZoomOut = zoom;
+ 
+-            if (Float.compare(oldMaxZoom, mLastWallpaperZoomOut) != 0) {
+-                for (int i = mWallpaperTokens.size() - 1; i >= 0; i--) {
+-                    final WallpaperWindowToken token = mWallpaperTokens.get(i);
+-                    token.updateWallpaperOffset();
+-                }
++        if (zoom > mLastWallpaperZoomOut + WALLPAPER_ZOOM_EPSILON) {
++            mLastWallpaperZoomOut = zoom;
++            mMaxZoomOutWindow = window;
++        } else if (window == mMaxZoomOutWindow) {
++            computeLastWallpaperZoomOut();
++        }
++
++        if (Math.abs(oldMaxZoom - mLastWallpaperZoomOut) >= WALLPAPER_ZOOM_EPSILON) {
++            for (int i = mWallpaperTokens.size() - 1; i >= 0; i--) {
++                final WallpaperWindowToken token = mWallpaperTokens.get(i);
++                token.updateWallpaperOffset();
+             }
+         }
+     }

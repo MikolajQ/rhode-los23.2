@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Harsh Shandilya <msfjarvis@gmail.com>
+Date: Fri, 23 Jun 2017 12:05:02 +0530
+Subject: [PATCH 077/226] Suppress FingerprintManager logspam
+
+If FingerprintManager#isFingerprintHardwareDetected fails to detect
+a fingerprint sensor, it emits a warning in the logcat warn stream.
+
+This failure can only happen in the following cases
+ - Device lacks a fingerprint sensor
+ - Device has a dying/dead fingerprint sensor
+ - The FingerprintManager class lacks the manifest permission to
+   connect to the fingerprint hardware via system server
+
+All these are unlikely to be useful scenarios, so disable the logspam
+
+Might make more sense to restrict this function to be called only
+a finite times before the system gives up and assumes there is no
+usable fingerprint hardware on the device
+
+Change-Id: Ibe32d956ff89379ecacc1348748e3e7272f314d8
+Signed-off-by: neobuddy89 <neobuddy89@gmail.com>
+Signed-off-by: Pranav Temkar <pranavtemkar@gmail.com>
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ core/java/android/hardware/fingerprint/FingerprintManager.java | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/hardware/fingerprint/FingerprintManager.java b/core/java/android/hardware/fingerprint/FingerprintManager.java
+index 1932910e66..e662f04fd7 100644
+--- a/core/java/android/hardware/fingerprint/FingerprintManager.java
++++ b/core/java/android/hardware/fingerprint/FingerprintManager.java
+@@ -100,6 +100,7 @@ import javax.crypto.Mac;
+ @RequiresFeature(PackageManager.FEATURE_FINGERPRINT)
+ public class FingerprintManager implements BiometricAuthenticator, BiometricFingerprintConstants {
+     private static final String TAG = "FingerprintManager";
++    private static final boolean DEBUG = false;
+ 
+     /**
+      * @hide
+@@ -1205,7 +1206,7 @@ public class FingerprintManager implements BiometricAuthenticator, BiometricFing
+                 throw e.rethrowFromSystemServer();
+             }
+         } else {
+-            Slog.w(TAG, "isFingerprintHardwareDetected(): Service not connected!");
++            if (DEBUG) Slog.w(TAG, "isFingerprintHardwareDetected(): Service not connected!");
+         }
+         return false;
+     }

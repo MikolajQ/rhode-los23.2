@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sat, 8 Feb 2025 16:43:25 +0800
+Subject: [PATCH 111/226] [event_log] disabling event writing for user debug
+ builds
+
+Change-Id: I60281cff944e1ff91c7d194d35df247c1ac4a41b
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+---
+ core/java/android/util/EventLog.java | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/core/java/android/util/EventLog.java b/core/java/android/util/EventLog.java
+index 15489f15ba..a48c336f7b 100644
+--- a/core/java/android/util/EventLog.java
++++ b/core/java/android/util/EventLog.java
+@@ -342,7 +342,7 @@ public class EventLog {
+      */
+     @RavenwoodRedirect
+     public static int writeEvent(int tag, int value) {
+-        if (!Build.IS_DEBUGGABLE) {
++        if (!Build.IS_ENG) {
+             return 0;
+         }
+ 
+@@ -357,7 +357,7 @@ public class EventLog {
+      */
+     @RavenwoodRedirect
+     public static int writeEvent(int tag, long value) {
+-        if (!Build.IS_DEBUGGABLE) {
++        if (!Build.IS_ENG) {
+             return 0;
+         }
+ 
+@@ -372,7 +372,7 @@ public class EventLog {
+      */
+     @RavenwoodRedirect
+     public static int writeEvent(int tag, float value) {
+-        if (!Build.IS_DEBUGGABLE) {
++        if (!Build.IS_ENG) {
+             return 0;
+         }
+ 
+@@ -387,7 +387,7 @@ public class EventLog {
+      */
+     @RavenwoodRedirect
+     public static int writeEvent(int tag, String str) {
+-        if (!Build.IS_DEBUGGABLE) {
++        if (!Build.IS_ENG) {
+             return 0;
+         }
+ 
+@@ -402,7 +402,7 @@ public class EventLog {
+      */
+     @RavenwoodRedirect
+     public static int writeEvent(int tag, Object... list) {
+-        if (!Build.IS_DEBUGGABLE) {
++        if (!Build.IS_ENG) {
+             return 0;
+         }
+ 
+@@ -418,7 +418,7 @@ public class EventLog {
+     @RavenwoodThrow
+     public static void readEvents(int[] tags, Collection<Event> output)
+             throws IOException {
+-        if (!Build.IS_DEBUGGABLE) {
++        if (!Build.IS_ENG) {
+             return;
+         }
+ 
+@@ -438,7 +438,7 @@ public class EventLog {
+     public static void readEventsOnWrapping(int[] tags, long timestamp,
+             Collection<Event> output)
+             throws IOException {
+-        if (!Build.IS_DEBUGGABLE) {
++        if (!Build.IS_ENG) {
+             return;
+         }
+ 

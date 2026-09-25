@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrzej Perczak <linux@andrzejperczak.com>
+Date: Fri, 28 Apr 2023 10:42:11 +0200
+Subject: [PATCH 060/226] OomAdjuster: Remove excessive log
+
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ services/core/java/com/android/server/am/OomAdjuster.java | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/OomAdjuster.java b/services/core/java/com/android/server/am/OomAdjuster.java
+index 1ae9c6b72b..ba16a73409 100644
+--- a/services/core/java/com/android/server/am/OomAdjuster.java
++++ b/services/core/java/com/android/server/am/OomAdjuster.java
+@@ -1105,7 +1105,6 @@ public abstract class OomAdjuster {
+         final boolean doKillExcessiveProcesses = shouldKillExcessiveProcesses(now);
+         if (!doKillExcessiveProcesses) {
+             if (mNextNoKillDebugMessageTime < now) {
+-                Slog.d(TAG, "Not killing cached processes"); // STOPSHIP Remove it b/222365734
+                 mNextNoKillDebugMessageTime = now + 5000; // Every 5 seconds
+             }
+         }

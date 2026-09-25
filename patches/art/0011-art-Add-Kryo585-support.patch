@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Raphiel Rollerscaperers <rapherion@raphielgang.org>
+Date: Tue, 15 Nov 2022 13:17:56 +0800
+Subject: [PATCH 11/21] art: Add Kryo585 support
+
+Signed-off-by: minaripenguin37 <alexfinhart@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ runtime/arch/arm/instruction_set_features_arm.cc     | 1 +
+ runtime/arch/arm64/instruction_set_features_arm64.cc | 5 +++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/runtime/arch/arm/instruction_set_features_arm.cc b/runtime/arch/arm/instruction_set_features_arm.cc
+index eb76ba8..a0afdc4 100644
+--- a/runtime/arch/arm/instruction_set_features_arm.cc
++++ b/runtime/arch/arm/instruction_set_features_arm.cc
+@@ -67,6 +67,7 @@ ArmFeaturesUniquePtr ArmInstructionSetFeatures::FromVariant(
+       "exynos-m1",
+       "kryo",
+       "kryo385",
++      "kryo585",
+       "kryo785",
+   };
+   bool has_armv8a = FindVariantInArray(arm_variants_with_armv8a,
+diff --git a/runtime/arch/arm64/instruction_set_features_arm64.cc b/runtime/arch/arm64/instruction_set_features_arm64.cc
+index bb33fab..e6152a0 100644
+--- a/runtime/arch/arm64/instruction_set_features_arm64.cc
++++ b/runtime/arch/arm64/instruction_set_features_arm64.cc
+@@ -83,6 +83,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromVariant(
+       "exynos-m3",
+       "kryo",
+       "kryo385",
++      "kryo585",
+       "kryo785",
+   };
+ 
+@@ -92,6 +93,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromVariant(
+       "cortex-a75",
+       "cortex-a76",
+       "kryo385",
++      "kryo585",
+       "kryo785",
+   };
+ 
+@@ -101,6 +103,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromVariant(
+       "cortex-a75",
+       "cortex-a76",
+       "kryo385",
++      "kryo585",
+       "kryo785",
+   };
+ 
+@@ -109,6 +112,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromVariant(
+       "cortex-a55",
+       "cortex-a75",
+       "cortex-a76",
++      "kryo585",
+       "kryo785",
+   };
+ 
+@@ -152,6 +156,7 @@ Arm64FeaturesUniquePtr Arm64InstructionSetFeatures::FromVariant(
+         "kryo",
+         "kryo300",
+         "kryo385",
++        "kryo585",
+         "kryo785",
+         "oryon",
+     };

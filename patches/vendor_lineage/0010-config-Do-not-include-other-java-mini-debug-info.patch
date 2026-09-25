@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yurical <yurical1@outlook.com>
+Date: Tue, 14 Oct 2025 20:00:09 +0800
+Subject: [PATCH 10/14] config: Do not include other java mini debug info
+
+In the same manner of PRODUCT_SYSTEM_SERVER_DEBUG_INFO.
+We explicitly add PRODUCT_OTHER_JAVA_DEBUG_INFO here since
+WITH_DEXPREOPT_DEBUG_INFO can be overriden with
+PRODUCT_SYSTEM_SERVER_DEBUG_INFO and PRODUCT_OTHER_JAVA_DEBUG_INFO.
+
+Change-Id: Ib9173bdbeaf3e279256be10c4082036c486dd154
+Signed-off-by: Yurical <yurical1@outlook.com>
+---
+ config/common.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/config/common.mk b/config/common.mk
+index e179ac9..82bdc37 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -158,6 +158,9 @@ WITH_DEXPREOPT_DEBUG_INFO := false
+ # Reduce system server verbosity
+ PRODUCT_SYSTEM_SERVER_DEBUG_INFO := false
+ 
++# Do not include other java mini debug info
++PRODUCT_OTHER_JAVA_DEBUG_INFO := false
++
+ # Bootanimation
+ TARGET_SCREEN_WIDTH ?= 1080
+ TARGET_SCREEN_HEIGHT ?= 1920

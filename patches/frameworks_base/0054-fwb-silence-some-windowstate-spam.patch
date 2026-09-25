@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Fri, 25 Aug 2023 05:31:32 +0000
+Subject: [PATCH 054/226] fwb: silence some windowstate spam
+
+Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4d87ea, mPriority=0}
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ services/core/java/com/android/server/wm/WindowState.java | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/WindowState.java b/services/core/java/com/android/server/wm/WindowState.java
+index c90391bdb1..e1e0f23693 100644
+--- a/services/core/java/com/android/server/wm/WindowState.java
++++ b/services/core/java/com/android/server/wm/WindowState.java
+@@ -1046,8 +1046,8 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+      */
+     void setOnBackInvokedCallbackInfo(
+             @Nullable OnBackInvokedCallbackInfo callbackInfo) {
+-        ProtoLog.d(WM_DEBUG_BACK_PREVIEW, "%s: Setting back callback %s",
+-                this, callbackInfo);
++        //ProtoLog.d(WM_DEBUG_BACK_PREVIEW, "%s: Setting back callback %s",
++        //        this, callbackInfo);
+         mOnBackInvokedCallbackInfo = callbackInfo;
+     }
+ 
+@@ -1143,7 +1143,7 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+         // Make sure we initial all fields before adding to parentWindow, to prevent exception
+         // during onDisplayChanged.
+         if (mIsChildWindow) {
+-            ProtoLog.v(WM_DEBUG_ADD_REMOVE, "Adding %s to %s", this, parentWindow);
++            //ProtoLog.v(WM_DEBUG_ADD_REMOVE, "Adding %s to %s", this, parentWindow);
+             parentWindow.addChild(this, sWindowSubLayerComparator);
+         }
+ 

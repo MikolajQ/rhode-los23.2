@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Thuan Nguyen Nhu <ngnhuthuan99@gmail.com>
+Date: Tue, 16 Jun 2026 16:58:06 +0700
+Subject: [PATCH 205/226] Fix caching issue for product strategies
+
+- Prevent caching of sAudioProductStrategiesWithoutInternal
+when AudioProductStrategies is uninitialized.
+
+Change-Id: I16cb67807a9f837ab7e4b8916cdcf2168219041c
+Signed-off-by: Nguyen Nhu Thuan (MS/EMC12-XC)
+<Thuan.NguyenNhu@vn.bosch.com>
+---
+ .../server/audio/AudioSystemAdapter.java       | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/services/core/java/com/android/server/audio/AudioSystemAdapter.java b/services/core/java/com/android/server/audio/AudioSystemAdapter.java
+index 017066790c..62234464dd 100644
+--- a/services/core/java/com/android/server/audio/AudioSystemAdapter.java
++++ b/services/core/java/com/android/server/audio/AudioSystemAdapter.java
+@@ -755,16 +755,22 @@ public class AudioSystemAdapter implements AudioSystem.RoutingUpdateCallback,
+      * otherwise.
+      */
+     public List<AudioProductStrategy> getAudioProductStrategies(boolean filterInternal) {
+-        if (filterInternal) {
+-            synchronized (sAudioProductStrategiesLock) {
+-                if (sAudioProductStrategiesWithoutInternal == null) {
+-                    sAudioProductStrategiesWithoutInternal = AudioProductStrategy
+-                            .filterNonInternalStrategies(getAllProductStrategies());
++        if (!filterInternal) {
++            return getAllProductStrategies();
++        }
++
++        synchronized (sAudioProductStrategiesLock) {
++            if (sAudioProductStrategiesWithoutInternal == null) {
++                final List<AudioProductStrategy> allStrategies = getAllProductStrategies();
++                if (sAudioProductStrategies == null) {
++                    Log.w(TAG, "The list of audio product strategies is not initialized.");
++                    return Collections.emptyList();
+                 }
++                sAudioProductStrategiesWithoutInternal = AudioProductStrategy
++                        .filterNonInternalStrategies(allStrategies);
+             }
+             return sAudioProductStrategiesWithoutInternal;
+         }
+-        return getAllProductStrategies();
+     }
+ 
+     /**

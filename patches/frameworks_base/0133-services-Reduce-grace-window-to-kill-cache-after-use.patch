@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Mon, 15 Sep 2025 22:35:38 +0530
+Subject: [PATCH 133/226] services: Reduce grace window to kill cache after
+ user unlock
+
+* Reduced from 10 minutes to 2 minutes.
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../java/com/android/server/am/ActivityManagerConstants.java    | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/ActivityManagerConstants.java b/services/core/java/com/android/server/am/ActivityManagerConstants.java
+index ccc5ce282c..332dbbeccd 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerConstants.java
++++ b/services/core/java/com/android/server/am/ActivityManagerConstants.java
+@@ -916,7 +916,7 @@ final class ActivityManagerConstants extends ContentObserver {
+ 
+     /** @see #mNoKillCachedProcessesPostBootCompletedDurationMillis */
+     private static final long
+-            DEFAULT_NO_KILL_CACHED_PROCESSES_POST_BOOT_COMPLETED_DURATION_MILLIS = 600_000;
++            DEFAULT_NO_KILL_CACHED_PROCESSES_POST_BOOT_COMPLETED_DURATION_MILLIS = 120_000;
+ 
+     /**
+      * If true, do not kill excessive cached processes proactively, until user-0 is unlocked.

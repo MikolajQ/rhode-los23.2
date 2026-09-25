@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Wed, 12 Feb 2025 21:08:39 +0800
+Subject: [PATCH 099/226] Increase hwuiTask priority
+
+Change-Id: I72233347393c54fd2670bc58c9e7a54e3b8b05c6
+---
+ libs/hwui/platform/android/thread/CommonPoolBase.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/hwui/platform/android/thread/CommonPoolBase.h b/libs/hwui/platform/android/thread/CommonPoolBase.h
+index 8f836b6124..42d0d113ff 100644
+--- a/libs/hwui/platform/android/thread/CommonPoolBase.h
++++ b/libs/hwui/platform/android/thread/CommonPoolBase.h
+@@ -41,7 +41,7 @@ protected:
+             tids[i] = pthread_gettid_np(self);
+             tidConditionVars[i].notify_one();
+         }
+-        setpriority(PRIO_PROCESS, 0, PRIORITY_FOREGROUND);
++        setpriority(PRIO_PROCESS, 0, PRIORITY_URGENT_DISPLAY);
+         auto startHook = renderthread::RenderThread::getOnStartHook();
+         if (startHook) {
+             startHook(name.data());

@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Mon, 16 Mar 2026 23:39:52 +0800
+Subject: [PATCH 156/226] services: Skipping redundant posture estimation
+ callbacks
+
+PostureEstimator was firing mOnEstimationChanged on every sensor event even when the computed tent/wedge/flat state was identical to the previous result. adding dirty-flag check so the callback only fires when posture actually changes
+
+Change-Id: If4c84c6b79900f255a3d573752eece41f3d3793d
+Signed-off-by: Ghosuto <clash.raja10@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../server/policy/BookStyleClosedStatePredicate.java  | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/services/foldables/devicestateprovider/src/com/android/server/policy/BookStyleClosedStatePredicate.java b/services/foldables/devicestateprovider/src/com/android/server/policy/BookStyleClosedStatePredicate.java
+index 87ed18fc8b..45b89142ab 100644
+--- a/services/foldables/devicestateprovider/src/com/android/server/policy/BookStyleClosedStatePredicate.java
++++ b/services/foldables/devicestateprovider/src/com/android/server/policy/BookStyleClosedStatePredicate.java
+@@ -249,6 +249,8 @@ public class BookStyleClosedStatePredicate implements Predicate<FoldableDeviceSt
+ 
+         private boolean mScreenTurnedOn = false;
+         private boolean mDeviceClosed = false;
++        private boolean mLastTentOrWedge = false;
++        private boolean mLastLeftFlat = false;
+ 
+         public PostureEstimator(Handler handler, FeatureFlags featureFlags,
+                 SensorManager sensorManager, @Nullable Sensor leftAccelerometerSensor,
+@@ -308,7 +310,14 @@ public class BookStyleClosedStatePredicate implements Predicate<FoldableDeviceSt
+                 mLastDeviceOrientationSensorEvent = event;
+             }
+ 
+-            mOnEstimationChanged.run();
++            boolean tentOrWedge = isLikelyTentOrWedgeMode();
++            boolean leftFlat = Objects.equals(
++                    isGravityVectorMostlyFlat(mLeftGravityVector), Boolean.TRUE);
++            if (tentOrWedge != mLastTentOrWedge || leftFlat != mLastLeftFlat) {
++                mLastTentOrWedge = tentOrWedge;
++                mLastLeftFlat = leftFlat;
++                mOnEstimationChanged.run();
++            }
+         }
+ 
+         @Override

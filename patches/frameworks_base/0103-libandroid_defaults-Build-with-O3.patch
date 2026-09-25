@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 14 Feb 2025 09:53:59 +0800
+Subject: [PATCH 103/226] libandroid_defaults: Build with -O3
+
+Change-Id: I16344d1f527d32b1789d0b16f2c854c533638783
+---
+ native/android/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/native/android/Android.bp b/native/android/Android.bp
+index 3f4cd85afb..ee6d54c1f6 100644
+--- a/native/android/Android.bp
++++ b/native/android/Android.bp
+@@ -38,6 +38,7 @@ cc_defaults {
+         "-Wunused",
+         "-Wunreachable-code",
+         "-Wthread-safety",
++        "-O3",
+     ],
+     lto: {
+         thin: true,

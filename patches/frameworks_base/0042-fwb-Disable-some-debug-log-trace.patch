@@ -1,0 +1,262 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 1582130940 <19632674+1582130940@users.noreply.github.com>
+Date: Mon, 9 Aug 2021 03:35:07 +0200
+Subject: [PATCH 042/226] fwb: Disable some debug/log/trace
+
+* ResourceTypes: Don't spam logcat
+fusionjack <dogfight60-fusionjack@yahoo.de>
+
+* GpsNetInitiatedHandler: Disable More Debugging
+Chet Kener <Cl3Kener@gmail.com>
+
+* Ringtone/DeadZone: Turn off some debugs
+AndroidRul3z <ferrettidario@gmail.com>
+
+* BluetoothAdapter: Disable logspew
+Alexander Martinz <eviscerationls@gmail.com>
+
+* base: Kill some log spam
+* SystemUI: Disable KeyguardConstants DEBUG
+* ViewRootImpl: Log spill when dragging
+maxwen <max.weninger@gmail.com>
+
+* BluetoothUtils: Disable useless logspam
+* AlarmManagerService: Reduce log level wtf -> w
+?UTF-8?q?Sim=C3=A3o=20Gomes=20Viana?= <devel@superboring.dev>
+
+* InterruptionStateProvider: Disable debugging
+jhonboy121 <alfredmathew05@gmail.com>
+
+* DEBUG: Turn off some debugging we don't need.
+mydongistiny <jaysonedson@gmail.com>
+
+* DefaultPermissionGrantPolicy: Silence harmless errors
+Logcat spams with google packages not installed. Kill it.
+
+* InputMethodUtils: Fix system bootloop when no IME found
+In case of faulty gapps, there are no default IME left on the system.
+This shouldn't be situation where user cannot boot at all.
+Handle InputMethodUtils to prevent PackageManagerService crashing system.
+* SystemUI: Remove trace counter from ScrimState
+updateScrimColor is expensive
+Pranav Vashi <neobuddy89@gmail.com>
+
+* services: LightsService: Mute an annoying error message.
+E LightsService: Light requested not available on this device.
+If you google for the error you will find many discussion threads or logcats
+that show this error. Since the error only describes that the device does
+not support this function, the error can be classified as harmless. In order
+not to confuse the user, we will now hide the logging of this error.
+spezi77 <spezi7713@gmx.net>
+
+* StatusIconContainer: Remove duplicate import
+utzcoz <utzcoz@gmail.com>
+
+* Settingslib: Remove a reflect method that can never succeed
+Stops spamming logcat with  java.lang.ClassNotFoundException
+The target class doesn't exist anywhere
+Soo-Hwan Na <69458352+roynatech2544@users.noreply.github.com>
+
+* ActivityThread: Remove Failed to find provider info logspam
+Immanuel Raj <immanuelr44@gmail.com>
+
+Co-authored-by: fusionjack <dogfight60-fusionjack@yahoo.de>
+Co-authored-by: Chet Kener <Cl3Kener@gmail.com>
+Co-authored-by: AndroidRul3z <ferrettidario@gmail.com>
+Co-authored-by: Alexander Martinz <eviscerationls@gmail.com>
+Co-authored-by: maxwen <max.weninger@gmail.com>
+Co-authored-by: ?UTF-8?q?Sim=C3=A3o=20Gomes=20Viana?= <devel@superboring.dev>
+Co-authored-by: jhonboy121 <alfredmathew05@gmail.com>
+Co-authored-by: mydongistiny <jaysonedson@gmail.com>
+Co-authored-by: spezi77 <spezi7713@gmx.net>
+Co-authored-by: Pranav Vashi <neobuddy89@gmail.com>
+Co-authored-by: utzcoz <utzcoz@gmail.com>
+Co-authored-by: Soo-Hwan Na <69458352+roynatech2544@users.noreply.github.com>
+Co-authored-by: Immanuel Raj <immanuelr44@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../com/android/server/alarm/AlarmManagerService.java    | 2 +-
+ core/java/android/app/ActivityThread.java                | 5 -----
+ core/java/android/view/ViewRootImpl.java                 | 1 -
+ libs/androidfw/ResourceTypes.cpp                         | 2 +-
+ .../internal/location/GpsNetInitiatedHandler.java        | 2 +-
+ .../android/backupconfirm/BackupRestoreConfirmation.java | 2 +-
+ .../android/settingslib/bluetooth/BluetoothUtils.java    | 2 +-
+ .../systemui/navigationbar/views/buttons/DeadZone.java   | 2 +-
+ .../com/android/systemui/statusbar/GestureRecorder.java  | 2 +-
+ .../com/android/systemui/statusbar/phone/ScrimState.java | 9 ---------
+ .../pm/permission/DefaultPermissionGrantPolicy.java      | 1 -
+ .../core/jni/com_android_server_lights_LightsService.cpp | 2 +-
+ 12 files changed, 8 insertions(+), 24 deletions(-)
+
+diff --git a/apex/jobscheduler/service/java/com/android/server/alarm/AlarmManagerService.java b/apex/jobscheduler/service/java/com/android/server/alarm/AlarmManagerService.java
+index 80421cd5e3..1e5bcbcb87 100644
+--- a/apex/jobscheduler/service/java/com/android/server/alarm/AlarmManagerService.java
++++ b/apex/jobscheduler/service/java/com/android/server/alarm/AlarmManagerService.java
+@@ -5559,7 +5559,7 @@ public class AlarmManagerService extends SystemService {
+             }
+         }
+         if (oldCount < decrement) {
+-            Slog.wtf(TAG, "Attempt to decrement existing alarm count " + oldCount + " by "
++            Slog.w(TAG, "Attempt to decrement existing alarm count " + oldCount + " by "
+                     + decrement + " for uid " + uid);
+         }
+     }
+diff --git a/core/java/android/app/ActivityThread.java b/core/java/android/app/ActivityThread.java
+index 6777dbaad9..74c8ceaab9 100644
+--- a/core/java/android/app/ActivityThread.java
++++ b/core/java/android/app/ActivityThread.java
+@@ -8526,11 +8526,6 @@ public final class ActivityThread extends ClientTransactionHandler
+             }
+         }
+         if (holder == null) {
+-            if (UserManager.get(c).isUserUnlocked(userId)) {
+-                Slog.e(TAG, "Failed to find provider info for " + auth);
+-            } else {
+-                Slog.w(TAG, "Failed to find provider info for " + auth + " (user not unlocked)");
+-            }
+             return null;
+         }
+ 
+diff --git a/core/java/android/view/ViewRootImpl.java b/core/java/android/view/ViewRootImpl.java
+index fa1c190eb4..4f2a99f080 100644
+--- a/core/java/android/view/ViewRootImpl.java
++++ b/core/java/android/view/ViewRootImpl.java
+@@ -8493,7 +8493,6 @@ public final class ViewRootImpl implements ViewParent,
+         }
+         if (x < 0 || x >= mView.getWidth() || y < 0 || y >= mView.getHeight()) {
+             // E.g. when moving window divider with mouse
+-            Slog.d(mTag, "updatePointerIcon called with position out of bounds");
+             return false;
+         }
+ 
+diff --git a/libs/androidfw/ResourceTypes.cpp b/libs/androidfw/ResourceTypes.cpp
+index 3dafce44a0..46e4874fe3 100644
+--- a/libs/androidfw/ResourceTypes.cpp
++++ b/libs/androidfw/ResourceTypes.cpp
+@@ -4576,7 +4576,7 @@ bool ResTable::getResourceName(uint32_t resID, bool allowUtf8, resource_name* ou
+ 
+     if (p < 0) {
+         if (Res_GETPACKAGE(resID)+1 == 0) {
+-            ALOGW("No package identifier when getting name for resource number 0x%08x", resID);
++            ALOGV("No package identifier when getting name for resource number 0x%08x", resID);
+         } else {
+ #ifndef STATIC_ANDROIDFW_FOR_TOOLS
+             ALOGW("No known package when getting name for resource number 0x%08x", resID);
+diff --git a/location/java/com/android/internal/location/GpsNetInitiatedHandler.java b/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
+index 8aa80aa17f..17843a2afc 100644
+--- a/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
++++ b/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
+@@ -38,7 +38,7 @@ public class GpsNetInitiatedHandler {
+ 
+     private static final String TAG = "GpsNetInitiatedHandler";
+ 
+-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
++    private static final boolean DEBUG = false;
+ 
+     private final Context mContext;
+     private final TelephonyManager mTelephonyManager;
+diff --git a/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java b/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
+index bc06bdbd29..60ef1c9c64 100644
+--- a/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
++++ b/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
+@@ -55,7 +55,7 @@ import androidx.core.view.WindowInsetsCompat;
+  */
+ public class BackupRestoreConfirmation extends Activity {
+     static final String TAG = "BackupRestoreConfirmation";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     static final String KEY_DID_ACKNOWLEDGE = "did_acknowledge";
+     static final String KEY_TOKEN = "token";
+diff --git a/packages/SettingsLib/src/com/android/settingslib/bluetooth/BluetoothUtils.java b/packages/SettingsLib/src/com/android/settingslib/bluetooth/BluetoothUtils.java
+index 975fdafdca..fff3ebb381 100644
+--- a/packages/SettingsLib/src/com/android/settingslib/bluetooth/BluetoothUtils.java
++++ b/packages/SettingsLib/src/com/android/settingslib/bluetooth/BluetoothUtils.java
+@@ -74,7 +74,7 @@ public class BluetoothUtils {
+     private static final String TAG = "BluetoothUtils";
+ 
+     public static final boolean V = false; // verbose logging
+-    public static final boolean D = true; // regular logging
++    public static final boolean D = false; // regular logging
+ 
+     public static final int META_INT_ERROR = -1;
+     public static final String BT_ADVANCED_HEADER_ENABLED = "bt_advanced_header_enabled";
+diff --git a/packages/SystemUI/src/com/android/systemui/navigationbar/views/buttons/DeadZone.java b/packages/SystemUI/src/com/android/systemui/navigationbar/views/buttons/DeadZone.java
+index a6be314158..3afd14e2b2 100644
+--- a/packages/SystemUI/src/com/android/systemui/navigationbar/views/buttons/DeadZone.java
++++ b/packages/SystemUI/src/com/android/systemui/navigationbar/views/buttons/DeadZone.java
+@@ -46,7 +46,7 @@ public class DeadZone {
+     public static final int HORIZONTAL = 0;  // Consume taps along the top edge.
+     public static final int VERTICAL = 1;  // Consume taps along the left edge.
+ 
+-    private static final boolean CHATTY = true; // print to logcat when we eat a click
++    private static final boolean CHATTY = false; // print to logcat when we eat a click
+ 
+     private static final FloatProperty<DeadZone> FLASH_PROPERTY =
+             new FloatProperty<DeadZone>("DeadZoneFlash") {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java b/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java
+index a49af47f48..4adb8868c0 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java
+@@ -33,7 +33,7 @@ import java.util.LinkedList;
+  * Convenience class for capturing gestures for later analysis.
+  */
+ public class GestureRecorder {
+-    public static final boolean DEBUG = true; // for now
++    public static final boolean DEBUG = false; // for now
+     public static final String TAG = GestureRecorder.class.getSimpleName();
+ 
+     public class Gesture {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimState.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimState.java
+index 6c20ebc232..a524596153 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimState.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimState.java
+@@ -20,7 +20,6 @@ import static com.android.systemui.statusbar.phone.ScrimController.BUSY_SCRIM_AL
+ 
+ import android.graphics.Color;
+ 
+-import com.android.app.tracing.coroutines.TrackTracer;
+ import com.android.systemui.Flags;
+ import com.android.systemui.dock.DockManager;
+ import com.android.systemui.res.R;
+@@ -598,14 +597,6 @@ public enum ScrimState {
+             tint = scrim == mScrimInFront ? ScrimController.DEBUG_FRONT_TINT
+                     : ScrimController.DEBUG_BEHIND_TINT;
+         }
+-        TrackTracer.instantForGroup("scrim",
+-                scrim == mScrimInFront ? "front_scrim_alpha" : "back_scrim_alpha",
+-                (int) (alpha * 255));
+-
+-        TrackTracer.instantForGroup("scrim",
+-                scrim == mScrimInFront ? "front_scrim_tint" : "back_scrim_tint",
+-                Color.alpha(tint));
+-
+         scrim.setTint(tint);
+         scrim.setViewAlpha(alpha);
+     }
+diff --git a/services/core/java/com/android/server/pm/permission/DefaultPermissionGrantPolicy.java b/services/core/java/com/android/server/pm/permission/DefaultPermissionGrantPolicy.java
+index b4f79f6f59..acd465ca16 100644
+--- a/services/core/java/com/android/server/pm/permission/DefaultPermissionGrantPolicy.java
++++ b/services/core/java/com/android/server/pm/permission/DefaultPermissionGrantPolicy.java
+@@ -335,7 +335,6 @@ final class DefaultPermissionGrantPolicy {
+                 return mContext.getPackageManager().getPackageInfo(pkg,
+                         DEFAULT_PACKAGE_INFO_QUERY_FLAGS);
+             } catch (NameNotFoundException e) {
+-                Slog.e(TAG, "Package not found: " + pkg);
+                 return null;
+             }
+         }
+diff --git a/services/core/jni/com_android_server_lights_LightsService.cpp b/services/core/jni/com_android_server_lights_LightsService.cpp
+index 35d8219651..c12f205f7d 100644
+--- a/services/core/jni/com_android_server_lights_LightsService.cpp
++++ b/services/core/jni/com_android_server_lights_LightsService.cpp
+@@ -112,7 +112,7 @@ static void processReturn(
+         case Status::SUCCESS:
+             break;
+         case Status::LIGHT_NOT_SUPPORTED:
+-            ALOGE("Light requested not available on this device. %d", type);
++            ALOGV("Light requested not available on this device. %d", type);
+             break;
+         case Status::BRIGHTNESS_NOT_SUPPORTED:
+             ALOGE("Brightness parameter not supported on this device: %d",

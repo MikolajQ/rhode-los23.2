@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SakuraiLH <hikarilh@foxmail.com>
+Date: Wed, 2 Nov 2022 05:14:12 +0800
+Subject: [PATCH 062/226] base: Stop the spamming of background start not
+ allowed
+
+Change-Id: I856c62bf2d96b47a5de1948f29bb54c2a55832f9
+Signed-off-by: SakuraiLH <hikarilh@foxmail.com>
+---
+ services/core/java/com/android/server/am/ActiveServices.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/services/core/java/com/android/server/am/ActiveServices.java b/services/core/java/com/android/server/am/ActiveServices.java
+index 5016e9d62c..8e3bafc1cb 100644
+--- a/services/core/java/com/android/server/am/ActiveServices.java
++++ b/services/core/java/com/android/server/am/ActiveServices.java
+@@ -1106,10 +1106,12 @@ public final class ActiveServices {
+             final int allowed = mAm.getAppStartModeLOSP(appUid, appPackageName, appTargetSdkVersion,
+                     callingPid, false, false, forcedStandby);
+             if (allowed != ActivityManager.APP_START_MODE_NORMAL) {
++		/*
+                 Slog.w(TAG, "Background start not allowed: service "
+                         + service + " to " + r.shortInstanceName
+                         + " from pid=" + callingPid + " uid=" + callingUid
+                         + " pkg=" + callingPackage + " startFg?=" + fgRequired);
++		*/
+                 if (allowed == ActivityManager.APP_START_MODE_DELAYED || forceSilentAbort) {
+                     // In this case we are silently disabling the app, to disrupt as
+                     // little as possible existing apps.

@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Fri, 1 May 2026 06:22:49 +0800
+Subject: [PATCH 164/226] services: Optimizing letterbox updates
+
+simpleperf shows a large amount of cpu wasted due to redundant letterbox operations - add redundancy checks and skip letterbox updates when animating windows
+
+Change-Id: Id7a3b379daa38c3267074ccb016dacdb154fe4b6
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../server/wm/AppCompatLetterboxPolicy.java      | 16 +++++++++++-----
+ .../com/android/server/wm/DisplayContent.java    |  6 +++++-
+ 2 files changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/AppCompatLetterboxPolicy.java b/services/core/java/com/android/server/wm/AppCompatLetterboxPolicy.java
+index 8af10b72f1..2c222780ef 100644
+--- a/services/core/java/com/android/server/wm/AppCompatLetterboxPolicy.java
++++ b/services/core/java/com/android/server/wm/AppCompatLetterboxPolicy.java
+@@ -192,9 +192,14 @@ class AppCompatLetterboxPolicy {
+         if (shouldNotLayoutLetterbox(w)) {
+             return;
+         }
+-        mAppCompatRoundedCorners.updateRoundedCornersIfNeeded(w);
+-        updateWallpaperForLetterbox(w);
+-        if (shouldShowLetterboxUi(w)) {
++        final boolean shouldShowLetterboxUi = shouldShowLetterboxUi(w);
++        final boolean isLetterboxedNotForDisplayCutout = shouldShowLetterboxUi
++                && !w.isLetterboxedForDisplayCutout();
++        mAppCompatRoundedCorners.updateRoundedCornersIfNeeded(w,
++                isLetterboxedNotForDisplayCutout
++                        && !isFreeformActivityMatchParentAppBoundsHeight());
++        updateWallpaperForLetterbox(w, isLetterboxedNotForDisplayCutout);
++        if (shouldShowLetterboxUi) {
+             mLetterboxPolicyState.layoutLetterboxIfNeeded(w);
+         }  else {
+             mLetterboxPolicyState.hide();
+@@ -273,7 +278,8 @@ class AppCompatLetterboxPolicy {
+         mAppCompatConfiguration.dump(pw, prefix);
+     }
+ 
+-    private void updateWallpaperForLetterbox(@NonNull WindowState mainWindow) {
++    private void updateWallpaperForLetterbox(@NonNull WindowState mainWindow,
++            boolean isLetterboxedNotForDisplayCutout) {
+         final AppCompatLetterboxOverrides letterboxOverrides = mActivityRecord
+                 .mAppCompatController.getLetterboxOverrides();
+         final @LetterboxBackgroundType int letterboxBackgroundType =
+@@ -281,7 +287,7 @@ class AppCompatLetterboxPolicy {
+         boolean wallpaperShouldBeShown =
+                 letterboxBackgroundType == LETTERBOX_BACKGROUND_WALLPAPER
+                         // Don't use wallpaper as a background if letterboxed for display cutout.
+-                        && isLetterboxedNotForDisplayCutout(mainWindow)
++                        && isLetterboxedNotForDisplayCutout
+                         // Check that dark scrim alpha or blur radius are provided
+                         && (letterboxOverrides.getLetterboxWallpaperBlurRadiusPx() > 0
+                         || letterboxOverrides.getLetterboxWallpaperDarkScrimAlpha() > 0)
+diff --git a/services/core/java/com/android/server/wm/DisplayContent.java b/services/core/java/com/android/server/wm/DisplayContent.java
+index 27427724f0..43834b9abf 100644
+--- a/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -1107,7 +1107,11 @@ class DisplayContent extends RootDisplayArea implements WindowManagerPolicy.Disp
+ 
+         final ActivityRecord activity = w.mActivityRecord;
+         if (activity != null && activity.isVisibleRequested()) {
+-            activity.updateLetterboxSurfaceIfNeeded(w);
++            final int type = w.mAttrs.type;
++            if (!w.mAnimatingExit
++                    && (type == TYPE_BASE_APPLICATION || type == TYPE_APPLICATION_STARTING)) {
++                activity.updateLetterboxSurfaceIfNeeded(w);
++            }
+             final boolean updateAllDrawn = activity.updateDrawnWindowStates(w);
+             if (updateAllDrawn && !mTmpUpdateAllDrawn.contains(activity)) {
+                 mTmpUpdateAllDrawn.add(activity);

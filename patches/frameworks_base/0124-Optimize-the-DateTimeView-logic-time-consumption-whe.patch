@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shuangxi Xiang <xiangshuangxi@xiaomi.corp-partner.google.com>
+Date: Fri, 5 Sep 2025 03:06:57 -0700
+Subject: [PATCH 124/226] Optimize the DateTimeView logic time consumption when
+ updating the Ui main thread time
+
+During the notification bar case fluency test in the system core UI scene, the SystemUIUi main thread experienced severe frame drops due to frequent execution of the following DateTimeView logic while updating the status bar time once a minute:
+android.view.ViewRootImpl$ViewRootHandler: android.widget.DateTimeView$ReceiverInfo$$ExternalSyntheticLambda0
+
+Signed-off-by:
+Shuangxi Xiang <xiangshuangxi@xiaomi.corp-partner.google.com>
+
+Change-Id: I888218897555d596b46b78f23a63d1df1750b3ca
+---
+ core/java/android/widget/DateTimeView.java | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/core/java/android/widget/DateTimeView.java b/core/java/android/widget/DateTimeView.java
+index ca9cd66188..8eaebde4a4 100644
+--- a/core/java/android/widget/DateTimeView.java
++++ b/core/java/android/widget/DateTimeView.java
+@@ -165,10 +165,6 @@ public class DateTimeView extends TextView {
+         if (mLocalTime == null || getVisibility() == GONE) {
+             return;
+         }
+-        if (mShowRelativeTime) {
+-            updateRelativeTime();
+-            return;
+-        }
+ 
+         int display;
+         ZoneId zoneId = ZoneId.systemDefault();
+@@ -476,6 +472,13 @@ public class DateTimeView extends TextView {
+                 final int count = mAttachedViews.size();
+                 for (int i = 0; i < count; i++) {
+                     DateTimeView view = mAttachedViews.get(i);
++                    if (view.mShowRelativeTime) {
++                        // Every minute, the status bar only needs to execute this function once
++                        // to update the display
++                        view.post(() -> view.updateRelativeTime());
++                        return;
++                    }
++
+                     view.post(() -> view.clearFormatAndUpdate());
+                 }
+             }

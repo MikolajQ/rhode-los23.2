@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Sat, 2 May 2026 07:39:13 +0800
+Subject: [PATCH 159/226] base: Fixing wallpaper token leak
+
+Change-Id: Ifab772e1d14185a2da6babd1773bad67ce727658
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../Shell/src/com/android/wm/shell/transition/Transitions.java | 1 +
+ .../core/java/com/android/server/wm/WallpaperWindowToken.java  | 3 +++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/transition/Transitions.java b/libs/WindowManager/Shell/src/com/android/wm/shell/transition/Transitions.java
+index 5801f0494c..a6adbddde9 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/transition/Transitions.java
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/transition/Transitions.java
+@@ -724,6 +724,7 @@ public class Transitions implements RemoteCallable<Transitions>,
+             if (existing != null) {
+                 Log.e(TAG, "Got duplicate transitionReady for " + transitionToken);
+                 // The transition is already somewhere else in the pipeline, so just return here.
++                info.releaseAnimSurfaces();
+                 t.apply();
+                 if (existing.mFinishT != null) {
+                     existing.mFinishT.merge(finishT);
+diff --git a/services/core/java/com/android/server/wm/WallpaperWindowToken.java b/services/core/java/com/android/server/wm/WallpaperWindowToken.java
+index 94d24537bd..937697d0d4 100644
+--- a/services/core/java/com/android/server/wm/WallpaperWindowToken.java
++++ b/services/core/java/com/android/server/wm/WallpaperWindowToken.java
+@@ -78,6 +78,9 @@ class WallpaperWindowToken extends WindowToken {
+     @Override
+     void setExiting(boolean animateExit) {
+         super.setExiting(animateExit);
++        if (mSurfaceControl != null) {
++            getSyncTransaction().setVisibility(mSurfaceControl, false);
++        }
+         mDisplayContent.mWallpaperController.removeWallpaperToken(this);
+     }
+ 
