@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rmp22 <195054967+rmp22@users.noreply.github.com>
+Date: Thu, 23 Oct 2025 17:55:24 +0800
+Subject: [PATCH 07/10] init: Fix and improve safetynet property spoofing
+
+InitPropertySet cant write ro properties due to permission checks
+
+command
+adb shell "getprop | grep -E 'ro.boot.flash.locked|ro.boot.vbmeta.device_state|ro.boot.verifiedbootstate|ro.boot.veritymode|ro.boot.warranty_bit|ro.warranty_bit|ro.debuggable|ro.force.debuggable|ro.adb.secure|ro.secure|ro.bootimage.build.type|ro.build.type|ro.build.keys|ro.build.tags|ro.system.build.tags|ro.product.build.type|ro.odm.build.type|ro.system.build.type|ro.system_ext.build.type|ro.vendor.build.type|ro.vendor_dlkm.build.type|ro.vendor.boot.warranty_bit|ro.vendor.warranty_bit|vendor.boot.vbmeta.device_state|vendor.boot.verifiedbootstate|oplusboot.verifiedbootstate|sys.oem_unlock_allowed'"
+
+output
+[oplusboot.verifiedbootstate]: [green]
+[ro.adb.secure]: [1]
+[ro.appcompat_override.ro.boot.verifiedbootstate]: [green]
+[ro.boot.flash.locked]: [1]
+[ro.boot.vbmeta.device_state]: [locked]
+[ro.boot.verifiedbootstate]: [green]
+[ro.boot.veritymode]: [enforcing]
+[ro.boot.warranty_bit]: [0]
+[ro.bootimage.build.type]: [user]
+[ro.build.keys]: [release-keys]
+[ro.build.tags]: [release-keys]
+[ro.build.type]: [user]
+[ro.debuggable]: [0]
+[ro.force.debuggable]: [0]
+[ro.odm.build.type]: [user]
+[ro.product.build.type]: [user]
+[ro.secure]: [1]
+[ro.system.build.tags]: [release-keys]
+[ro.system.build.type]: [user]
+[ro.system_ext.build.type]: [user]
+[ro.vendor.boot.warranty_bit]: [0]
+[ro.vendor.build.type]: [user]
+[ro.vendor.warranty_bit]: [0]
+[ro.vendor_dlkm.build.type]: [user]
+[ro.warranty_bit]: [0]
+[sys.oem_unlock_allowed]: [0]
+[vendor.boot.vbmeta.device_state]: [locked]
+[vendor.boot.verifiedbootstate]: [green]
+
+Change-Id: I561a3bc6423c57c0ad905ce7bed84aabf15fe23a
+Signed-off-by: rmp22 <195054967+rmp22@users.noreply.github.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ init/property_service.cpp | 96 +++++++++++++++++++++++----------------
+ 1 file changed, 56 insertions(+), 40 deletions(-)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index c44d1a5..6f99f07 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -1116,6 +1116,52 @@ static void property_initialize_ro_vendor_api_level() {
+     }
+ }
+ 
++static void SetSafetyNetProps() {
++    std::string error;
++    uint32_t res;
++
++    const std::pair<const char*, const char*> props[] = {
++        {"ro.boot.flash.locked", "1"},
++        {"ro.boot.vbmeta.device_state", "locked"},
++        {"ro.boot.verifiedbootstate", "green"},
++        {"ro.boot.veritymode", "enforcing"},
++        {"ro.boot.warranty_bit", "0"},
++        {"ro.warranty_bit", "0"},
++        {"ro.debuggable", "0"},
++        {"ro.force.debuggable", "0"},
++        {"ro.adb.secure", "1"},
++        {"ro.secure", "1"},
++        {"ro.bootimage.build.type", "user"},
++        {"ro.build.type", "user"},
++        {"ro.build.keys", "release-keys"},
++        {"ro.build.tags", "release-keys"},
++        {"ro.system.build.tags", "release-keys"},
++        {"ro.product.build.type", "user"},
++        {"ro.system_dlkm.build.type", "user"},
++        {"ro.odm.build.type", "user"},
++        {"ro.system.build.type", "user"},
++        {"ro.system_ext.build.type", "user"},
++        {"ro.vendor.build.type", "user"},
++        {"ro.vendor_dlkm.build.type", "user"},
++        {"ro.vendor.boot.warranty_bit", "0"},
++        {"ro.vendor.warranty_bit", "0"},
++        {"vendor.boot.vbmeta.device_state", "locked"},
++        {"vendor.boot.verifiedbootstate", "green"},
++        {"oplusboot.verifiedbootstate", "green"},
++        {"sys.oem_unlock_allowed", "0"}
++    };
++
++    for (const auto& [name, value] : props) {
++        res = PropertySetNoSocket(name, value, &error);
++        if (res == PROP_SUCCESS) {
++            LOG(INFO) << "Property '" << name << "' set successfully to '" << value << "'";
++        } else {
++            LOG(ERROR) << "Failed to set property '" << name
++                       << "' to '" << value << "': err=" << res << " (" << error << ")";
++        }
++    }
++}
++
+ void PropertyLoadBootDefaults() {
+     // We read the properties and their values into a map, in order to always allow properties
+     // loaded in the later property files to override the properties in loaded in the earlier
+@@ -1221,6 +1267,16 @@ void PropertyLoadBootDefaults() {
+     property_initialize_ro_cpu_abilist();
+     property_initialize_ro_vendor_api_level();
+ 
++    // Report a valid verified boot chain to make Google SafetyNet integrity
++    // checks pass. This needs to be done before parsing the kernel cmdline as
++    // these properties are read-only and will be set to invalid values with
++    // androidboot cmdline arguments.
++    if (SPOOF_SAFETYNET) {
++      if (!IsRecoveryMode()) {
++        SetSafetyNetProps();
++      }
++    }
++
+     // Restore the normal property override security after init extension is executed
+     weaken_prop_override_security = false;
+ 
+@@ -1382,36 +1438,6 @@ static void ProcessBootconfig() {
+     });
+ }
+ 
+-static void SetSafetyNetProps() {
+-    InitPropertySet("ro.boot.flash.locked", "1");
+-    InitPropertySet("ro.boot.vbmeta.device_state", "locked");
+-    InitPropertySet("ro.boot.verifiedbootstate", "green");
+-    InitPropertySet("ro.boot.veritymode", "enforcing");
+-    InitPropertySet("ro.boot.warranty_bit", "0");
+-    InitPropertySet("ro.warranty_bit", "0");
+-    InitPropertySet("ro.debuggable", "0");
+-    InitPropertySet("ro.force.debuggable", "0");
+-    InitPropertySet("ro.adb.secure", "1");
+-    InitPropertySet("ro.secure", "1");
+-    InitPropertySet("ro.bootimage.build.type", "user");
+-    InitPropertySet("ro.build.type", "user");
+-    InitPropertySet("ro.build.keys", "release-keys");
+-    InitPropertySet("ro.build.tags", "release-keys");
+-    InitPropertySet("ro.system.build.tags", "release-keys");
+-    InitPropertySet("ro.product.build.type", "user");
+-    InitPropertySet("ro.odm.build.type", "user");
+-    InitPropertySet("ro.system.build.type", "user");
+-    InitPropertySet("ro.system_ext.build.type", "user");
+-    InitPropertySet("ro.vendor.build.type", "user");
+-    InitPropertySet("ro.vendor_dlkm.build.type", "user");
+-    InitPropertySet("ro.vendor.boot.warranty_bit", "0");
+-    InitPropertySet("ro.vendor.warranty_bit", "0");
+-    InitPropertySet("vendor.boot.vbmeta.device_state", "locked");
+-    InitPropertySet("vendor.boot.verifiedbootstate", "green");
+-    InitPropertySet("oplusboot.verifiedbootstate", "green");
+-    InitPropertySet("sys.oem_unlock_allowed", "0");
+-}
+-
+ void PropertyInit() {
+     selinux_callback cb;
+     cb.func_audit = PropertyAuditCallback;
+@@ -1426,16 +1452,6 @@ void PropertyInit() {
+         LOG(FATAL) << "Failed to load serialized property info file";
+     }
+ 
+-    // Report a valid verified boot chain to make Google SafetyNet integrity
+-    // checks pass. This needs to be done before parsing the kernel cmdline as
+-    // these properties are read-only and will be set to invalid values with
+-    // androidboot cmdline arguments.
+-    if (SPOOF_SAFETYNET) {
+-      if (!IsRecoveryMode()) {
+-        SetSafetyNetProps();
+-      }
+-    }
+-
+     // If arguments are passed both on the command line and in DT,
+     // properties set in DT always have priority over the command-line ones.
+     ProcessKernelDt();

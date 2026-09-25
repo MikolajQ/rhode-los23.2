@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Micay <daniel.micay@grapheneos.org>
+Date: Tue, 5 May 2026 22:25:37 -0400
+Subject: [PATCH 23/23] avoid adding pthread_internal_t guard for main thread
+
+This isn't necessary and appears to cause a compatibility issue with an
+obfuscated app due to highly flawed anti-tampering code.
+---
+ libc/bionic/pthread_create.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/libc/bionic/pthread_create.cpp b/libc/bionic/pthread_create.cpp
+index aa793f7..8ab3c6a 100644
+--- a/libc/bionic/pthread_create.cpp
++++ b/libc/bionic/pthread_create.cpp
+@@ -242,8 +242,11 @@ ThreadMapping __allocate_thread_mapping(size_t stack_size, size_t stack_guard_si
+   // pthread_internal_t / static TLS region. arc4random_uniform() can return 0,
+   // and align_up(0, page_size) is 0, which would leave no guard page at all
+   // and let a stack overflow silently corrupt pthread_internal_t.
++  //
++  // For the main thread, the stack isn't in this mapping and we don't need to
++  // add a random gap.
+   size_t gap_size = __builtin_align_up(arc4random_uniform(max_gap_size), page_size());
+-  if (gap_size == 0) gap_size = page_size();
++  if (stack_size > 0 && gap_size == 0) gap_size = page_size();
+ 
+   // Allocate in order: stack guard, stack, (random) guard page(s), pthread_internal_t, static TLS, libgen buffers, guard page.
+   size_t mmap_size;

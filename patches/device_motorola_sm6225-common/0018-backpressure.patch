@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Sun, 10 May 2026 10:05:15 +0200
+Subject: [PATCH 18/18] backpressure
+
+Change-Id: Ic79a6f4cdc4adf984fa445314ae8aaaa825ff8e8
+---
+ system.prop | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/system.prop b/system.prop
+index 4fb973b..20f12f6 100644
+--- a/system.prop
++++ b/system.prop
+@@ -1,3 +1,4 @@
+ # Logging
+ persist.log.tag.slpi=S
+ persist.log.tag.RBS=S
++debug.sf.disable_backpressure=1

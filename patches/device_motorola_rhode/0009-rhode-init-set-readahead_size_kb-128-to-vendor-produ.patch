@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Martin Liu <liumartin@google.com>
+Date: Sun, 17 Mar 2024 11:48:02 +0100
+Subject: [PATCH 9/9] rhode: init: set readahead_size_kb=128 to vendor, product
+ and system_ext
+
+To avoid memory pressure
+
+Bug: 181567573
+Test: check readahead size
+Signed-off-by: Martin Liu <liumartin@google.com>
+Change-Id: I0ef6456a96ef923fe681112560d2f49c514ff529
+---
+ init/fstab.qcom | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/init/fstab.qcom b/init/fstab.qcom
+index 4b74f18..d370c03 100644
+--- a/init/fstab.qcom
++++ b/init/fstab.qcom
+@@ -7,9 +7,9 @@
+ 
+ #<src>                                                 <mnt_point>               <type>  <mnt_flags and options>                            <fs_mgr_flags>
+ system                                                  /system                  ext4    ro                                                   wait,slotselect,avb=vbmeta_system,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey,logical,first_stage_mount,readahead_size_kb=128
+-system_ext                                              /system_ext              ext4    ro                                                   wait,slotselect,avb,logical,nofail,first_stage_mount
+-product                                                 /product                 ext4    ro                                                   wait,slotselect,avb,logical,nofail,first_stage_mount
+-vendor                                                  /vendor                  ext4    ro                                                   wait,slotselect,avb=vbmeta,logical,first_stage_mount
++system_ext                                              /system_ext              ext4    ro                                                   wait,slotselect,avb,logical,nofail,first_stage_mount,readahead_size_kb=128
++product                                                 /product                 ext4    ro                                                   wait,slotselect,avb,logical,nofail,first_stage_mount,readahead_size_kb=128
++vendor                                                  /vendor                  ext4    ro                                                   wait,slotselect,avb=vbmeta,logical,first_stage_mount,readahead_size_kb=128
+ vendor_dlkm                                             /vendor_dlkm             ext4    noatime,ro,barrier=1                                 wait,slotselect,avb,logical,first_stage_mount
+ /dev/block/by-name/metadata                             /metadata                ext4    noatime,nosuid,nodev,discard                         wait,formattable,first_stage_mount,check
+ /dev/block/bootdevice/by-name/userdata                  /data                    f2fs    noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,fsync_mode=nobarrier,inlinecrypt            latemount,wait,check,formattable,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,metadata_encryption=aes-256-xts:wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption,quota,reservedsize=128M,sysfs_path=/sys/devices/platform/soc/4804000.ufshc,checkpoint=fs,readahead_size_kb=128

@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: spezi77 <spezi7713@gmx.net>
+Date: Fri, 15 Jan 2021 20:22:02 +0100
+Subject: [PATCH 03/10] init: Add more properties to spoof.
+
+Signed-off-by: neobuddy89 <neobuddy89@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ init/property_service.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index 6fcf87a..f17393b 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -1388,6 +1388,18 @@ static void SetSafetyNetProps() {
+     InitPropertySet("ro.boot.vbmeta.device_state", "locked");
+     InitPropertySet("ro.boot.verifiedbootstate", "green");
+     InitPropertySet("ro.boot.veritymode", "enforcing");
++    InitPropertySet("ro.boot.warranty_bit", "0");
++    InitPropertySet("ro.warranty_bit", "0");
++    InitPropertySet("ro.debuggable", "0");
++    InitPropertySet("ro.secure", "1");
++    InitPropertySet("ro.build.type", "user");
++    InitPropertySet("ro.build.keys", "release-keys");
++    InitPropertySet("ro.build.tags", "release-keys");
++    InitPropertySet("ro.system.build.tags", "release-keys");
++    InitPropertySet("ro.vendor.boot.warranty_bit", "0");
++    InitPropertySet("ro.vendor.warranty_bit", "0");
++    InitPropertySet("vendor.boot.vbmeta.device_state", "locked");
++    InitPropertySet("vendor.boot.verifiedbootstate", "green");
+ 
+ }
+ 

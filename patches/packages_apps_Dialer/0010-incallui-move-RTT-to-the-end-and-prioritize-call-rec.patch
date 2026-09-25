@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: inthewaves <inthewaves@pm.me>
+Date: Wed, 16 Jul 2025 22:00:09 -0700
+Subject: [PATCH 10/10] incallui: move RTT to the end and prioritize call
+ recording button
+
+---
+ .../android/incallui/incall/impl/ButtonChooserFactory.java    | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/java/com/android/incallui/incall/impl/ButtonChooserFactory.java b/java/com/android/incallui/incall/impl/ButtonChooserFactory.java
+index ae84ad8..c1a7c40 100644
+--- a/java/com/android/incallui/incall/impl/ButtonChooserFactory.java
++++ b/java/com/android/incallui/incall/impl/ButtonChooserFactory.java
+@@ -63,7 +63,7 @@ class ButtonChooserFactory {
+         MappingInfo.builder(4).setSlotOrder(0).build());
+     // RTT call is only supported on IMS and WiFi.
+     mapping.put(
+-        InCallButtonIds.BUTTON_UPGRADE_TO_RTT, MappingInfo.builder(3).setSlotOrder(0).build());
++        InCallButtonIds.BUTTON_UPGRADE_TO_RTT, MappingInfo.builder(7).setSlotOrder(10).build());
+     mapping.put(
+         InCallButtonIds.BUTTON_UPGRADE_TO_VIDEO, MappingInfo.builder(4).setSlotOrder(10).build());
+     mapping.put(
+@@ -121,7 +121,7 @@ class ButtonChooserFactory {
+     mapping.put(InCallButtonIds.BUTTON_MUTE, MappingInfo.builder(0).build());
+     mapping.put(InCallButtonIds.BUTTON_DIALPAD, MappingInfo.builder(1).build());
+     mapping.put(InCallButtonIds.BUTTON_AUDIO, MappingInfo.builder(2).build());
+-    mapping.put(InCallButtonIds.BUTTON_RECORD_CALL, MappingInfo.builder(3).build());
++    mapping.put(InCallButtonIds.BUTTON_RECORD_CALL, MappingInfo.builder(3).setSlotOrder(0).build());
+     mapping.put(InCallButtonIds.BUTTON_MERGE, MappingInfo.builder(4).setSlotOrder(5).build());
+     mapping.put(InCallButtonIds.BUTTON_ADD_CALL, MappingInfo.builder(4).build());
+     mapping.put(InCallButtonIds.BUTTON_SWAP_SIM, MappingInfo.builder(5).build());

@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Fri, 22 Oct 2021 04:07:18 +0530
+Subject: [PATCH 05/10] init: Do not set safety net props for ENG builds
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ init/Android.bp           | 6 ++++++
+ init/property_service.cpp | 6 ++++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/init/Android.bp b/init/Android.bp
+index 3e2fb07..bc2ad05 100644
+--- a/init/Android.bp
++++ b/init/Android.bp
+@@ -130,6 +130,7 @@ libinit_cc_defaults {
+         "-DREBOOT_BOOTLOADER_ON_PANIC=0",
+         "-DSHUTDOWN_ZERO_TIMEOUT=0",
+         "-DWORLD_WRITABLE_KMSG=0",
++        "-DSPOOF_SAFETYNET=1",
+         "-Wall",
+         "-Werror",
+         "-Wextra",
+@@ -159,6 +160,8 @@ libinit_cc_defaults {
+             cppflags: [
+                 "-USHUTDOWN_ZERO_TIMEOUT",
+                 "-DSHUTDOWN_ZERO_TIMEOUT=1",
++                "-USPOOF_SAFETYNET",
++                "-DSPOOF_SAFETYNET=0",
+             ],
+         },
+         uml: {
+@@ -446,6 +449,7 @@ init_first_stage_cc_defaults {
+         "-DSHUTDOWN_ZERO_TIMEOUT=0",
+         "-DLOG_UEVENTS=0",
+         "-DSEPOLICY_VERSION=30", // TODO(jiyong): externalize the version number
++        "-DSPOOF_SAFETYNET=1",
+     ] + GLOBAL_HWASAN_OPTIONS,
+ 
+     product_variables: {
+@@ -475,6 +479,8 @@ init_first_stage_cc_defaults {
+             cflags: [
+                 "-USHUTDOWN_ZERO_TIMEOUT",
+                 "-DSHUTDOWN_ZERO_TIMEOUT=1",
++                "-USPOOF_SAFETYNET",
++                "-DSPOOF_SAFETYNET=0",
+             ],
+         },
+     },
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index 5802a48..88d21ca 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -1427,8 +1427,10 @@ void PropertyInit() {
+     // checks pass. This needs to be done before parsing the kernel cmdline as
+     // these properties are read-only and will be set to invalid values with
+     // androidboot cmdline arguments.
+-    if (!IsRecoveryMode()) {
+-      SetSafetyNetProps();
++    if (SPOOF_SAFETYNET) {
++      if (!IsRecoveryMode()) {
++        SetSafetyNetProps();
++      }
+     }
+ 
+     // If arguments are passed both on the command line and in DT,

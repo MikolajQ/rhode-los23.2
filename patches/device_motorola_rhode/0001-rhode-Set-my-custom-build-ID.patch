@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Sat, 22 Jul 2023 08:53:57 +0200
+Subject: [PATCH 1/9] rhode: Set my custom build ID
+
+Change-Id: Iedadbb073c4f9a4eac4fc30df270ba80cfc18c77
+---
+ lineage_rhode.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/lineage_rhode.mk b/lineage_rhode.mk
+index 3c84331..4da4488 100644
+--- a/lineage_rhode.mk
++++ b/lineage_rhode.mk
+@@ -13,6 +13,8 @@ $(call inherit-product, device/motorola/rhode/device.mk)
+ # Inherit some common LineageOS stuff.
+ $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
+ 
++TARGET_UNOFFICIAL_BUILD_ID := Tom
++
+ # Device identifier. This must come after all inclusions.
+ PRODUCT_NAME := lineage_rhode
+ PRODUCT_DEVICE := rhode

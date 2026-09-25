@@ -1,0 +1,185 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Mon, 16 Feb 2026 08:48:17 +0100
+Subject: [PATCH 24/31] PIHooks: Refactor
+
+Switch to property-based spoofing and make field detection more
+robust. Inspired from Evolution-X.
+
+Change-Id: Ica2615567643b8b229f109da657ca2992272c67f
+---
+ .../internal/util/PropImitationHooks.java     | 74 +++++++++++--------
+ core/res/res/values/extra_config.xml          | 14 ----
+ core/res/res/values/extra_symbols.xml         |  3 -
+ 3 files changed, 45 insertions(+), 46 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/PropImitationHooks.java b/core/java/com/android/internal/util/PropImitationHooks.java
+index 83371b9d5c..9619727ec2 100644
+--- a/core/java/com/android/internal/util/PropImitationHooks.java
++++ b/core/java/com/android/internal/util/PropImitationHooks.java
+@@ -44,7 +44,7 @@ import java.util.Set;
+ public class PropImitationHooks {
+ 
+     private static final String TAG = "PropImitationHooks";
+-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
++    private static final boolean DEBUG = true;
+ 
+     private static final Boolean sDisableGmsProps = SystemProperties.getBoolean(
+             "persist.sys.pihooks.disable.gms_props", false);
+@@ -56,6 +56,13 @@ public class PropImitationHooks {
+     private static final String PACKAGE_GMS = "com.google.android.gms";
+     private static final String PROCESS_GMS_UNSTABLE = PACKAGE_GMS + ".unstable";
+     private static final String PACKAGE_GPHOTOS = "com.google.android.apps.photos";
++    private static final String PROP_HOOKS = "persist.sys.pihooks_";
++
++    private static final String[] GMS_SPOOF_KEYS = {
++        "BRAND", "DEVICE", "DEVICE_INITIAL_SDK_INT", "FINGERPRINT", "ID",
++        "MANUFACTURER", "MODEL", "PRODUCT", "RELEASE", "SECURITY_PATCH",
++        "TAGS", "TYPE", "SDK_INT"
++    };
+ 
+     private static final ComponentName GMS_ADD_ACCOUNT_ACTIVITY = ComponentName.unflattenFromString(
+             "com.google.android.gms/.auth.uiflows.minutemaid.MinuteMaidActivity");
+@@ -102,8 +109,6 @@ public class PropImitationHooks {
+             "PIXEL_2024_MIDYEAR_EXPERIENCE"
+     );
+ 
+-    private static volatile String[] sCertifiedProps;
+-
+     private static volatile String sProcessName;
+     private static volatile boolean sIsGms, sIsFinsky, sIsPhotos;
+ 
+@@ -122,8 +127,6 @@ public class PropImitationHooks {
+             return;
+         }
+ 
+-        sCertifiedProps = res.getStringArray(R.array.config_certifiedBuildProperties);
+-
+         sProcessName = processName;
+         sIsGms = packageName.equals(PACKAGE_GMS) && processName.equals(PROCESS_GMS_UNSTABLE);
+         sIsFinsky = packageName.equals(PACKAGE_FINSKY);
+@@ -140,35 +143,54 @@ public class PropImitationHooks {
+         }
+     }
+ 
+-    private static void setPropValue(String key, String value) {
++    private static void setPropValue(String key, Object value) {
+         try {
+-            dlog("Setting prop " + key + " to " + value.toString());
+-            Class clazz = Build.class;
+-            if (key.startsWith("VERSION.")) {
+-                clazz = Build.VERSION.class;
+-                key = key.substring(8);
++            dlog("Setting prop " + key + " to " + value);
++            Field field = getBuildClassField(key);
++	    if (field != null) {
++                field.setAccessible(true);
++		if (field.getType() == int.class) {
++                    if (value instanceof String valueAsString) {
++                        field.set(null, Integer.parseInt(valueAsString));
++                    } else if (value instanceof Integer valueAsInteger) {
++                        field.set(null, valueAsInteger);
++                    }
++                } else if (field.getType() == long.class) {
++                    if (value instanceof String valueAsString) {
++                        field.set(null, Long.parseLong(valueAsString));
++                    } else if (value instanceof Long valueAsLong) {
++                        field.set(null, valueAsLong);
++                    }
++                } else {
++                    field.set(null, value.toString());
++                }
++                field.setAccessible(false);
++	    } else {
++                Log.e(TAG, "Field " + key + " not found in Build or Build.VERSION classes");
+             }
+-            Field field = clazz.getDeclaredField(key);
+-            field.setAccessible(true);
+-            // Cast the value to int if it's an integer field, otherwise string.
+-            field.set(null, field.getType().equals(Integer.TYPE) ? Integer.parseInt(value) : value);
+-            field.setAccessible(false);
+         } catch (Exception e) {
+             Log.e(TAG, "Failed to set prop " + key, e);
+         }
+     }
+ 
++    private static Field getBuildClassField(String key) throws NoSuchFieldException {
++        try {
++            Field field = Build.class.getDeclaredField(key);
++            dlog("Field " + key + " found in Build.class");
++            return field;
++        } catch (NoSuchFieldException e) {
++            Field field = Build.VERSION.class.getDeclaredField(key);
++            dlog("Field " + key + " found in Build.VERSION.class");
++            return field;
++        }
++    }
++
+     private static void setCertifiedPropsForGms() {
+         if (sDisableGmsProps) {
+             dlog("GMS prop imitation is disabled by user");
+             return;
+         }
+ 
+-        if (sCertifiedProps.length == 0) {
+-            dlog("Certified props are not set");
+-            return;
+-        }
+-
+         final boolean was = isGmsAddAccountActivityOnTop();
+         final TaskStackListener taskStackListener = new TaskStackListener() {
+             @Override
+@@ -195,14 +217,8 @@ public class PropImitationHooks {
+     }
+ 
+     private static void setCertifiedProps() {
+-        for (String entry : sCertifiedProps) {
+-            // Each entry must be of the format FIELD:value
+-            final String[] fieldAndProp = entry.split(":", 2);
+-            if (fieldAndProp.length != 2) {
+-                Log.e(TAG, "Invalid entry in certified props: " + entry);
+-                continue;
+-            }
+-            setPropValue(fieldAndProp[0], fieldAndProp[1]);
++        for (String key : GMS_SPOOF_KEYS) {
++            setPropValue(key, SystemProperties.get(PROP_HOOKS + key));
+         }
+     }
+ 
+diff --git a/core/res/res/values/extra_config.xml b/core/res/res/values/extra_config.xml
+index c7bea1c67e..23e7fe5a51 100644
+--- a/core/res/res/values/extra_config.xml
++++ b/core/res/res/values/extra_config.xml
+@@ -1,19 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+-    <!-- Build properties from a GMS certified device against current platform SPL level -->
+-    <string-array name="config_certifiedBuildProperties" translatable="false">
+-      <!--
+-        Each entry must be of the format
+-            FIELD:value
+-        with the field belonging to android.os.Build or android.os.Build.VERSION class.
+-        Example:
+-        <item>BRAND:foo</item>
+-        <item>DEVICE:bar</item>
+-        <item>FINGERPRINT:foo/bar/bar:1.0/lorem/ipsum:dolor/sit-amet</item>
+-        <item>VERSION.RELEASE:1.0</item>
+-      -->
+-    </string-array>
+-
+     <!-- Keybox configuration for device certification -->
+     <string-array name="config_certifiedKeybox" translatable="false">
+       <!--
+diff --git a/core/res/res/values/extra_symbols.xml b/core/res/res/values/extra_symbols.xml
+index 7082bca1e0..4df7178c63 100644
+--- a/core/res/res/values/extra_symbols.xml
++++ b/core/res/res/values/extra_symbols.xml
+@@ -1,8 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+-    <!-- PropImitationHooks -->
+-    <java-symbol type="array" name="config_certifiedBuildProperties" />
+-
+     <!-- KeyboxImitationHooks -->
+     <java-symbol type="array" name="config_certifiedKeybox" />
+ </resources>

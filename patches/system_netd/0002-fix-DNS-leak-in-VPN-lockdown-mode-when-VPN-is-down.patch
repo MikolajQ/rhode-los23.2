@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fred Underwood <underwoodfred@proton.me>
+Date: Tue, 22 Oct 2024 17:15:50 +1000
+Subject: [PATCH 2/3] fix DNS leak in VPN lockdown mode when VPN is down
+
+This is an extension of the original GrapheneOS DNS leak blocking from
+May 2024 with a fix for the fallback routing.
+
+    commit 2710991021914dfba9f5ae6840846be7ce80460c
+    Author: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+    Date:   Thu May 9 23:02:17 2024 +0300
+
+        fix DNS leak in VPN lockdown mode when VPN is down
+---
+ server/NetworkController.cpp | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/server/NetworkController.cpp b/server/NetworkController.cpp
+index 90109ed..43f2ea5 100644
+--- a/server/NetworkController.cpp
++++ b/server/NetworkController.cpp
+@@ -214,8 +214,8 @@ int NetworkController::setDefaultNetwork(unsigned netId) {
+ 
+ uint32_t NetworkController::getNetworkForDnsLocked(unsigned* netId, uid_t uid) const {
+     Fwmark fwmark;
+-    fwmark.protectedFromVpn = true;
+-    fwmark.permission = PERMISSION_SYSTEM;
++    fwmark.protectedFromVpn = canProtectLocked(uid, *netId);
++    fwmark.permission = getPermissionForUserLocked(uid);
+ 
+     Network* appDefaultNetwork = getPhysicalOrUnreachableNetworkForUserLocked(uid);
+     unsigned defaultNetId = appDefaultNetwork ? appDefaultNetwork->getNetId() : mDefaultNetId;
+@@ -254,6 +254,7 @@ uint32_t NetworkController::getNetworkForDnsLocked(unsigned* netId, uid_t uid) c
+             // Explicitly selecting the VPN here prevents fallthrough.
+             fwmark.explicitlySelected = true;
+             *netId = virtualNetwork->getNetId();
++            fwmark.explicitlySelected = true;
+         } else {
+             // TODO: return an error instead of silently doing the DNS lookup on the wrong network.
+             // http://b/27560555

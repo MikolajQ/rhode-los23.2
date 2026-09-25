@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: minaripenguin <minaripenguin@users.noreply.github.com>
+Date: Thu, 22 Aug 2024 12:09:57 +0800
+Subject: [PATCH 08/10] init: Spoof encrytion prop as encrypted
+
+* reference: https://github.com/RisingOS-staging/android_vendor_rising/commit/deae9373dcd0d93f09548ee5ef53a517e7cad2f4
+
+Signed-off-by: minaripenguin <minaripenguin@users.noreply.github.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ init/property_service.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index 6f99f07..f71d9be 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -1148,7 +1148,8 @@ static void SetSafetyNetProps() {
+         {"vendor.boot.vbmeta.device_state", "locked"},
+         {"vendor.boot.verifiedbootstate", "green"},
+         {"oplusboot.verifiedbootstate", "green"},
+-        {"sys.oem_unlock_allowed", "0"}
++        {"sys.oem_unlock_allowed", "0"},
++        {"ro.crypto.state", "encrypted"}
+     };
+ 
+     for (const auto& [name, value] : props) {

@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Wed, 27 Dec 2023 18:10:39 +0100
+Subject: [PATCH 7/9] rhode: Completely disable fluence
+
+Change-Id: I1e7a1ef0d3d5f894517551af1dfb91ff13decb84
+---
+ vendor.prop | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/vendor.prop b/vendor.prop
+index c2b5cf9..6e74444 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -1,7 +1,4 @@
+ # Audio
+-persist.vendor.audio.dualmic.config=endfire
+-persist.vendor.audio.fluence.voicecall=false
+-persist.vendor.audio.fluence.voicecomm=true
+ persist.vendor.audio.voicecall.speaker.stereo=false
+ ro.audio.monitorRotation=true
+ 

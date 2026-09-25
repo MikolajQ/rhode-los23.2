@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Mon, 3 Apr 2023 18:51:06 +0300
+Subject: [PATCH 08/10] callrec: bugfix: file descriptor leak in
+ CallRecorderService
+
+MediaRecorder dups the file descriptor that is passed to it.
+Leaked file descriptors were cleared out eventually by ParcelFileDescriptor finalizer.
+---
+ .../dialer/callrecord/impl/CallRecorderService.java   | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/java/com/android/dialer/callrecord/impl/CallRecorderService.java b/java/com/android/dialer/callrecord/impl/CallRecorderService.java
+index 22a24e9..3730561 100644
+--- a/java/com/android/dialer/callrecord/impl/CallRecorderService.java
++++ b/java/com/android/dialer/callrecord/impl/CallRecorderService.java
+@@ -143,12 +143,13 @@ public class CallRecorderService extends Service {
+             CallRecording.generateMediaInsertValues(fileName, creationTime));
+ 
+     try {
+-      ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(uri, "w");
+-      if (pfd == null) {
+-        throw new IOException("Opening file for URI " + uri + " failed");
++      try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(uri, "w")) {
++        if (pfd == null) {
++          throw new IOException("Opening file for URI " + uri + " failed");
++        }
++        mMediaRecorder.setOutputFile(pfd.getFileDescriptor());
++        mMediaRecorder.prepare();
+       }
+-      mMediaRecorder.setOutputFile(pfd.getFileDescriptor());
+-      mMediaRecorder.prepare();
+       mMediaRecorder.start();
+ 
+       long mediaId = Long.parseLong(uri.getLastPathSegment());

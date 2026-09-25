@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Mon, 18 Mar 2024 14:37:05 +0100
+Subject: [PATCH 12/18] sm6225-common: init: Remove superfluous ZRAM tweaking
+
+page-cluster = 0 and usage of zstd as a new compression algorithm are
+already enforced by the kernel.
+
+Change-Id: I0c23c054aca86fe165718c0a377f5ed3201d96dc
+---
+ init/init.mmi.rc | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/init/init.mmi.rc b/init/init.mmi.rc
+index b745de1..0946e4c 100644
+--- a/init/init.mmi.rc
++++ b/init/init.mmi.rc
+@@ -288,8 +288,6 @@ on boot
+    chown system system /sys/class/capsense/int_state
+ 
+ on property:sys.boot_completed=1 && property:ro.vendor.zram.swapon=true
+-    write /sys/block/zram0/comp_algorithm lz4
+-    write /proc/sys/vm/page-cluster 0
+     swapon_all /vendor/etc/fstab.qcom
+     write /proc/sys/vm/swappiness 100
+     setprop sys.sysctl.swappiness 100

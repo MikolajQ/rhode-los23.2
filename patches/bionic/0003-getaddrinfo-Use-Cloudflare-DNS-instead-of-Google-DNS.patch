@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chirayu Desai <chirayudesai1@gmail.com>
+Date: Sat, 5 Dec 2020 03:11:49 +0530
+Subject: [PATCH 03/23] getaddrinfo: Use Cloudflare DNS instead of Google DNS
+
+Change-Id: Ide51c086d2570aa5ecf28868e13f4f1672a4ff8a
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libc/dns/net/getaddrinfo.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libc/dns/net/getaddrinfo.c b/libc/dns/net/getaddrinfo.c
+index cc94b21..9dd91e0 100644
+--- a/libc/dns/net/getaddrinfo.c
++++ b/libc/dns/net/getaddrinfo.c
+@@ -387,7 +387,7 @@ static int
+ _have_ipv4(unsigned mark, uid_t uid) {
+ 	static const struct sockaddr_in sin_test = {
+ 		.sin_family = AF_INET,
+-		.sin_addr.s_addr = __constant_htonl(0x08080808L)  // 8.8.8.8
++		.sin_addr.s_addr = __constant_htonl(0x01010101L)  // 1.1.1.1
+ 	};
+ 	sockaddr_union addr = { .in = sin_test };
+ 	return _find_src_addr(&addr.generic, NULL, mark, uid) == 1;

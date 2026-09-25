@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alan Chen <alache@codeaurora.org>
+Date: Sun, 29 Oct 2023 12:13:45 +0100
+Subject: [PATCH 07/18] sm6225-common: wifi: Remove gEnablePowerSaveOffload INI
+
+Remove gEnablePowerSaveOffload INI for Lahaina
+
+Change-Id: I296e09ca8cb4a91fae6b14ebd921184bbc029212
+CRs-Fixed: 2685706
+---
+ wifi/WCNSS_qcom_cfg.ini | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/wifi/WCNSS_qcom_cfg.ini b/wifi/WCNSS_qcom_cfg.ini
+index 2d4ebd0..1800e59 100644
+--- a/wifi/WCNSS_qcom_cfg.ini
++++ b/wifi/WCNSS_qcom_cfg.ini
+@@ -213,9 +213,6 @@ gMaxMediumTime = 6000
+ # 802.11K support
+ gRrmEnable=1
+ 
+-#Enable Power Save offload
+-gEnablePowerSaveOffload=2
+-
+ #Enable firmware uart print
+ gEnablefwprint=0
+ 

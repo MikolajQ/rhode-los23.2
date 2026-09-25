@@ -1,0 +1,273 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Abhay Singh Gill <abhaygill017@gmail.com>
+Date: Wed, 11 Jun 2025 15:41:40 +0530
+Subject: [PATCH 20/31] base: Allow user to provide keybox data [1/2]
+
+Handle PKCS#1 RSA keys for keybox spoofing as well
+
+Change-Id: I2e75b3366ab40aa7031b01401861d924b7031252
+Signed-off-by: Abhay Singh Gill <abhaygill017@gmail.com>
+Signed-off-by: Ritesh <SahanyRitesh@proton.me>
+Signed-off-by: aswin7469 <aswinas@pixysos.com>
+---
+ core/java/android/provider/Settings.java      |   7 ++
+ .../internal/util/KeyProviderManager.java     | 118 ++++++++++++++++--
+ .../android/internal/util/KeyboxUtils.java    |  43 +++++--
+ .../validators/SecureSettingsValidators.java  |   1 +
+ 4 files changed, 149 insertions(+), 20 deletions(-)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 36e2193cec..10179e9f5f 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -13334,6 +13334,13 @@ public final class Settings {
+         public static final String HBM_SETTING_KEY =
+                 "com.android.server.display.HBM_SETTING_KEY";
+ 
++        /**
++         * User selectable keybox data.
++         * @hide
++         */
++        @Readable
++        public static final String KEYBOX_DATA = "keybox_data";
++
+         /**
+          * Keys we no longer back up under the current schema, but want to continue to
+          * process when restoring historical backup datasets.
+diff --git a/core/java/com/android/internal/util/KeyProviderManager.java b/core/java/com/android/internal/util/KeyProviderManager.java
+index 2e0b7f8e17..4da3f43db6 100644
+--- a/core/java/com/android/internal/util/KeyProviderManager.java
++++ b/core/java/com/android/internal/util/KeyProviderManager.java
+@@ -6,10 +6,14 @@ package com.android.internal.util;
+ 
+ import android.app.ActivityThread;
+ import android.content.Context;
++import android.provider.Settings;
+ import android.util.Log;
++import android.util.Xml;
+ 
+ import com.android.internal.R;
++import org.xmlpull.v1.XmlPullParser;
+ 
++import java.io.StringReader;
+ import java.util.Arrays;
+ import java.util.HashMap;
+ import java.util.Map;
+@@ -21,17 +25,14 @@ import java.util.Map;
+ public final class KeyProviderManager {
+     private static final String TAG = "KeyProviderManager";
+ 
+-    private static final IKeyboxProvider PROVIDER = new DefaultKeyboxProvider();
+-
+-    private KeyProviderManager() {
+-    }
++    private KeyProviderManager() {}
+ 
+     public static IKeyboxProvider getProvider() {
+-        return PROVIDER;
++        return new DefaultKeyboxProvider();
+     }
+ 
+     public static boolean isKeyboxAvailable() {
+-        return PROVIDER.hasKeybox();
++        return getProvider().hasKeybox();
+     }
+ 
+     private static class DefaultKeyboxProvider implements IKeyboxProvider {
+@@ -44,15 +45,108 @@ public final class KeyProviderManager {
+                 return;
+             }
+ 
+-            String[] keybox = context.getResources().getStringArray(R.array.config_certifiedKeybox);
++            if (!loadFromXmlSetting(context)) {
++                loadFromConfigArray(context);
++            }
++        }
++
++        private boolean loadFromXmlSetting(Context ctx) {
++            try {
++                String xml = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.KEYBOX_DATA);
++                if (xml == null || xml.trim().isEmpty()) return false;
++
++                XmlPullParser p = Xml.newPullParser();
++                p.setInput(new StringReader(xml));
++
++                String currentAlg = null;
++                int certCount = 0;
++                boolean numberOfKeyboxesChecked = false;
++
++                for (int ev = p.next(); ev != XmlPullParser.END_DOCUMENT; ev = p.next()) {
++                    if (ev == XmlPullParser.START_TAG) {
++                        String tag = p.getName();
++                        switch (tag) {
++                            case "NumberOfKeyboxes":
++                                p.next();
++                                numberOfKeyboxesChecked = true;
++                                try {
++                                    int count = Integer.parseInt(p.getText().trim());
++                                    if (count != 1) {
++                                        Log.w(TAG, "Invalid NumberOfKeyboxes: " + count);
++                                        return false;
++                                    }
++                                } catch (NumberFormatException e) {
++                                    Log.w(TAG, "Failed to parse NumberOfKeyboxes", e);
++                                    return false;
++                                }
++                                break;
++
++                            case "Key":
++                                currentAlg = p.getAttributeValue(null, "algorithm");
++                                if ("ecdsa".equalsIgnoreCase(currentAlg)) currentAlg = "EC";
++                                else if ("rsa".equalsIgnoreCase(currentAlg)) currentAlg = "RSA";
++                                else currentAlg = null;
++                                certCount = 0;
++                                break;
++
++                            case "PrivateKey": {
++                                String format = p.getAttributeValue(null, "format");
++                                if (!"pem".equalsIgnoreCase(format)) {
++                                    Log.w(TAG, "Unsupported PrivateKey format: " + format);
++                                    return false;
++                                }
++                                p.next();
++                                if (currentAlg != null) {
++                                    keyboxData.put(currentAlg + ".PRIV", p.getText().trim());
++                                }
++                                break;
++                            }
++
++                            case "Certificate": {
++                                String format = p.getAttributeValue(null, "format");
++                                if (!"pem".equalsIgnoreCase(format)) {
++                                    Log.w(TAG, "Unsupported Certificate format: " + format);
++                                    return false;
++                                }
++                                if (currentAlg != null && certCount < 3) {
++                                    p.next();
++                                    certCount++;
++                                    keyboxData.put(currentAlg + ".CERT_" + certCount, p.getText().trim());
++                                }
++                                break;
++                            }
++                        }
++                    }
++                }
++
++                if (!numberOfKeyboxesChecked) {
++                    Log.w(TAG, "Missing <NumberOfKeyboxes> in keybox XML");
++                    return false;
++                }
++
++                if (!hasKeybox()) {
++                    Log.w(TAG, "Failed to load keybox from XML setting");
++                    return false;
++                }
++
++                Log.i(TAG, "Loaded keybox from XML setting");
++                return true;
++            } catch (Exception e) {
++                Log.e(TAG, "XML keybox load failed", e);
++                return false;
++            }
++        }
+ 
+-            Arrays.stream(keybox)
+-                    .map(entry -> entry.split(":", 2))
+-                    .filter(parts -> parts.length == 2)
+-                    .forEach(parts -> keyboxData.put(parts[0], parts[1]));
++        private void loadFromConfigArray(Context ctx) {
++            for (String entry : ctx.getResources().getStringArray(R.array.config_certifiedKeybox)) {
++                String[] parts = entry.split(":", 2);
++                if (parts.length == 2) {
++                    keyboxData.put(parts[0], parts[1]);
++                }
++            }
+ 
+             if (!hasKeybox()) {
+-                Log.w(TAG, "Incomplete keybox data loaded");
++                Log.w(TAG, "Incomplete keybox provided by overlays");
+             }
+         }
+ 
+diff --git a/core/java/com/android/internal/util/KeyboxUtils.java b/core/java/com/android/internal/util/KeyboxUtils.java
+index cc31268694..84fabdf8da 100644
+--- a/core/java/com/android/internal/util/KeyboxUtils.java
++++ b/core/java/com/android/internal/util/KeyboxUtils.java
+@@ -10,7 +10,9 @@ import android.system.keystore2.KeyEntryResponse;
+ import android.system.keystore2.KeyMetadata;
+ 
+ import com.android.internal.org.bouncycastle.asn1.ASN1Sequence;
++import com.android.internal.org.bouncycastle.asn1.ASN1Primitive;
+ import com.android.internal.org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
++import com.android.internal.org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+ import com.android.internal.org.bouncycastle.asn1.sec.ECPrivateKey;
+ import com.android.internal.org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+ import com.android.internal.org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+@@ -24,6 +26,7 @@ import java.security.cert.Certificate;
+ import java.security.cert.CertificateFactory;
+ import java.security.cert.X509Certificate;
+ import java.security.spec.PKCS8EncodedKeySpec;
++import java.security.spec.RSAPrivateCrtKeySpec;
+ import java.util.ArrayList;
+ import java.util.Base64;
+ import java.util.HashMap;
+@@ -48,16 +51,40 @@ public class KeyboxUtils {
+ 
+     public static PrivateKey parsePrivateKey(String encodedKey, String algorithm) throws Exception {
+         byte[] keyBytes = decodePemOrBase64(encodedKey);
++        ASN1Primitive primitive = ASN1Primitive.fromByteArray(keyBytes);
+         if ("EC".equalsIgnoreCase(algorithm)) {
+-            ASN1Sequence seq = ASN1Sequence.getInstance(keyBytes);
+-            ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(seq);
+-            AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, ecPrivateKey.getParameters());
+-            PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, ecPrivateKey);
+-            PKCS8EncodedKeySpec pkcs8Spec = new PKCS8EncodedKeySpec(privInfo.getEncoded());
+-            return KeyFactory.getInstance("EC").generatePrivate(pkcs8Spec);
++            try {
++                // Try parsing as PKCS#8
++                PrivateKeyInfo info = PrivateKeyInfo.getInstance(primitive);
++                return KeyFactory.getInstance("EC").generatePrivate(new PKCS8EncodedKeySpec(info.getEncoded()));
++            } catch (Exception e) {
++                // Possibly SEC1 / PKCS#1 EC
++                ASN1Sequence seq = ASN1Sequence.getInstance(primitive);
++                ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(seq);
++                AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, ecPrivateKey.getParameters());
++                PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, ecPrivateKey);
++                PKCS8EncodedKeySpec pkcs8Spec = new PKCS8EncodedKeySpec(privInfo.getEncoded());
++                return KeyFactory.getInstance("EC").generatePrivate(pkcs8Spec);
++            }
+         } else if ("RSA".equalsIgnoreCase(algorithm)) {
+-            PKCS8EncodedKeySpec pkcs8Spec = new PKCS8EncodedKeySpec(keyBytes);
+-            return KeyFactory.getInstance("RSA").generatePrivate(pkcs8Spec);
++            try {
++                // Try parsing as PKCS#8
++                return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
++            } catch (Exception e) {
++                // Parse as PKCS#1
++                RSAPrivateKey rsaKey = RSAPrivateKey.getInstance(primitive);
++                RSAPrivateCrtKeySpec keySpec = new RSAPrivateCrtKeySpec(
++                    rsaKey.getModulus(),
++                    rsaKey.getPublicExponent(),
++                    rsaKey.getPrivateExponent(),
++                    rsaKey.getPrime1(),
++                    rsaKey.getPrime2(),
++                    rsaKey.getExponent1(),
++                    rsaKey.getExponent2(),
++                    rsaKey.getCoefficient()
++                );
++                return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
++            }
+         } else {
+             throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
+         }
+diff --git a/packages/SettingsProvider/src/android/provider/settings/validators/SecureSettingsValidators.java b/packages/SettingsProvider/src/android/provider/settings/validators/SecureSettingsValidators.java
+index a7508c30f8..2e14ca580c 100644
+--- a/packages/SettingsProvider/src/android/provider/settings/validators/SecureSettingsValidators.java
++++ b/packages/SettingsProvider/src/android/provider/settings/validators/SecureSettingsValidators.java
+@@ -521,5 +521,6 @@ public class SecureSettingsValidators {
+                 new InclusiveIntegerRangeValidator(0, 1));
+         VALIDATORS.put(Secure.IDENTITY_CHECK_NOTIFICATION_VIEW_DETAILS_CLICKED,
+                 new InclusiveIntegerRangeValidator(0, 1));
++        VALIDATORS.put(Secure.KEYBOX_DATA, ANY_STRING_VALIDATOR);
+     }
+ }

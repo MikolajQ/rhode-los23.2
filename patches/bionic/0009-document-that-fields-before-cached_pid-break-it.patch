@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Micay <danielmicay@gmail.com>
+Date: Tue, 27 Jun 2017 19:27:12 -0400
+Subject: [PATCH 09/23] document that fields before cached_pid break it
+
+Adding a field above this results in either that field or the tid field
+(depending on if it's above that too) being set to zero by vfork.
+Ideally that assembly would be replaced with a C++ wrapper but in the
+meantime this adds a comment to save time for someone else.
+
+Signed-off-by: anupritaisno1 <www.anuprita804@gmail.com>
+---
+ libc/bionic/pthread_internal.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libc/bionic/pthread_internal.h b/libc/bionic/pthread_internal.h
+index b3133a9..09aab98 100644
+--- a/libc/bionic/pthread_internal.h
++++ b/libc/bionic/pthread_internal.h
+@@ -72,6 +72,7 @@ class pthread_internal_t {
+   pid_t tid;
+ 
+  private:
++  // accessed from vfork asm via offset of field, so don't put fields above this
+   uint32_t cached_pid_ : 31;
+   uint32_t vforked_ : 1;
+ 

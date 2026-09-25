@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oliver Scott <olivercscott@gmail.com>
+Date: Thu, 25 Feb 2021 11:29:35 -0500
+Subject: [PATCH 28/31] Wi-Fi timeout feature
+
+Add Wi-Fi timeout setting
+
+Issue: calyxos#228
+Change-Id: I1ac6b19eb35af656afd38eac24bb37fe618859f1
+(cherry picked from commit 12a44815c0d1c64c2684782a87707675181e19e6)
+---
+ core/java/android/provider/Settings.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 238e594427..59b15724ed 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -19186,6 +19186,12 @@ public final class Settings {
+                 CLOCKWORK_HOME_READY,
+         };
+ 
++        /**
++         * The amount of time in milliseconds before wifi is turned off
++         * @hide
++         */
++        public static final String WIFI_OFF_TIMEOUT = "wifi_off_timeout";
++
+         /**
+          * Keys we no longer back up under the current schema, but want to continue to
+          * process when restoring historical backup datasets.

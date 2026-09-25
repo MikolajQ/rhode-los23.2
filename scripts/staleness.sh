@@ -4,20 +4,8 @@
 # to zmiana architektury hooków, nie prosty bump (patrz README/pamięć projektu, 22.09).
 set -euo pipefail
 
-echo "== 1) Forki Tomoms w manifeście 16.2 vs LineageOS lineage-23.2"
-MANIFEST_URL="https://raw.githubusercontent.com/tomoms/android/16.2/default.xml"
-curl -sL "$MANIFEST_URL" | grep -oE 'name="Tomoms/[^"]+"' | sed 's/name="//;s/"//' | sort -u | while read -r name; do
-  repo=${name#Tomoms/}
-  th=$(gh api "repos/Tomoms/$repo/commits?sha=16.2&per_page=1" -q '.[0].commit.committer.date' 2>/dev/null || echo "")
-  lh=$(gh api "repos/LineageOS/$repo/commits?sha=lineage-23.2&per_page=1" -q '.[0].commit.committer.date' 2>/dev/null || echo "")
-  [[ "$th" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]] || th=""
-  [[ "$lh" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]] || lh=""
-  if [ -z "$lh" ]; then printf "%-46s Tomoms %s | LineageOS: brak forka (repo AOSP)\n" "$repo" "${th:0:10}"; continue; fi
-  lag=$(( ( $(date -d "${lh:0:10}" +%s) - $(date -d "${th:0:10}" +%s) ) / 86400 ))
-  [ "$lag" -lt 0 ] && lag=0
-  printf "%-46s Tomoms %s | LineageOS %s | opóźnienie %3d dni %s\n" "$repo" "${th:0:10}" "${lh:0:10}" "$lag" "$([ "$lag" -gt 30 ] && echo '<-- >30 dni' || true)"
-done
-
+echo "== 1) Patche przepisu vs aktualny LineageOS lineage-23.2 + scalenie jądra"
+"$(dirname "$0")/check-patches.sh" || echo "  UWAGA: coś nie wejdzie — odświeżyć patch przed ham get (docs/przeglad-tomoms.md, sekcja o utrzymaniu)"
 echo
 echo "== 2) KernelSU-Next (legacy) — nasz pin vs upstream"
 PINNED=$(gh api repos/MikolajQ/android_kernel_motorola_sm6225/commits/b2f4adb57 --jq '.commit.message' 2>/dev/null | head -1 | grep -oE 'legacy [0-9a-f]+' | awk '{print $2}' || echo "")

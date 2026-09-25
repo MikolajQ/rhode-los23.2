@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Sat, 27 Dec 2025 23:14:33 +0000
+Subject: [PATCH 31/31] KeyboxChainGenerator: Use real vbmeta digest
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+* Real vbmeta digest from system property (not random)
+
+Co-authored-by: Abhay Singh Gill <abhaygill017@gmail.com>
+Change-Id: Ic28b248a05d2e0ce585ce4e00a6704b93f2f13e7
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+
+
+[MikolajQ: konflikt rozwiązany przy przenoszeniu na LineageOS lineage-23.2]
+---
+ core/java/android/provider/Settings.java      | 15 ------
+ .../internal/util/KeyboxChainGenerator.java   | 51 +++++++++----------
+ 2 files changed, 23 insertions(+), 43 deletions(-)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 4c7f76af05..59871f6d7b 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -13341,21 +13341,6 @@ public final class Settings {
+         @Readable
+         public static final String KEYBOX_DATA = "keybox_data";
+ 
+-        /**
+-         * Store vboot key.
+-         * @hide
+-         */
+-        @Readable
+-        public static final String VBOOT_KEY = "vboot_key";
+-
+-
+-        /**
+-         * Store vboot hash.
+-         * @hide
+-         */
+-        @Readable
+-        public static final String VBOOT_HASH = "vboot_hash";
+-
+         /**
+          * Keys we no longer back up under the current schema, but want to continue to
+          * process when restoring historical backup datasets.
+diff --git a/core/java/com/android/internal/util/KeyboxChainGenerator.java b/core/java/com/android/internal/util/KeyboxChainGenerator.java
+index 5683846eb5..b2972f930c 100644
+--- a/core/java/com/android/internal/util/KeyboxChainGenerator.java
++++ b/core/java/com/android/internal/util/KeyboxChainGenerator.java
+@@ -14,15 +14,14 @@ import android.content.pm.Signature;
+ import android.hardware.security.keymint.Algorithm;
+ import android.hardware.security.keymint.EcCurve;
+ import android.hardware.security.keymint.KeyOrigin;
++import android.os.SystemProperties;
+ import android.hardware.security.keymint.KeyParameter;
+ import android.hardware.security.keymint.Tag;
+ import android.os.Binder;
+ import android.os.Build;
+ import android.os.UserHandle;
+-import android.provider.Settings;
+ import android.security.keystore.KeyProperties;
+ import android.system.keystore2.KeyDescriptor;
+-import android.util.Base64;
+ import android.util.Log;
+ 
+ import androidx.annotation.Nullable;
+@@ -147,35 +146,19 @@ public final class KeyboxChainGenerator {
+ 
+     private static Extension createExtension(KeyGenParameters params, int uid) {
+         try {
+-            Context context = ActivityThread.currentApplication();
+-            if (context == null) {
+-                Log.e(TAG, "Context is null in createExtension");
+-                return null;
+-            }
+-            SecureRandom secureRandom = new SecureRandom();
+-            
+-            String key = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.VBOOT_KEY);
+-            byte[] verifiedBootKey;
+-            if (key == null) {
+-                byte[] randomBytes = new byte[32];
+-                secureRandom.nextBytes(randomBytes);
+-                String encoded = Base64.encodeToString(randomBytes, Base64.NO_WRAP);
+-                Settings.Secure.putString(context.getContentResolver(), Settings.Secure.VBOOT_KEY, encoded);
+-                verifiedBootKey = randomBytes;
+-            } else {
+-                verifiedBootKey = Base64.decode(key, Base64.NO_WRAP);
+-            }
++            SecureRandom random = new SecureRandom();
++
++            byte[] verifiedBootKey = new byte[32];
++            random.nextBytes(verifiedBootKey);
+ 
+-            String hash = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.VBOOT_HASH);
+             byte[] verifiedBootHash;
+-            if (hash == null) {
+-                byte[] randomBytes = new byte[32];
+-                secureRandom.nextBytes(randomBytes);
+-                String encoded = Base64.encodeToString(randomBytes, Base64.NO_WRAP);
+-                Settings.Secure.putString(context.getContentResolver(), Settings.Secure.VBOOT_HASH, encoded);
+-                verifiedBootHash = randomBytes;
++            String vbmetaProp = SystemProperties.get("ro.boot.vbmeta.digest", "");
++
++            if (vbmetaProp != null && vbmetaProp.length() == 64) {
++                verifiedBootHash = hexStringToByteArray(vbmetaProp);
+             } else {
+-                verifiedBootHash = Base64.decode(hash, Base64.NO_WRAP);
++                verifiedBootHash = new byte[32];
++                random.nextBytes(verifiedBootHash);
+             }
+ 
+             ASN1Encodable[] rootOfTrustEncodables = {
+@@ -403,6 +386,18 @@ public final class KeyboxChainGenerator {
+         return kpg.generateKeyPair();
+     }
+ 
++    private static byte[] hexStringToByteArray(String hex) {
++        int len = hex.length();
++        byte[] data = new byte[len / 2];
++        for (int i = 0; i < len; i += 2) {
++            int high = Character.digit(hex.charAt(i), 16);
++            int low = Character.digit(hex.charAt(i + 1), 16);
++            if (high == -1 || low == -1) throw new IllegalArgumentException("Invalid hex");
++            data[i / 2] = (byte) ((high << 4) + low);
++        }
++        return data;
++    }
++
+     private static void dlog(String msg) {
+         if (DEBUG) Log.d(TAG, msg);
+     }

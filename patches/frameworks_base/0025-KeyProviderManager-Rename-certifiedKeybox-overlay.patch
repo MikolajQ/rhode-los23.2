@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Wed, 18 Feb 2026 14:16:16 +0100
+Subject: [PATCH 25/31] KeyProviderManager: Rename certifiedKeybox overlay
+
+Change-Id: I2db8056f19b5086d4358164c8ac5a78cdaff1acb
+---
+ core/java/com/android/internal/util/KeyProviderManager.java | 2 +-
+ core/res/res/values/extra_config.xml                        | 2 +-
+ core/res/res/values/extra_symbols.xml                       | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/KeyProviderManager.java b/core/java/com/android/internal/util/KeyProviderManager.java
+index acdca1ebf4..ea253b0cf3 100644
+--- a/core/java/com/android/internal/util/KeyProviderManager.java
++++ b/core/java/com/android/internal/util/KeyProviderManager.java
+@@ -140,7 +140,7 @@ public final class KeyProviderManager {
+         }
+ 
+         private void loadFromConfigArray(Context ctx) {
+-            for (String entry : ctx.getResources().getStringArray(R.array.config_certifiedKeybox)) {
++            for (String entry : ctx.getResources().getStringArray(R.array.config_validKbx)) {
+                 String[] parts = entry.split(":", 2);
+                 if (parts.length == 2) {
+                     keyboxData.put(parts[0], parts[1]);
+diff --git a/core/res/res/values/extra_config.xml b/core/res/res/values/extra_config.xml
+index 23e7fe5a51..774628ee05 100644
+--- a/core/res/res/values/extra_config.xml
++++ b/core/res/res/values/extra_config.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+     <!-- Keybox configuration for device certification -->
+-    <string-array name="config_certifiedKeybox" translatable="false">
++    <string-array name="config_validKbx" translatable="false">
+       <!--
+         Keybox entries for EC and RSA keys and certificates.
+         These should be populated with valid data for device certification.
+diff --git a/core/res/res/values/extra_symbols.xml b/core/res/res/values/extra_symbols.xml
+index 4df7178c63..305e309359 100644
+--- a/core/res/res/values/extra_symbols.xml
++++ b/core/res/res/values/extra_symbols.xml
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+     <!-- KeyboxImitationHooks -->
+-    <java-symbol type="array" name="config_certifiedKeybox" />
++    <java-symbol type="array" name="config_validKbx" />
+ </resources>

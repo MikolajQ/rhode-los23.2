@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: klozz <carlosj@klozz.dev>
+Date: Sun, 29 Oct 2023 16:34:42 +0100
+Subject: [PATCH 4/9] rhode: Enable Multi-gen LRU
+
+https://android-review.googlesource.com/q/topic:mglru-exp
+
+Change-Id: Icba5f4eb9f61e7335f5beabba97f386ea7315b96
+---
+ vendor.prop | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/vendor.prop b/vendor.prop
+index da0cf8c..c2b5cf9 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -14,5 +14,8 @@ ro.surface_flinger.set_idle_timer_ms=500
+ ro.surface_flinger.set_touch_timer_ms=2000
+ ro.surface_flinger.use_smart_90_for_video=true
+ 
++# Multi-gen LRU
++persist.device_config.mglru_native.lru_gen_config=all
++
+ # Radio
+ ro.vendor.radio.imei.sv=21

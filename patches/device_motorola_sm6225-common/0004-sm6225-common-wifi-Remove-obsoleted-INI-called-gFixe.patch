@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Krunal Soni <ksoni@codeaurora.org>
+Date: Sun, 29 Oct 2023 12:20:34 +0100
+Subject: [PATCH 04/18] sm6225-common: wifi: Remove obsoleted INI called
+ gFixedRate
+
+Latest driver is not using "gFixedRate" INI anymore and this INI
+is not doing any meaningful work, so remove it.
+
+Ref: https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/qcacld-3.0/-/commit/e608a27cb84736d2f7c425ddad4541eced34f245
+
+Change-Id: Icf7ef052a722f25c4338dd8086b14ce01c6176d8
+CRs-Fixed: 2201799
+---
+ wifi/WCNSS_qcom_cfg.ini | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/wifi/WCNSS_qcom_cfg.ini b/wifi/WCNSS_qcom_cfg.ini
+index b3d619d..879cc8d 100644
+--- a/wifi/WCNSS_qcom_cfg.ini
++++ b/wifi/WCNSS_qcom_cfg.ini
+@@ -47,9 +47,6 @@ gEnableApOBSSProt=1
+ #Enable/Disable UAPSD for SoftAP
+ gEnableApUapsd=1
+ 
+-# Fixed Rate
+-gFixedRate=0
+-
+ # Maximum Tx power
+ # gTxPowerCap=30
+ 

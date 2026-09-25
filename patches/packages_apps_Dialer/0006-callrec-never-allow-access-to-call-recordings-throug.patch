@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Mon, 3 Apr 2023 14:39:14 +0300
+Subject: [PATCH 06/10] callrec: never allow access to call recordings through
+ the FileProvider
+
+---
+ java/com/android/dialer/app/res/xml/file_paths.xml | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/java/com/android/dialer/app/res/xml/file_paths.xml b/java/com/android/dialer/app/res/xml/file_paths.xml
+index b43f450..0dd41a0 100644
+--- a/java/com/android/dialer/app/res/xml/file_paths.xml
++++ b/java/com/android/dialer/app/res/xml/file_paths.xml
+@@ -22,8 +22,4 @@
+   <files-path
+     name="voicemails"
+     path="voicemails/"/>
+-  <!-- Offer access to saved call recordings -->
+-  <external-path
+-    name="recordings"
+-    path="CallRecordings/"/>
+ </paths>

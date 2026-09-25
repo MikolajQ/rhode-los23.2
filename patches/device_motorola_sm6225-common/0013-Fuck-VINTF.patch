@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Tue, 26 Mar 2024 09:00:13 +0100
+Subject: [PATCH 13/18] Fuck VINTF
+
+Change-Id: Ief14b6d026822cdbbb52547282b9da6c644512b5
+---
+ common.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/common.mk b/common.mk
+index 809727d..f976a8c 100644
+--- a/common.mk
++++ b/common.mk
+@@ -364,6 +364,8 @@ PRODUCT_PACKAGES += \
+ PRODUCT_COPY_FILES += \
+     vendor/qcom/opensource/vibrator/excluded-input-devices.xml:vendor/etc/excluded-input-devices.xml
+ 
++PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
++
+ # Wifi
+ PRODUCT_PACKAGES += \
+     android.hardware.wifi-service \

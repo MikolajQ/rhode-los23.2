@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Fri, 12 Jan 2024 15:50:07 +0100
+Subject: [PATCH 10/18] sm6225-common: gps: Use GrapheneOS's SUPL server
+
+Change-Id: Id94e35ff6277c8f7c4450dc4869f2573dfdec94c
+---
+ gps/etc/gps.conf | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gps/etc/gps.conf b/gps/etc/gps.conf
+index cb53c7d..4ffabee 100644
+--- a/gps/etc/gps.conf
++++ b/gps/etc/gps.conf
+@@ -52,8 +52,8 @@ CAPABILITIES=0x17
+ ################################
+ 
+ # FOR SUPL SUPPORT, set the following
+-# SUPL_HOST=supl.host.com or IP
+-# SUPL_PORT=1234
++SUPL_HOST=supl.grapheneos.org
++SUPL_PORT=7275
+ 
+ # FOR MO SUPL SUPPORT, set the following
+ # MO_SUPL_HOST=supl.host.com or IP

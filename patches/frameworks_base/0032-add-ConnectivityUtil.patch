@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fred Underwood <underwoodfred@proton.me>
+Date: Fri, 6 Jun 2025 09:29:46 +1000
+Subject: [PATCH] add ConnectivityUtil
+
+Squshed with f965102b7e3bbfb170864f2ab8752bb98947b675
+
+Change-Id: I225fd020be514151fe23cd9e43ae51705c0ef782
+---
+ core/api/module-lib-current.txt             |  9 ++++
+ core/java/android/ext/ConnectivityUtil.java | 46 +++++++++++++++++++++
+ 2 files changed, 55 insertions(+)
+ create mode 100644 core/java/android/ext/ConnectivityUtil.java
+
+diff --git a/core/api/module-lib-current.txt b/core/api/module-lib-current.txt
+index 23e18b9ff5..2f906e70b9 100644
+--- a/core/api/module-lib-current.txt
++++ b/core/api/module-lib-current.txt
+@@ -145,6 +145,15 @@ package android.content.pm {
+ 
+ }
+ 
++package android.ext {
++
++  public class ConnectivityUtil {
++    method public static boolean isRegularAppWithLockdownVpnEnabled(@NonNull android.content.Context, int);
++    method public static boolean isSystem(@NonNull android.content.Context, int);
++  }
++
++}
++
+ package android.hardware.usb {
+ 
+   @RestrictedForEnvironment(environments=android.annotation.RestrictedForEnvironment.ENVIRONMENT_SDK_RUNTIME, from=android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public class UsbManager {
+diff --git a/core/java/android/ext/ConnectivityUtil.java b/core/java/android/ext/ConnectivityUtil.java
+new file mode 100644
+index 0000000000..75777dcb00
+--- /dev/null
++++ b/core/java/android/ext/ConnectivityUtil.java
+@@ -0,0 +1,46 @@
++package android.ext;
++
++import android.annotation.NonNull;
++import android.annotation.SystemApi;
++import android.content.Context;
++import android.content.pm.ApplicationInfo;
++import android.content.pm.PackageManager;
++import android.os.UserHandle;
++import android.provider.Settings;
++
++/** @hide */
++@SystemApi(client = SystemApi.Client.MODULE_LIBRARIES)
++public class ConnectivityUtil {
++    private ConnectivityUtil() {}
++    /**
++     * Return true if this uid is a core system component, or if the uid is known to PackageManager
++     * and at least one of the packages that use it is a system app.
++     */
++    public static boolean isSystem(@NonNull Context context, int uid) {
++        if (UserHandle.isCore(uid)) {
++            return true;
++        }
++
++        PackageManager pm = context.getPackageManager();
++        String[] packageNames = pm.getPackagesForUid(uid);
++        if (packageNames == null) {
++            return false;
++        }
++        int userId = UserHandle.getUserId(uid);
++        for (String packageName : packageNames) {
++            try {
++                ApplicationInfo appInfo = pm.getApplicationInfoAsUser(packageName, 0, userId);
++                if (appInfo.isSystemApp()) {
++                    return true;
++                }
++            } catch (PackageManager.NameNotFoundException ignored) { }
++        }
++        return false;
++    }
++
++    public static boolean isRegularAppWithLockdownVpnEnabled(@NonNull Context context, int uid) {
++        final int lockdownVpnEnabled = Settings.Secure.getIntForUser(context.getContentResolver(),
++                Settings.Secure.ALWAYS_ON_VPN_LOCKDOWN, 0, UserHandle.getUserId(uid));
++        return lockdownVpnEnabled == 1 && !isSystem(context, uid);
++    }
++}

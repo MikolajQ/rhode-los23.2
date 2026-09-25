@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Micay <danielmicay@gmail.com>
+Date: Mon, 2 Jan 2017 18:51:57 -0500
+Subject: [PATCH 04/31] SettingsProvider: hide sensitive information while
+ locked by default
+
+---
+ packages/SettingsProvider/res/values/defaults.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SettingsProvider/res/values/defaults.xml b/packages/SettingsProvider/res/values/defaults.xml
+index ce8de5e8d5..45e5fd9ad6 100644
+--- a/packages/SettingsProvider/res/values/defaults.xml
++++ b/packages/SettingsProvider/res/values/defaults.xml
+@@ -167,7 +167,7 @@
+     <integer name="def_lock_screen_show_notifications">1</integer>
+ 
+     <!-- Default for Settings.Secure.LOCK_SCREEN_ALLOW_PRIVATE_NOTIFICATIONS -->
+-    <bool name="def_lock_screen_allow_private_notifications">true</bool>
++    <bool name="def_lock_screen_allow_private_notifications">false</bool>
+ 
+     <!-- Default for Settings.Secure.LOCK_SCREEN_SHOW_ONLY_UNSEEN_NOTIFICATIONS -->
+     <bool name="def_lock_screen_show_only_unseen_notifications">false</bool>

@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Sun, 8 Feb 2026 15:31:19 +0100
+Subject: [PATCH 06/31] Switch to GrapheneOS's SUPL server
+
+Change-Id: I26a13db0ab152c21eb301b785259423d61135d80
+---
+ core/res/res/values/config.xml                             | 2 +-
+ telephony/java/android/telephony/CarrierConfigManager.java | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 6fbc3dc07b..e05f44db15 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -7131,7 +7131,7 @@
+     <!-- GNSS configurations to override carrier config. Empty by default-->
+     <string-array name="config_gnssParameters" translatable="false">
+         <!-- Add configurations here, example: -->
+-        <!-- <item>SUPL_HOST=supl.google.com</item> -->
++        <!-- <item>SUPL_HOST=supl.grapheneos.org</item> -->
+     </string-array>
+ 
+     <integer name="config_chooser_max_targets_per_row">4</integer>
+diff --git a/telephony/java/android/telephony/CarrierConfigManager.java b/telephony/java/android/telephony/CarrierConfigManager.java
+index a10fae15c0..f23e745712 100644
+--- a/telephony/java/android/telephony/CarrierConfigManager.java
++++ b/telephony/java/android/telephony/CarrierConfigManager.java
+@@ -5067,7 +5067,7 @@ public class CarrierConfigManager {
+ 
+         /**
+          * SUPL server host for SET Initiated & non-ES Network-Initiated SUPL requests.
+-         * Default to supl.google.com
++         * Default to supl.grapheneos.org
+          * @hide
+          */
+         public static final String KEY_SUPL_HOST_STRING = KEY_PREFIX + "supl_host";
+@@ -5203,7 +5203,7 @@ public class CarrierConfigManager {
+         private static PersistableBundle getDefaults() {
+             PersistableBundle defaults = new PersistableBundle();
+             defaults.putBoolean(KEY_PERSIST_LPP_MODE_BOOL, true);
+-            defaults.putString(KEY_SUPL_HOST_STRING, "supl.google.com");
++            defaults.putString(KEY_SUPL_HOST_STRING, "supl.grapheneos.org");
+             defaults.putString(KEY_SUPL_PORT_STRING, "7275");
+             defaults.putString(KEY_SUPL_VER_STRING, "0x20000");
+             defaults.putString(KEY_SUPL_MODE_STRING, "1");

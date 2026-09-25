@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Sun, 8 Sep 2024 19:32:37 +0530
+Subject: [PATCH 04/10] Dialer: Enable auto call recording for all
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ java/com/android/incallui/call/CallRecorder.java | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/java/com/android/incallui/call/CallRecorder.java b/java/com/android/incallui/call/CallRecorder.java
+index da8b7d9..3bdabe5 100644
+--- a/java/com/android/incallui/call/CallRecorder.java
++++ b/java/com/android/incallui/call/CallRecorder.java
+@@ -374,10 +374,6 @@ public class CallRecorder implements CallList.Listener {
+   }
+ 
+   private boolean isCallRecordAutostart() {
+-    if (!canRecordInCurrentCountry()) {
+-      return false;
+-    }
+-
+     // This replicates PreferenceManager.getDefaultSharedPreferences, except
+     // that we need multi process preferences, as the pref is written in a separate
+     // process (com.android.dialer vs. com.android.incallui)

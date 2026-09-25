@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: chiteroman <chiteroman@users.noreply.github.com>
+Date: Wed, 10 Jul 2024 01:49:22 -0400
+Subject: [PATCH 06/10] init: Spoof additional props
+
+Change-Id: I3a22f2a923628c54462ed878f2c98a228d355f60
+Signed-off-by: Alvin Francis <nivlafx@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ init/property_service.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index 88d21ca..c44d1a5 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -1390,6 +1390,8 @@ static void SetSafetyNetProps() {
+     InitPropertySet("ro.boot.warranty_bit", "0");
+     InitPropertySet("ro.warranty_bit", "0");
+     InitPropertySet("ro.debuggable", "0");
++    InitPropertySet("ro.force.debuggable", "0");
++    InitPropertySet("ro.adb.secure", "1");
+     InitPropertySet("ro.secure", "1");
+     InitPropertySet("ro.bootimage.build.type", "user");
+     InitPropertySet("ro.build.type", "user");
+@@ -1407,6 +1409,7 @@ static void SetSafetyNetProps() {
+     InitPropertySet("vendor.boot.vbmeta.device_state", "locked");
+     InitPropertySet("vendor.boot.verifiedbootstate", "green");
+     InitPropertySet("oplusboot.verifiedbootstate", "green");
++    InitPropertySet("sys.oem_unlock_allowed", "0");
+ }
+ 
+ void PropertyInit() {

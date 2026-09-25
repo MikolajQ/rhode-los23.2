@@ -34,7 +34,7 @@ if [ -s "$ROOT/vmstat.log" ]; then
 fi
 
 gh release create "$TAG" --repo "$REL_REPO" --title "lineage-23.2 $TAG rhode" \
-  --notes "Build z manifestu Tomoms 16.2 z $(date -u +%F). boot/dtbo/vendor_boot = obrazy z payload.bin (po podpisaniu): fastboot boot boot.img -> recovery -> Format data -> sideload." \
+  --notes "Build LineageOS lineage-23.2 + patche przepisu (w tym wybrane zmiany Tomoms) z $(date -u +%F). boot/dtbo/vendor_boot = obrazy z payload.bin (po podpisaniu): fastboot boot boot.img -> recovery -> Format data -> sideload." \
   "${assets[@]}"
 
 # JSON dla Updatera — format opisany w README android_packages_apps_Updater (NetworkUpdate.kt):

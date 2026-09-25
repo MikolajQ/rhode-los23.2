@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: t-m-w <tmw-likes-calyx@pm.me>
+Date: Fri, 26 Aug 2022 15:45:17 +0000
+Subject: [PATCH 29/31] Move Bluetooth timeout back to AOSP settings
+
+This is so it can be accessed by the Bluetooth APEX module.
+
+Change-Id: I81941dc4e390b17e4ec8f57bf45327f3b8b525db
+---
+ core/java/android/provider/Settings.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 59b15724ed..4c7f76af05 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -19192,6 +19192,12 @@ public final class Settings {
+          */
+         public static final String WIFI_OFF_TIMEOUT = "wifi_off_timeout";
+ 
++        /**
++         * The amount of time in milliseconds before bluetooth is turned off
++         * @hide
++         */
++        public static final String BLUETOOTH_OFF_TIMEOUT = "bluetooth_off_timeout";
++
+         /**
+          * Keys we no longer back up under the current schema, but want to continue to
+          * process when restoring historical backup datasets.

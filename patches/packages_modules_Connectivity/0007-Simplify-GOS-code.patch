@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Wed, 13 May 2026 15:16:33 +0200
+Subject: [PATCH 7/8] Simplify GOS code
+
+---
+ .../android/server/connectivity/NetworkDiagnostics.java  | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
+
+diff --git a/service/src/com/android/server/connectivity/NetworkDiagnostics.java b/service/src/com/android/server/connectivity/NetworkDiagnostics.java
+index 594038e0..f23c6221 100644
+--- a/service/src/com/android/server/connectivity/NetworkDiagnostics.java
++++ b/service/src/com/android/server/connectivity/NetworkDiagnostics.java
+@@ -30,7 +30,6 @@ import static com.android.net.module.util.NetworkStackConstants.IP_MTU;
+ import android.annotation.NonNull;
+ import android.annotation.Nullable;
+ import android.annotation.TargetApi;
+-import android.ext.settings.ConnChecksSetting;
+ import android.net.InetAddresses;
+ import android.net.LinkAddress;
+ import android.net.LinkProperties;
+@@ -757,13 +756,7 @@ public class NetworkDiagnostics {
+                         '-', 'a', 'n', 'd', 'r', 'o', 'i', 'd', '-', 'd', 's',
+             };
+ 
+-            final String qnameEnding;
+-            if (ConnChecksSetting.get() == ConnChecksSetting.VAL_STANDARD) {
+-                qnameEnding = "metric.gstatic.com";
+-            } else {
+-                qnameEnding = "dnscheck.grapheneos.org";
+-            }
+-            this.qnameEnding = qnameEnding;
++            this.qnameEnding = "dnscheck.grapheneos.org";
+             byte[] middle = getQnameFragment(qnameEnding);
+ 
+             byte[] end = {

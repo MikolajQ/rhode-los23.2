@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Wed, 11 Dec 2024 16:18:10 +0200
+Subject: [PATCH] lower maximum severity of UNFLAGGED_API lint to INFO
+
+Added APIs aren't flagged on GrapheneOS.
+
+Change-Id: Idcd33ae0a70d4d306affddec1862829f8cff4e13
+---
+ .../src/main/java/com/android/tools/metalava/lint/ApiLint.kt    | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/metalava/src/main/java/com/android/tools/metalava/lint/ApiLint.kt b/metalava/src/main/java/com/android/tools/metalava/lint/ApiLint.kt
+index ee701d6b6..9322c4a58 100644
+--- a/metalava/src/main/java/com/android/tools/metalava/lint/ApiLint.kt
++++ b/metalava/src/main/java/com/android/tools/metalava/lint/ApiLint.kt
+@@ -281,7 +281,7 @@ private constructor(
+         /** Compute the maximum [Severity] of issues on [item]. */
+         private fun computeMaximumSeverity(item: Item?, previousItem: Item?, issue: Issue) =
+             when {
+-                issue == Issues.UNFLAGGED_API -> Severity.ERROR
++                issue == Issues.UNFLAGGED_API -> Severity.INFO
+                 // If the issue is being reported on the context Item then use its maximum.
+                 item === contextItem -> maximumSeverityForItem
+                 // If its containing item was previously released (so issues are hidden) but the

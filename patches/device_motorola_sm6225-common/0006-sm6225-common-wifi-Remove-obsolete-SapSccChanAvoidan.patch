@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <jjohnson@codeaurora.org>
+Date: Sun, 29 Oct 2023 12:23:02 +0100
+Subject: [PATCH 06/18] sm6225-common: wifi: Remove obsolete
+ SapSccChanAvoidance config
+
+As part of change I374e870610d79cc0d172ae126bfa70dc6d2db9a9
+("qcacld-3.0: Remove not used INI CFG") support for the INI item
+"gSapSccChanAvoidance" was removed. However that change left behind
+the SapSccChanAvoidance field in struct hdd_config. This is now
+obsolete, so remove it.
+
+Ref: https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/qcacld-3.0/-/commit/bce28eb11e8800db7d12dd57c23dda596aeae563
+
+Change-Id: I4950066f492417922ec4054938da1e9acfaf9668
+CRs-Fixed: 2368703
+---
+ wifi/WCNSS_qcom_cfg.ini | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/wifi/WCNSS_qcom_cfg.ini b/wifi/WCNSS_qcom_cfg.ini
+index ac11e28..2d4ebd0 100644
+--- a/wifi/WCNSS_qcom_cfg.ini
++++ b/wifi/WCNSS_qcom_cfg.ini
+@@ -310,11 +310,6 @@ gEnableSifsBurst=1
+ # 1=Enable (default), 0=Disable
+ gEnableMuBformee=1
+ 
+-# Enable/Disable channel avoidance for SAP in SCC scenario
+-# 0 - disable
+-# 1 - enable
+-gSapSccChanAvoidance=0
+-
+ # Inactivity time (in ms) to end TX Service Period while in IBSS power save mode
+ gIbssTxSpEndInactivityTime=10
+ 

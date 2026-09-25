@@ -1,5 +1,5 @@
-title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
-version: "0.1.15"
+title: "LineageOS 23.2 rhode (LineageOS + wybrane zmiany Tomoms + KernelSU-Next + GApps w obrazie)"
+version: "0.2.0"
 
 # Serwer: HAM tworzy CPX62 (16 vCPU shared / 32 GB, /ham-build na lokalnym dysku 640 GB), a gdy go brak — CCX33
 # (8 vCPU / 32 GB) z wolumenem 400 GB na /ham-build; Ubuntu 24.04, zram,
@@ -7,6 +7,8 @@ version: "0.1.15"
 # Uruchamiać (bezobsługowo): ~/bin/rhode/ham get MikolajQ@gh/rhode-los23.2 -t -b -n -a ~/.ham-answers-rhode.json
 # ham wgrywa ~/bin/rhode/ham-build (leży obok) i przerywa, gdy commit serwera ≠ klienta; budować oba: make local w ~/ham.
 # Po udanym buildzie serwer sam odpina i kasuje wolumen (jeśli jest), potem kasuje siebie (ham-build z forka) — bez tego komputera.
+# Baza: czysty LineageOS lineage-23.2; wybrane zmiany Tomoms (PIHooks, drzewa urządzenia, sieć/bionic z GrapheneOS,
+# wyłączanie Wi-Fi/BT, nagrywanie rozmów) jako patche w patches/ — uzasadnienie w docs/przeglad-tomoms.md.
 # HAM wpisuje linie do pty — każde interaktywne pytanie (np. repo init o kolory) zjada następną linię przepisu.
 
 args:
@@ -43,7 +45,7 @@ build:
     run: |
       cd /ham-build
       git config --global color.ui false
-      repo init -u https://github.com/tomoms/android -b 16.2 --git-lfs --depth=1 --no-clone-bundle < /dev/null
+      repo init -u https://github.com/LineageOS/android -b lineage-23.2 --git-lfs --depth=1 --no-clone-bundle < /dev/null
       mkdir -p .repo/local_manifests
       cp /ham-recipe/rhode.xml .repo/local_manifests/rhode.xml
 
@@ -55,7 +57,20 @@ build:
       test -f external/chromium-webview/Android.bp   # linkfile z prebuiltu LOS (moduł "webview") ma istnieć
       test -f vendor/gapps/arm64/arm64-vendor.mk
 
-  - name: "Patche (vendor/gapps: cięcie pakietów; vendor/lineage: bez prywatnych Trichrome*)"
+  # Jądro = fork jądra Tomoms z KernelSU-Next (MikolajQ/android_kernel_motorola_sm6225@16.2-ksun). Tomoms scala
+  # LineageOS co kilka dni, więc konfliktów prawie nie ma; tu dociągamy to, czego jeszcze nie scalił (łatki
+  # bezpieczeństwa jądra z LOS). Konflikt = build staje: rozwiązać ręcznie w forku, nie na serwerze.
+  - name: "Jądro: scalenie z LineageOS lineage-23.2"
+    run: |
+      cd /ham-build/kernel/motorola/sm6225
+      git fetch -q --shallow-since=2026-01-01 https://github.com/MikolajQ/android_kernel_motorola_sm6225 16.2-ksun
+      git checkout -q FETCH_HEAD
+      git fetch -q --shallow-since=2026-01-01 https://github.com/LineageOS/android_kernel_motorola_sm6225 lineage-23.2
+      git merge-base HEAD FETCH_HEAD > /dev/null || { echo "brak wspólnej bazy od 2026-01-01 — pogłębić fetch"; false; }
+      git -c user.name=ham -c user.email=ham@localhost merge --no-edit -q FETCH_HEAD || { git merge --abort; echo "jądro: konflikt z LineageOS"; false; }
+      git log --oneline -3
+
+  - name: "Patche (LineageOS + zmiany Tomoms; vendor/gapps: cięcie pakietów; media: poziomy enkodera)"
     run: /ham-recipe/scripts/apply-patches.sh /ham-build
 
   - name: "hosts do obrazu (adult + social + komunikatory, bez WhatsApp/Signal)"
@@ -64,14 +79,7 @@ build:
   - name: "Droid-ify (przypięty release + SHA-256)"
     run: /ham-recipe/scripts/fetch-droidify.sh /ham-build
 
-  - name: "Repozytoria klienta F-Droid (XML) w miejsce listy Tomoms w vendor/lineage — czyta je też Droid-ify"
-    run: |
-      cd /ham-build
-      test -f vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
-      cp vendor/extra/fdroid/additional_repos.xml vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
-      grep -c izzysoft vendor/lineage/prebuilt/common/etc/additional_fdroid_repos.xml
-
-  - name: "Identyfikator builda: miq zamiast Tom (TARGET_UNOFFICIAL_BUILD_ID w drzewie urządzenia Tomoms)"
+  - name: "Identyfikator builda: miq zamiast Tom (TARGET_UNOFFICIAL_BUILD_ID z patcha drzewa rhode)"
     run: |
       cd /ham-build
       grep -q '^TARGET_UNOFFICIAL_BUILD_ID := Tom$' device/motorola/rhode/lineage_rhode.mk

@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Abhay Singh Gill <abhaygill017@gmail.com>
+Date: Mon, 27 Oct 2025 05:33:38 +0530
+Subject: [PATCH 23/31] KeyboxImitationHooks: Add modificationTimeMs to key
+ metadata
+
+Else we would get key permanently invalidated exception in some apps.
+
+Signed-off-by: Abhay Singh Gill <abhaygill017@gmail.com>
+---
+ core/java/com/android/internal/util/KeyboxImitationHooks.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/core/java/com/android/internal/util/KeyboxImitationHooks.java b/core/java/com/android/internal/util/KeyboxImitationHooks.java
+index 853329dd07..aa1bc5d87e 100644
+--- a/core/java/com/android/internal/util/KeyboxImitationHooks.java
++++ b/core/java/com/android/internal/util/KeyboxImitationHooks.java
+@@ -171,6 +171,7 @@ public class KeyboxImitationHooks {
+             // CREATION_DATETIME, USER_ID
+ 
+             metadata.authorizations = authorizations.toArray(new Authorization[0]);
++            metadata.modificationTimeMs = System.currentTimeMillis();
+             response.metadata = metadata;
+             response.iSecurityLevel = level;
+             return response;

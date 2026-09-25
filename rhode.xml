@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Local manifest dla rhode (Moto G52) na bazie manifestu Tomoms 16.2.
+  Local manifest dla rhode (Moto G52) na bazie manifestu LineageOS lineage-23.2.
   Kopiowany do .repo/local_manifests/ przez ham.yml.
   Remote "github" (fetch="..") rozwiązuje się do https://github.com/ .
 -->
 <manifest>
   <remote name="gitlab" fetch="https://gitlab.com/" />
 
-  <!-- urządzenie: drzewa Tomoms na 16.2, kernel z własnego forka (KernelSU-Next) -->
-  <project path="device/motorola/rhode"         name="Tomoms/android_device_motorola_rhode"          remote="github" revision="16.2" />
-  <project path="device/motorola/sm6225-common" name="Tomoms/android_device_motorola_sm6225-common"  remote="github" revision="16.2" />
+  <!-- urządzenie: drzewa LineageOS + 27 commitów Tomoms jako patche (patches/device_motorola_*, docs/przeglad-tomoms.md);
+       jądro: fork jądra Tomoms z KernelSU-Next, przy każdym buildzie scalany z LineageOS lineage-23.2 (krok w ham.yml) -->
+  <project path="device/motorola/rhode"         name="LineageOS/android_device_motorola_rhode"          remote="github" revision="lineage-23.2" />
+  <project path="device/motorola/sm6225-common" name="LineageOS/android_device_motorola_sm6225-common"  remote="github" revision="lineage-23.2" />
   <project path="kernel/motorola/sm6225"        name="MikolajQ/android_kernel_motorola_sm6225"       remote="github" revision="16.2-ksun" />
   <project path="hardware/motorola"             name="LineageOS/android_hardware_motorola"          remote="github" revision="lineage-23.2" />
   <project path="hardware/samsung_slsi/nfc"     name="LineageOS/android_hardware_samsung_slsi_nfc"  remote="github" revision="lineage-23.2" />
@@ -32,6 +33,6 @@
        a AwPreconnector WebView zawsze woła z pustym NetworkAnonymizationKey -> CHECK() w
        PreconnectManagerImpl pada -> SIGTRAP w KAŻDEJ apce wołającej androidx.webkit Profile.preconnect()
        (m.in. Google Mobile Ads SDK; złapane na Meteo ICM). Zgłoszone: github.com/uazo/cromite/issues/3085.
-       Te projekty są domyślnie w manifeście Tomoms (snippets/lineage.xml) - nic tu nie trzeba dopisywać,
+       Te projekty są domyślnie w manifeście LineageOS (snippets/lineage.xml) - nic tu nie trzeba dopisywać,
        wystarczy ich nie usuwać. -->
 </manifest>

@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fred Underwood <underwoodfred@proton.me>
+Date: Wed, 16 Jul 2025 20:55:08 +1000
+Subject: [PATCH 6/8] prevent NsdService#connect for lockdown VPN clients
+
+Squashed with 41a3812d85334d7c9e99645f319c30edb1e03199
+---
+ framework-t/src/android/net/nsd/NsdManager.java  | 9 +++++++--
+ service-t/src/com/android/server/NsdService.java | 7 +++++++
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/framework-t/src/android/net/nsd/NsdManager.java b/framework-t/src/android/net/nsd/NsdManager.java
+index d5fa1dea..9d7e84f6 100644
+--- a/framework-t/src/android/net/nsd/NsdManager.java
++++ b/framework-t/src/android/net/nsd/NsdManager.java
+@@ -717,8 +717,13 @@ public final class NsdManager {
+         mHandler = new ServiceHandler(ConnectivityThread.getInstanceLooper());
+ 
+         try {
+-            mService = service.connect(new NsdCallbackImpl(mHandler), CompatChanges.isChangeEnabled(
+-                    ENABLE_PLATFORM_MDNS_BACKEND));
++            INsdServiceConnector connector = service.connect(new NsdCallbackImpl(mHandler),
++                    CompatChanges.isChangeEnabled(ENABLE_PLATFORM_MDNS_BACKEND));
++            if (connector == null) {
++                mService = createStubbedINsdServiceConnector();
++            } else {
++                mService = connector;
++            }
+         } catch (RemoteException e) {
+             throw new RuntimeException("Failed to connect to NsdService");
+         }
+diff --git a/service-t/src/com/android/server/NsdService.java b/service-t/src/com/android/server/NsdService.java
+index 9cb4a084..6c048df7 100644
+--- a/service-t/src/com/android/server/NsdService.java
++++ b/service-t/src/com/android/server/NsdService.java
+@@ -51,6 +51,7 @@ import android.annotation.RequiresApi;
+ import android.app.ActivityManager;
+ import android.content.Context;
+ import android.content.Intent;
++import android.ext.ConnectivityUtil;
+ import android.net.ConnectivityManager;
+ import android.net.INetd;
+ import android.net.InetAddresses;
+@@ -2471,6 +2472,12 @@ public class NsdService extends INsdManager.Stub {
+         if (cb == null) {
+             throw new IllegalArgumentException("Unknown client callback from uid=" + uid);
+         }
++        // Unfortunately we have to allow system apps to use this service even when under a lockdown
++        // VPN, otherwise would break things.
++        if (ConnectivityUtil.isRegularAppWithLockdownVpnEnabled(mContext, uid)) {
++            Log.d(TAG, "connect(): caller (uid " + uid + ") is under VPN lockdown, returning null");
++            return null;
++        }
+         if (DBG) Log.d(TAG, "New client connect. useJavaBackend=" + useJavaBackend);
+         final INsdServiceConnector connector = new NsdServiceConnector();
+         mNsdStateMachine.sendMessage(mNsdStateMachine.obtainMessage(NsdManager.REGISTER_CLIENT,

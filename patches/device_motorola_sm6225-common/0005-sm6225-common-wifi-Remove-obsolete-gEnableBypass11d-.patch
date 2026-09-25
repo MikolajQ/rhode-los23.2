@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: wadesong <wadesong@codeaurora.org>
+Date: Sun, 29 Oct 2023 12:21:34 +0100
+Subject: [PATCH 05/18] sm6225-common: wifi: Remove obsolete gEnableBypass11d
+ config
+
+Remove the definitions and related internal data structures and
+value retrieving code of the following 3 CFG INI items, due to
+they're not used to control any driver behavior any more.
+
+ -gVccRssiTrigger
+ -gVccUlMacLossThresh
+ -gEnableBypass11d
+
+Ref: https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/qcacld-3.0/-/commit/3daaeeb4ea1b3b6f5f214fa69a3a921086efdb63
+
+Change-Id: I919bf191f48db4bf0947235ff804aed2b4b1bdb9
+CRs-Fixed: 2352224
+---
+ wifi/WCNSS_qcom_cfg.ini | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/wifi/WCNSS_qcom_cfg.ini b/wifi/WCNSS_qcom_cfg.ini
+index 879cc8d..ac11e28 100644
+--- a/wifi/WCNSS_qcom_cfg.ini
++++ b/wifi/WCNSS_qcom_cfg.ini
+@@ -141,10 +141,6 @@ gChannelBondingMode5GHz=1
+ gGoKeepAlivePeriod = 20
+ gApKeepAlivePeriod = 20
+ 
+-#If set will start with active scan after driver load, otherwise will start with
+-#passive scan to find out the domain
+-gEnableBypass11d=1
+-
+ #If set to 0, will not scan DFS channels
+ gEnableDFSChnlScan=1
+ 

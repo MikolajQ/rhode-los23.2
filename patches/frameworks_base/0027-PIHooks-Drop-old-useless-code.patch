@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Mon, 23 Feb 2026 15:49:03 +0100
+Subject: [PATCH 27/31] PIHooks: Drop old useless code
+
+Change-Id: I1d6ff28e40ffddfeb92f592be213662a6e60e1b0
+---
+ .../android/internal/util/PropImitationHooks.java   | 13 -------------
+ .../security/keystore2/AndroidKeyStoreSpi.java      |  2 --
+ 2 files changed, 15 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/PropImitationHooks.java b/core/java/com/android/internal/util/PropImitationHooks.java
+index 9619727ec2..592e95cf58 100644
+--- a/core/java/com/android/internal/util/PropImitationHooks.java
++++ b/core/java/com/android/internal/util/PropImitationHooks.java
+@@ -257,19 +257,6 @@ public class PropImitationHooks {
+                 .anyMatch(elem -> elem.getClassName().contains("DroidGuard"));
+     }
+ 
+-    public static void onEngineGetCertificateChain() {
+-        if (sDisableKeyAttestationBlock) {
+-            dlog("Key attestation blocking disabled");
+-            return;
+-        }
+-
+-        // Check stack for SafetyNet or Play Integrity
+-        if (isCallerSafetyNet() || sIsFinsky) {
+-            dlog("Allowing certificate chain for Integrity/SafetyNet");
+-            return;
+-        }
+-    }
+-
+     public static boolean hasSystemFeature(String name, boolean has) {
+         if (sIsPhotos) {
+             if (has && (sPixelFeatures.stream().anyMatch(name::contains)
+diff --git a/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java b/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java
+index 81ca30ea86..7be6cab924 100644
+--- a/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java
++++ b/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java
+@@ -179,8 +179,6 @@ public class AndroidKeyStoreSpi extends KeyStoreSpi {
+ 
+     @Override
+     public Certificate[] engineGetCertificateChain(String alias) {
+-        PropImitationHooks.onEngineGetCertificateChain();
+-
+         KeyEntryResponse response = getKeyMetadata(alias);
+ 
+         if (response == null || response.metadata.certificate == null) {

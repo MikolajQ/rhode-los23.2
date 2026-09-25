@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Fri, 14 Mar 2025 17:07:18 +0530
+Subject: [PATCH 04/23] bionic: Fix align usage for fast lookup hosts file data
+
+Change-Id: Iefcdf0fce59c552c118e880f78b153ea38a52720
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ libc/dns/net/hosts_cache.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libc/dns/net/hosts_cache.c b/libc/dns/net/hosts_cache.c
+index fc6370d..1208e29 100644
+--- a/libc/dns/net/hosts_cache.c
++++ b/libc/dns/net/hosts_cache.c
+@@ -496,7 +496,7 @@ int hc_gethtbyname(const char *host, int af, struct getnamaddr *info)
+ 				if (naliases >= MAXALIASES)
+ 					goto nospc;
+ 			}
+-			aligned = (char *)ALIGN(info->buf);
++			aligned = __builtin_align_up(info->buf, sizeof(uintptr_t));
+ 			if (info->buf != aligned) {
+ 				if ((ptrdiff_t)info->buflen < (aligned - info->buf))
+ 					goto nospc;

@@ -1,0 +1,217 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oliver Scott <olivercscott@gmail.com>
+Date: Thu, 5 Sep 2024 21:27:49 -0400
+Subject: [PATCH] Bluetooth timeout feature
+
+Add a bluetooth timeout setting and listen to changes to it as well as
+the bluetooth radio and connection state. Schedule an alarm to turn bluetooth
+off if it is enabled but not connected
+
+Issue: calyxos#124
+Change-Id: I4f4646139cd42b7ad20b486ed77dd00499aa3c6e
+(cherry picked from commit 28da7976f4643c1b9c49edcefc8f620aeaa06ae2)
+
+Issue: calyxos#830
+Change-Id: I5133909a030b5bb940707320420a26d8e1eb4852
+
+Alarm listener must not be a local variable
+
+Issue: calyxos#1050
+Change-Id: Ibb00c13ffe0fa5811c4fbd451acb8fa25fa58813
+
+Use AOSP Settings for BLUETOOTH_OFF_TIMEOUT
+
+This APEX module is not able to access LineageSettings, so the setting
+is moved back to AOSP.
+
+Co-authored-by: Pranav Vashi <neobuddy89@gmail.com>
+Co-authored-by: Ido Ben-Hur <idoybh2@gmail.com>
+Co-authored-by: Tommy Webb <tommy@calyxinstitute.org>
+Fixes: https://github.com/crdroidandroid/issue_tracker/issues/889
+Change-Id: I887cc3cea6c7f59523680d1141f91727086e143e
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+Signed-off-by: Mrick343 <mrinmoy8429de@gmail.com>
+---
+ .../bluetooth/BluetoothManagerService.java    | 65 +++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+
+diff --git a/service/src/com/android/server/bluetooth/BluetoothManagerService.java b/service/src/com/android/server/bluetooth/BluetoothManagerService.java
+index 5e432043..86bc3eb5 100644
+--- a/service/src/com/android/server/bluetooth/BluetoothManagerService.java
++++ b/service/src/com/android/server/bluetooth/BluetoothManagerService.java
+@@ -44,6 +44,9 @@ import static java.util.Objects.requireNonNull;
+ 
+ import android.annotation.NonNull;
+ import android.annotation.Nullable;
++import android.app.ActivityManager;
++import android.app.AlarmManager;
++import android.app.AlarmManager.OnAlarmListener;
+ import android.app.BroadcastOptions;
+ import android.bluetooth.IAdapter;
+ import android.bluetooth.IBluetoothCallback;
+@@ -59,6 +62,7 @@ import android.content.ServiceConnection;
+ import android.content.pm.ApplicationInfo;
+ import android.content.pm.PackageInfo;
+ import android.content.pm.PackageManager;
++import android.database.ContentObserver;
+ import android.os.Binder;
+ import android.os.Bundle;
+ import android.os.Handler;
+@@ -73,6 +77,7 @@ import android.os.SystemClock;
+ import android.os.SystemProperties;
+ import android.os.UserHandle;
+ import android.os.UserManager;
++import android.os.WorkSource;
+ import android.provider.Settings;
+ import android.sysprop.BluetoothProperties;
+ 
+@@ -94,6 +99,7 @@ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.List;
+ import java.util.Locale;
++import java.util.concurrent.Executor;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.ExecutionException;
+ import java.util.concurrent.TimeUnit;
+@@ -162,6 +168,9 @@ class BluetoothManagerService {
+     private final Looper mLooper;
+     private final UserManager mUserManager;
+ 
++    // Settings.Global.BLUETOOTH_OFF_TIMEOUT
++    private static final String BLUETOOTH_OFF_TIMEOUT = "bluetooth_off_timeout";
++
+     private final boolean mIsHearingAidProfileSupported;
+     private final String mHciInstanceName;
+     private AutoOn mAutoOn;
+@@ -187,8 +196,12 @@ class BluetoothManagerService {
+     private boolean mQuietEnableExternal = false;
+     private boolean mEnableExternal = false;
+ 
++    private final BluetoothExecutor mExecutor;
++
+     private int mErrorRecoveryRetryCounter = 0;
+ 
++    private boolean mIsMediaProfileConnected = false;
++
+     // The code in mBluetoothCallback is running on Binder thread.
+     // It must be posted on the local looper to prevent concurrent access.
+     private final IBluetoothCallback mBluetoothCallback =
+@@ -229,9 +242,11 @@ class BluetoothManagerService {
+                 @Override
+                 public void onMediaProfileConnectionChange(boolean connected) {
+                     Log.d(TAG, "IBluetoothCallback.onMediaProfileConnectionChange: " + connected);
++                    mIsMediaProfileConnected = connected;
+                     mHandler.post(
+                             () -> {
+                                 AirplaneModeListener.setIsMediaProfileConnected(connected);
++                                setBluetoothTimeout();
+                             });
+                 }
+ 
+@@ -566,6 +581,8 @@ class BluetoothManagerService {
+                                             ? MESSAGE_RESTORE_USER_SETTING_OFF
+                                             : MESSAGE_RESTORE_USER_SETTING_ON);
+                         }
++                    } else if (ACTION_STATE_CHANGED.equals(action)) {
++                        setBluetoothTimeout();
+                     } else if (action.equals(Intent.ACTION_SHUTDOWN)) {
+                         Log.i(TAG, "Device is shutting down.");
+                         mShutdownInProgress = true;
+@@ -600,6 +617,7 @@ class BluetoothManagerService {
+                         "UserManager system service cannot be null");
+ 
+         mHandler = new BluetoothHandler(mLooper);
++        mExecutor = new BluetoothExecutor(mHandler);
+         mBleAppManager = new BleAppManager(mLooper, this::bleOnToOffIfNeeded);
+ 
+         // Observe BLE scan only mode settings change.
+@@ -621,6 +639,7 @@ class BluetoothManagerService {
+         }
+ 
+         IntentFilter filter = new IntentFilter();
++        filter.addAction(ACTION_STATE_CHANGED);
+         filter.addAction(Intent.ACTION_SETTING_RESTORED);
+         filter.addAction(Intent.ACTION_SHUTDOWN);
+         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+@@ -675,6 +694,15 @@ class BluetoothManagerService {
+             mEnableExternal = true;
+         }
+ 
++        mContentResolver.registerContentObserver(Settings.Global.getUriFor(
++                BLUETOOTH_OFF_TIMEOUT), false,
++                new ContentObserver(null) {
++                    @Override
++                    public void onChange(boolean selfChange) {
++                        setBluetoothTimeout();
++                    }
++                });
++
+         mConfigAllowAutoOn =
+                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
+         Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
+@@ -864,6 +892,28 @@ class BluetoothManagerService {
+         return Unit.INSTANCE;
+     }
+ 
++    private void setBluetoothTimeout() {
++        long bluetoothTimeoutMillis = Settings.Global.getLong(mContext.getContentResolver(),
++                BLUETOOTH_OFF_TIMEOUT, 0);
++        AlarmManager alarmManager = mContext.getSystemService(AlarmManager.class);
++        alarmManager.cancel(mBluetoothTimeoutListener);
++        if (bluetoothTimeoutMillis != 0) {
++            final long timeout = SystemClock.elapsedRealtime() + bluetoothTimeoutMillis;
++            alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, timeout,
++                    TAG, mExecutor, new WorkSource(), mBluetoothTimeoutListener);
++        }
++    }
++
++    private final OnAlarmListener mBluetoothTimeoutListener = new OnAlarmListener() {
++        @Override
++        public void onAlarm() {
++            if (mAdapter == null) return;
++            if (!isEnabled()) return;
++            if (mIsMediaProfileConnected) return;
++            disable(TAG, true);
++        }
++    };
++
+     /** Returns true if satellite mode is turned on. */
+     private static boolean isSatelliteModeOn() {
+         return SatelliteModeListener.isOn();
+@@ -1492,6 +1542,7 @@ class BluetoothManagerService {
+                             mErrorRecoveryRetryCounter = 0;
+                         }
+                     }
++                    setBluetoothTimeout();
+                 }
+                 case MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED -> {
+                     Log.e(TAG, "MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED");
+@@ -1551,6 +1602,19 @@ class BluetoothManagerService {
+         return mHandler.hasMessages(MESSAGE_TIMEOUT_BIND);
+     }
+ 
++    public static class BluetoothExecutor implements Executor {
++        private final Handler handler;
++
++        public BluetoothExecutor(Handler handler) {
++            this.handler = handler;
++        }
++
++        @Override
++        public void execute(Runnable r) {
++            handler.post(r);
++        }
++    }
++
+     private void handleEnableMessage(boolean quietEnable, boolean isBle) {
+         String logHeader = "handleEnableMessage(" + quietEnable + ", " + isBle + "): ";
+         if (mShutdownInProgress) {
+@@ -1919,6 +1983,7 @@ class BluetoothManagerService {
+ 
+         if (prevState == State.ON) {
+             autoOnSetupTimer();
++            mIsMediaProfileConnected = false;
+             AirplaneModeListener.setIsMediaProfileConnected(false);
+             AirplaneModeListener.setWatchConnectionState(false);
+         }

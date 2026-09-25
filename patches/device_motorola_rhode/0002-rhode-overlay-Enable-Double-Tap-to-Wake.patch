@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "(electimon" <electimon@gmail.com>
+Date: Fri, 7 Jul 2023 09:47:55 +0000
+Subject: [PATCH 2/9] rhode: overlay: Enable Double Tap to Wake
+
+Change-Id: I68a51d79c02e0d3bb57a6ecff4488f8840461182
+---
+ resource-overlay/device/Frameworks/res/values/config.xml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/resource-overlay/device/Frameworks/res/values/config.xml b/resource-overlay/device/Frameworks/res/values/config.xml
+index 348face..4eac59c 100644
+--- a/resource-overlay/device/Frameworks/res/values/config.xml
++++ b/resource-overlay/device/Frameworks/res/values/config.xml
+@@ -214,4 +214,7 @@
+ 
+     <!-- Indicates whether device has a power button fingerprint sensor. -->
+     <bool name="config_is_powerbutton_fps" translatable="false">true</bool>
++
++    <!-- Whether device supports double tap to wake -->
++    <bool name="config_supportDoubleTapWake">true</bool>
+ </resources>

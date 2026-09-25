@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Tue, 2 Jan 2024 21:54:32 +0100
+Subject: [PATCH 08/18] sm6225-common: Completely disable fluence
+
+Change-Id: I26a6ee77d8bbe146d9ecd7864ce74b696c7b4063
+---
+ vendor.prop | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/vendor.prop b/vendor.prop
+index 1f5d2e0..2976a23 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -14,9 +14,6 @@ persist.vendor.audio.calfile3=/vendor/etc/acdbdata/Handset_cal.acdb
+ persist.vendor.audio.calfile4=/vendor/etc/acdbdata/Hdmi_cal.acdb
+ persist.vendor.audio.calfile5=/vendor/etc/acdbdata/Headset_cal.acdb
+ persist.vendor.audio.calfile6=/vendor/etc/acdbdata/Speaker_cal.acdb
+-persist.vendor.audio.fluence.speaker=true
+-persist.vendor.audio.fluence.tmic.enabled=false
+-persist.vendor.audio.fluence.voicerec=false
+ persist.vendor.audio.spv3.enable=true
+ ro.af.client_heap_size_kbyte=7168
+ ro.config.vc_call_vol_steps=8

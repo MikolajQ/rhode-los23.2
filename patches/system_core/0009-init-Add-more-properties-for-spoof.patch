@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Sun, 26 Oct 2025 21:55:29 +0530
+Subject: [PATCH 09/10] init: Add more properties for spoof
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ init/property_service.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index f71d9be..b64bc52 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -1149,7 +1149,12 @@ static void SetSafetyNetProps() {
+         {"vendor.boot.verifiedbootstate", "green"},
+         {"oplusboot.verifiedbootstate", "green"},
+         {"sys.oem_unlock_allowed", "0"},
+-        {"ro.crypto.state", "encrypted"}
++        {"ro.oem_unlock_supported", "0"},
++        {"ro.crypto.state", "encrypted"},
++        {"ro.boot.flash.locked", "1"},
++        {"ro.is_ever_orange", "0"},
++        {"ro.secureboot.devicelock", "1"},
++        {"ro.secureboot.lockstate", "locked"}
+     };
+ 
+     for (const auto& [name, value] : props) {

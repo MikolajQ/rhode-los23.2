@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Fri, 29 Nov 2019 23:56:26 +0530
+Subject: [PATCH 01/10] Dialer: Enable call recording for all
+
+Change-Id: I2068412384ceffdda19ac70c70f0717a647ab090
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ java/com/android/incallui/CallButtonPresenter.java | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/java/com/android/incallui/CallButtonPresenter.java b/java/com/android/incallui/CallButtonPresenter.java
+index 8da3b20..21a9064 100644
+--- a/java/com/android/incallui/CallButtonPresenter.java
++++ b/java/com/android/incallui/CallButtonPresenter.java
+@@ -500,8 +500,7 @@ public class CallButtonPresenter
+     final CallRecorder recorder = CallRecorder.getInstance();
+     final UserManager userManager = getContext().getSystemService(UserManager.class);
+ 
+-    final boolean showCallRecordOption = recorder.canRecordInCurrentCountry()
+-        && !isVideo && call.getState() == DialerCallState.ACTIVE
++    final boolean showCallRecordOption = !isVideo && call.getState() == DialerCallState.ACTIVE
+         && userManager.isUserUnlocked();
+ 
+     otherAccount = TelecomUtil.getOtherAccount(getContext(), call.getAccountHandle());

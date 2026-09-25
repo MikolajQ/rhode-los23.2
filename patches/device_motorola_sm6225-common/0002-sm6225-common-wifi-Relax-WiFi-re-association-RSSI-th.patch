@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kerneltoast <sultan@kerneltoast.com>
+Date: Wed, 20 Jan 2021 10:42:31 +0000
+Subject: [PATCH 02/18] sm6225-common: wifi: Relax WiFi re-association RSSI
+ thresholds
+
+Change-Id: I073f08eed69b2454e1fd2350c8f7e8bb8983641b
+---
+ wifi/WCNSS_qcom_cfg.ini | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wifi/WCNSS_qcom_cfg.ini b/wifi/WCNSS_qcom_cfg.ini
+index 339bc51..7d55372 100644
+--- a/wifi/WCNSS_qcom_cfg.ini
++++ b/wifi/WCNSS_qcom_cfg.ini
+@@ -85,7 +85,7 @@ EseEnabled=0
+ ImplicitQosIsEnabled=0
+ 
+ gNeighborScanTimerPeriod=200
+-gNeighborLookupThreshold=76
++gNeighborLookupThreshold=85
+ gNeighborScanChannelMinTime=20
+ gNeighborScanChannelMaxTime=30
+ gMaxNeighborReqTries=3

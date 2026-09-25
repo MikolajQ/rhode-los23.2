@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Mon, 16 Feb 2026 12:36:45 +0100
+Subject: [PATCH 05/10] fixup! Autostart call recording implementation
+
+---
+ .../dialer/app/res/values/cm_strings.xml      |  4 ++++
+ .../dialer/app/res/values/cr_strings.xml      | 22 -------------------
+ 2 files changed, 4 insertions(+), 22 deletions(-)
+ delete mode 100644 java/com/android/dialer/app/res/values/cr_strings.xml
+
+diff --git a/java/com/android/dialer/app/res/values/cm_strings.xml b/java/com/android/dialer/app/res/values/cm_strings.xml
+index 79dee54..d803e68 100644
+--- a/java/com/android/dialer/app/res/values/cm_strings.xml
++++ b/java/com/android/dialer/app/res/values/cm_strings.xml
+@@ -48,4 +48,8 @@
+ 
+     <string name="default_dialer_text">You must set Dialer as the default phone app to use it.</string>
+     <string name="default_dialer_action">Set as default</string>
++
++    <!-- Call recording -->
++    <string name="call_recording_autostart_key" translatable="false">call_recording_autostart</string>
++    <string name="call_recording_autostart_title">Autostart call recording</string>
+ </resources>
+diff --git a/java/com/android/dialer/app/res/values/cr_strings.xml b/java/com/android/dialer/app/res/values/cr_strings.xml
+deleted file mode 100644
+index 029f19c..0000000
+--- a/java/com/android/dialer/app/res/values/cr_strings.xml
++++ /dev/null
+@@ -1,22 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     Copyright (C) 2016-2024 crDroid Android Project
+-
+-     Licensed under the Apache License, Version 2.0 (the "License");
+-     you may not use this file except in compliance with the License.
+-     You may obtain a copy of the License at
+-
+-          http://www.apache.org/licenses/LICENSE-2.0
+-
+-     Unless required by applicable law or agreed to in writing, software
+-     distributed under the License is distributed on an "AS IS" BASIS,
+-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-     See the License for the specific language governing permissions and
+-     limitations under the License.
+--->
+-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+-
+-    <!-- Call recording -->
+-    <string name="call_recording_autostart_key" translatable="false">call_recording_autostart</string>
+-    <string name="call_recording_autostart_title">Autostart call recording</string>
+-</resources>

@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Isaac Chen <ycchen@google.com>
+Date: Thu, 8 Aug 2024 19:29:13 +0200
+Subject: [PATCH 15/18] sm6225-common: Set TARGET_2ND_ARCH_VARIANT to armv8-a
+
+* sm6225 targets are armv8 devices. Setting TARGET_2ND_ARCH_VARIANT
+  to armv8-a, instead of armv7-a-neon, can silence the related warning
+  during build.
+
+Bug: 68012286
+Change-Id: I18ae3aa985fd6bff11f043a155f3685d9f6644b8
+---
+ BoardConfigCommon.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
+index b51fab6..5f08ff0 100644
+--- a/BoardConfigCommon.mk
++++ b/BoardConfigCommon.mk
+@@ -13,7 +13,7 @@ TARGET_CPU_ABI2 :=
+ TARGET_CPU_VARIANT := generic
+ 
+ TARGET_2ND_ARCH := arm
+-TARGET_2ND_ARCH_VARIANT := armv7-a-neon
++TARGET_2ND_ARCH_VARIANT := armv8-a
+ TARGET_2ND_CPU_ABI := armeabi-v7a
+ TARGET_2ND_CPU_ABI2 := armeabi
+ TARGET_2ND_CPU_VARIANT := cortex-a9

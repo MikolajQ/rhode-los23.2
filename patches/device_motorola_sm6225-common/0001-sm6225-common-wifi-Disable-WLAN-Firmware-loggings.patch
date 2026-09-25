@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Panchajanya1999 <panchajanya@azure-dev.live>
+Date: Fri, 19 Feb 2021 16:50:51 +0530
+Subject: [PATCH 01/18] sm6225-common: wifi: Disable WLAN Firmware loggings
+
+firmware loggings are not at all necessary for general development.
+
+Change-Id: I111943a641670ea052f68148103e377771297d77
+---
+ wifi/WCNSS_qcom_cfg.ini | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wifi/WCNSS_qcom_cfg.ini b/wifi/WCNSS_qcom_cfg.ini
+index 0b4acfc..339bc51 100644
+--- a/wifi/WCNSS_qcom_cfg.ini
++++ b/wifi/WCNSS_qcom_cfg.ini
+@@ -234,7 +234,7 @@ gEnablefwprint=0
+ # Firmware log mode
+ # Valid values are 0,1,2
+ # 0=Disable, 1=WMI, 2=DIAG
+-gEnablefwlog=1
++gEnablefwlog=0
+ 
+ # Maximum Receive AMPDU size (VHT only. Valid values:
+ # 0->8k 1->16k 2->32k 3->64k 4->128k)

@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Abhay Singh Gill <abhaygill017@gmail.com>
+Date: Tue, 10 Jun 2025 10:25:22 +0530
+Subject: [PATCH 19/31] base: Use keybox spoofing only when attest key
+ descriptor is null
+
+Signed-off-by: Abhay Singh Gill <abhaygill017@gmail.com>
+Signed-off-by: Ritesh <SahanyRitesh@proton.me>
+---
+ .../internal/util/KeyboxImitationHooks.java   | 10 +++++-
+ .../security/KeyStoreSecurityLevel.java       |  1 +
+ .../AndroidKeyStoreKeyPairGeneratorSpi.java   | 36 +++++++++++++------
+ 3 files changed, 35 insertions(+), 12 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/KeyboxImitationHooks.java b/core/java/com/android/internal/util/KeyboxImitationHooks.java
+index 12d86a30e8..853329dd07 100644
+--- a/core/java/com/android/internal/util/KeyboxImitationHooks.java
++++ b/core/java/com/android/internal/util/KeyboxImitationHooks.java
+@@ -35,6 +35,7 @@ public class KeyboxImitationHooks {
+     private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+     private static boolean mFailed = false;
+     private static boolean mIsAttestation = false;
++    private static boolean hasAttestKeyDescriptor = false;
+     private static Integer keyAlgo;
+ 
+     public static KeyEntryResponse onGetKeyEntry(KeyDescriptor descriptor) {
+@@ -54,6 +55,10 @@ public class KeyboxImitationHooks {
+             return null;
+         }
+ 
++        if (hasAttestKeyDescriptor) {
++            return null;
++        }
++
+         int uid = Binder.getCallingUid();
+         KeyEntryResponse spoofed = KeyboxUtils.retrieve(uid, descriptor.alias);
+         if (spoofed != null) {
+@@ -88,7 +93,6 @@ public class KeyboxImitationHooks {
+             KeyboxUtils.append(uid, descriptor.alias, response);
+             mFailed = false;
+             putAlgo(params.algorithm);
+-            mIsAttestation = true;
+             return response.metadata;
+         } catch (Exception e) {
+             Log.e(TAG, "Failed to generate key", e);
+@@ -188,6 +192,10 @@ public class KeyboxImitationHooks {
+         mIsAttestation = flag;
+     }
+ 
++    public static void setAttestKeyFlag(boolean flag) {
++        hasAttestKeyDescriptor = flag;
++    }
++
+     private static void dlog(String msg) {
+         if (DEBUG) Log.d(TAG, msg);
+     }
+diff --git a/keystore/java/android/security/KeyStoreSecurityLevel.java b/keystore/java/android/security/KeyStoreSecurityLevel.java
+index b2a6b59116..e8eaa5cd9a 100644
+--- a/keystore/java/android/security/KeyStoreSecurityLevel.java
++++ b/keystore/java/android/security/KeyStoreSecurityLevel.java
+@@ -161,6 +161,7 @@ public class KeyStoreSecurityLevel {
+ 
+         KeyboxImitationHooks.putAlgo(algorithm);
+         KeyboxImitationHooks.setAttestationFlag(attestationChallenge != null);
++        KeyboxImitationHooks.setAttestKeyFlag(attestationKey != null);
+ 
+         return handleExceptions(() -> mSecurityLevel.generateKey(
+                 descriptor, attestationKey, args.toArray(new KeyParameter[args.size()]),
+diff --git a/keystore/java/android/security/keystore2/AndroidKeyStoreKeyPairGeneratorSpi.java b/keystore/java/android/security/keystore2/AndroidKeyStoreKeyPairGeneratorSpi.java
+index 266a7e77e9..c1a9627e34 100644
+--- a/keystore/java/android/security/keystore2/AndroidKeyStoreKeyPairGeneratorSpi.java
++++ b/keystore/java/android/security/keystore2/AndroidKeyStoreKeyPairGeneratorSpi.java
+@@ -698,20 +698,34 @@ public abstract class AndroidKeyStoreKeyPairGeneratorSpi extends KeyPairGenerato
+         try {
+             KeyStoreSecurityLevel iSecurityLevel = mKeyStore.getSecurityLevel(securityLevel);
+             KeyMetadata metadata;
+-            if (mSpec.getAttestationChallenge() != null &&
+-                (KeyProperties.KEY_ALGORITHM_EC.equals(mJcaKeyAlgorithm) ||
+-                 KeyProperties.KEY_ALGORITHM_RSA.equals(mJcaKeyAlgorithm))) {
+-                metadata = KeyboxImitationHooks.generateKey(
+-                    iSecurityLevel.getBinderInterface(),
+-                    descriptor,
+-                    constructKeyGenerationArguments()
+-                );
+-                if (metadata == null) {
+-                    KeyboxImitationHooks.setFailFlag(true);
++            if (mSpec.getAttestationChallenge() != null) {
++                KeyboxImitationHooks.setAttestationFlag(true);
++                if (mAttestKeyDescriptor == null) {
++                    KeyboxImitationHooks.setAttestKeyFlag(false);
++                    if ((KeyProperties.KEY_ALGORITHM_EC.equals(mJcaKeyAlgorithm) ||
++                      KeyProperties.KEY_ALGORITHM_RSA.equals(mJcaKeyAlgorithm))) {
++                        metadata = KeyboxImitationHooks.generateKey(
++                            iSecurityLevel.getBinderInterface(),
++                            descriptor,
++                            constructKeyGenerationArguments()
++                        );
++                        if (metadata == null) {
++                            KeyboxImitationHooks.setFailFlag(true);
++                            metadata = iSecurityLevel.generateKey(descriptor, mAttestKeyDescriptor,
++                                    constructKeyGenerationArguments(), flags, additionalEntropy);
++                        }
++                    } else {
++                        metadata = iSecurityLevel.generateKey(descriptor, mAttestKeyDescriptor,
++                                constructKeyGenerationArguments(), flags, additionalEntropy);
++                    }
++                } else {
++                    KeyboxImitationHooks.setAttestKeyFlag(true);
+                     metadata = iSecurityLevel.generateKey(descriptor, mAttestKeyDescriptor,
+-                        constructKeyGenerationArguments(), flags, additionalEntropy);
++                            constructKeyGenerationArguments(), flags, additionalEntropy);
+                 }
+             } else {
++                KeyboxImitationHooks.setAttestationFlag(false);
++                KeyboxImitationHooks.setAttestKeyFlag(false);
+                 metadata = iSecurityLevel.generateKey(descriptor, mAttestKeyDescriptor,
+                         constructKeyGenerationArguments(), flags, additionalEntropy);
+             }

@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Thomas <thomas.giudici@proton.me>
+Date: Mon, 27 Apr 2026 14:23:34 +0200
+Subject: [PATCH 22/23] pthread_create: always reserve a guard page above the
+ thread stack
+
+The secondary stack randomization patch replaced the previously fixed
+one-page guard between the thread stack and the pthread_internal_t /
+static TLS region with a randomly sized gap:
+
+    size_t gap_size = __builtin_align_up(arc4random_uniform(max_gap_size),
+                                         page_size());
+
+arc4random_uniform(N) is uniform over [0, N) and can return 0.
+__builtin_align_up(0, page_size()) is 0, so when that happens gap_size
+becomes 0 and the subsequent mprotect() makes the writable non-stack
+region directly abut the writable stack with no PROT_NONE guard page
+between them. A linear stack overflow then silently corrupts
+pthread_internal_t / static TLS instead of faulting.
+
+The probability is 1/max_gap_size per pthread_create() call (about
+1 / (stack_size/2 / page_size) on 64-bit), so it is rare but real and
+defeats the invariant introduced by the earlier 'move pthread_internal_t
+behind guard page' commit. The surrounding comment block still describes
+'(random) guard page(s)' between stack and pthread_internal_t,
+confirming this is unintended.
+
+Clamp gap_size to at least one page so randomization is preserved while
+the guard page is always present.
+---
+ libc/bionic/pthread_create.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/libc/bionic/pthread_create.cpp b/libc/bionic/pthread_create.cpp
+index 72cff2e..aa793f7 100644
+--- a/libc/bionic/pthread_create.cpp
++++ b/libc/bionic/pthread_create.cpp
+@@ -237,8 +237,13 @@ ThreadMapping __allocate_thread_mapping(size_t stack_size, size_t stack_guard_si
+ #else
+   size_t max_gap_size = stack_size / 10;
+ #endif
+-  // Make sure random stack top guard size are multiples of page size.
++  // Make sure the random stack top guard size is a multiple of the page size,
++  // and always reserve at least one guard page between the stack and the
++  // pthread_internal_t / static TLS region. arc4random_uniform() can return 0,
++  // and align_up(0, page_size) is 0, which would leave no guard page at all
++  // and let a stack overflow silently corrupt pthread_internal_t.
+   size_t gap_size = __builtin_align_up(arc4random_uniform(max_gap_size), page_size());
++  if (gap_size == 0) gap_size = page_size();
+ 
+   // Allocate in order: stack guard, stack, (random) guard page(s), pthread_internal_t, static TLS, libgen buffers, guard page.
+   size_t mmap_size;

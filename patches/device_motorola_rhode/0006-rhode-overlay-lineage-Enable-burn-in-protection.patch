@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Fri, 28 Jul 2023 21:31:26 +0200
+Subject: [PATCH 6/9] rhode: overlay-lineage: Enable burn-in protection
+
+Change-Id: I45707a0884efc09cb28f646a3b541af369481e57
+---
+ resource-overlay/device/Frameworks/res/values/config.xml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/resource-overlay/device/Frameworks/res/values/config.xml b/resource-overlay/device/Frameworks/res/values/config.xml
+index 4eac59c..0f0c83a 100644
+--- a/resource-overlay/device/Frameworks/res/values/config.xml
++++ b/resource-overlay/device/Frameworks/res/values/config.xml
+@@ -217,4 +217,7 @@
+ 
+     <!-- Whether device supports double tap to wake -->
+     <bool name="config_supportDoubleTapWake">true</bool>
++
++    <!-- If true, the display will be shifted around in ambient mode. -->
++    <bool name="config_enableBurnInProtection">true</bool>
+ </resources>

@@ -1,0 +1,308 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ishland <ishlandmc@gmail.com>
+Date: Sat, 29 Jun 2024 11:55:45 +0800
+Subject: [PATCH 03/10] Autostart call recording implementation
+
+Change-Id: I8e351a1997939af5c79797fff095a553570d0b3f
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../dialer/app/res/values/cr_strings.xml      | 22 +++++
+ .../dialer/app/res/xml/sound_settings.xml     |  7 +-
+ .../app/settings/SoundSettingsFragment.java   | 30 +++++++
+ .../android/incallui/call/CallRecorder.java   | 82 ++++++++++++++++---
+ 4 files changed, 127 insertions(+), 14 deletions(-)
+ create mode 100644 java/com/android/dialer/app/res/values/cr_strings.xml
+
+diff --git a/java/com/android/dialer/app/res/values/cr_strings.xml b/java/com/android/dialer/app/res/values/cr_strings.xml
+new file mode 100644
+index 0000000..029f19c
+--- /dev/null
++++ b/java/com/android/dialer/app/res/values/cr_strings.xml
+@@ -0,0 +1,22 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     Copyright (C) 2016-2024 crDroid Android Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++
++    <!-- Call recording -->
++    <string name="call_recording_autostart_key" translatable="false">call_recording_autostart</string>
++    <string name="call_recording_autostart_title">Autostart call recording</string>
++</resources>
+diff --git a/java/com/android/dialer/app/res/xml/sound_settings.xml b/java/com/android/dialer/app/res/xml/sound_settings.xml
+index 86f9284..2f1ea77 100644
+--- a/java/com/android/dialer/app/res/xml/sound_settings.xml
++++ b/java/com/android/dialer/app/res/xml/sound_settings.xml
+@@ -2,7 +2,7 @@
+ 
+ <!--
+   ~ Copyright (C) 2014 The Android Open Source Project
+-  ~ Copyright (C) 2023 The LineageOS Project
++  ~ Copyright (C) 2023-2024 The LineageOS Project
+   ~
+   ~ Licensed under the Apache License, Version 2.0 (the "License");
+   ~ you may not use this file except in compliance with the License.
+@@ -91,6 +91,11 @@
+             android:title="@string/call_recording_format"
+             app:iconSpaceReserved="false" />
+ 
++        <SwitchPreferenceCompat
++            android:defaultValue="false"
++            android:key="@string/call_recording_autostart_key"
++            android:title="@string/call_recording_autostart_title" />
++
+     </PreferenceCategory>
+ 
+ </PreferenceScreen>
+diff --git a/java/com/android/dialer/app/settings/SoundSettingsFragment.java b/java/com/android/dialer/app/settings/SoundSettingsFragment.java
+index 36957b5..c445f42 100644
+--- a/java/com/android/dialer/app/settings/SoundSettingsFragment.java
++++ b/java/com/android/dialer/app/settings/SoundSettingsFragment.java
+@@ -24,6 +24,7 @@ import android.app.AlertDialog;
+ import android.app.NotificationManager;
+ import android.content.Context;
+ import android.content.Intent;
++import android.content.SharedPreferences;
+ import android.media.RingtoneManager;
+ import android.net.Uri;
+ import android.os.Bundle;
+@@ -52,6 +53,8 @@ import com.android.dialer.util.SettingsUtil;
+ public class SoundSettingsFragment extends PreferenceFragmentCompat
+     implements Preference.OnPreferenceChangeListener {
+ 
++  private static final String KEY_RECORDING_WARNING_PRESENTED = "recording_warning_presented";
++
+   private static final int NO_DTMF_TONE = 0;
+   private static final int PLAY_DTMF_TONE = 1;
+ 
+@@ -92,6 +95,7 @@ public class SoundSettingsFragment extends PreferenceFragmentCompat
+   private SwitchPreferenceCompat playDtmfTone;
+   private ListPreference dtmfToneLength;
+   private SwitchPreferenceCompat enableDndInCall;
++  private SwitchPreferenceCompat callRecordAutostart;
+ 
+   private NotificationManager notificationManager;
+ 
+@@ -118,6 +122,7 @@ public class SoundSettingsFragment extends PreferenceFragmentCompat
+     playDtmfTone = findPreference(context.getString(R.string.play_dtmf_preference_key));
+     dtmfToneLength = findPreference(context.getString(R.string.dtmf_tone_length_preference_key));
+     enableDndInCall = findPreference("incall_enable_dnd");
++    callRecordAutostart = findPreference(context.getString(R.string.call_recording_autostart_key));
+ 
+     if (hasVibrator()) {
+       vibrateWhenRinging.setOnPreferenceChangeListener(this);
+@@ -161,6 +166,8 @@ public class SoundSettingsFragment extends PreferenceFragmentCompat
+     if (!CallRecorderService.isEnabled(getActivity())) {
+       getPreferenceScreen().removePreference(
+               findPreference(context.getString(R.string.call_recording_category_key)));
++    } else {
++      callRecordAutostart.setOnPreferenceChangeListener(this);
+     }
+     notificationManager = context.getSystemService(NotificationManager.class);
+   }
+@@ -227,6 +234,29 @@ public class SoundSettingsFragment extends PreferenceFragmentCompat
+         // At this time, it is unknown whether the user granted the permission
+         return false;
+       }
++    } else if (preference == callRecordAutostart) {
++      boolean newValue = (Boolean) objValue;
++      if (newValue) {
++        final SharedPreferences prefs =
++                getPreferenceManager().getDefaultSharedPreferences(getContext());
++        boolean warningPresented = prefs.getBoolean(KEY_RECORDING_WARNING_PRESENTED, false);
++        if (!warningPresented) {
++          new AlertDialog.Builder(getActivity())
++                  .setTitle(R.string.recording_warning_title)
++                  .setMessage(R.string.recording_warning_text)
++                  .setPositiveButton(R.string.onscreenCallRecordText, (dialog, which) -> {
++                    prefs.edit()
++                            .putBoolean(KEY_RECORDING_WARNING_PRESENTED, true)
++                            .apply();
++                    callRecordAutostart.setChecked(true);
++                  })
++                  .setNegativeButton(android.R.string.cancel, null)
++                  .show();
++
++          // At this time, it is unknown whether the user granted the permission
++          return false;
++        }
++      }
+     }
+     return true;
+   }
+diff --git a/java/com/android/incallui/call/CallRecorder.java b/java/com/android/incallui/call/CallRecorder.java
+index 8388d75..da8b7d9 100644
+--- a/java/com/android/incallui/call/CallRecorder.java
++++ b/java/com/android/incallui/call/CallRecorder.java
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2014 The CyanogenMod Project
+- * Copyright (C) 2023 The LineageOS Project
++ * Copyright (C) 2023-2024 The LineageOS Project
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -21,6 +21,7 @@ import android.content.ComponentName;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.ServiceConnection;
++import android.content.SharedPreferences;
+ import android.content.res.XmlResourceParser;
+ import android.os.Handler;
+ import android.os.IBinder;
+@@ -28,8 +29,11 @@ import android.os.Looper;
+ import android.os.RemoteException;
+ import android.text.TextUtils;
+ import android.util.Log;
++import android.util.Pair;
+ import android.widget.Toast;
+ 
++import androidx.annotation.Nullable;
++
+ import com.android.dialer.R;
+ import com.android.dialer.callrecord.CallRecording;
+ import com.android.dialer.callrecord.CallRecordingDataStore;
+@@ -65,6 +69,7 @@ public class CallRecorder implements CallList.Listener {
+   private Context context;
+   private boolean initialized = false;
+   private ICallRecorderService service = null;
++  private Pair<String, Long> pendingRecordLaunch = null;
+ 
+   private final HashSet<RecordingProgressListener> progressListeners = new HashSet<>();
+   private final Handler handler = new Handler(Looper.getMainLooper());
+@@ -73,6 +78,11 @@ public class CallRecorder implements CallList.Listener {
+     @Override
+     public void onServiceConnected(ComponentName name, IBinder service) {
+       CallRecorder.this.service = ICallRecorderService.Stub.asInterface(service);
++      Pair<String, Long> pending = CallRecorder.this.pendingRecordLaunch;
++      if (pending != null) {
++        CallRecorder.this.startRecording(pending.first, pending.second);
++        CallRecorder.this.pendingRecordLaunch = null;
++      }
+     }
+ 
+     @Override
+@@ -125,12 +135,14 @@ public class CallRecorder implements CallList.Listener {
+   private void uninitialize() {
+     if (initialized) {
+       context.unbindService(connection);
++      service = null;
+       initialized = false;
+     }
+   }
+ 
+   public boolean startRecording(final String phoneNumber, final long creationTime) {
+     if (service == null) {
++      pendingRecordLaunch = Pair.create(phoneNumber, creationTime);
+       return false;
+     }
+ 
+@@ -179,6 +191,7 @@ public class CallRecorder implements CallList.Listener {
+   }
+ 
+   public void finishRecording() {
++    pendingRecordLaunch = null;
+     if (service != null) {
+       try {
+         final CallRecording recording = service.stopRecording();
+@@ -220,28 +233,56 @@ public class CallRecorder implements CallList.Listener {
+ 
+   @Override
+   public void onCallListChange(final CallList callList) {
+-    if (!initialized && callList.getActiveCall() != null) {
++    DialerCall activeCall = callList.getActiveCall();
++    if (!initialized && activeCall != null) {
+       // we'll come here if this is the first active call
+       initialize();
++      if (isCallRecordAutostart()) {
++        startRecording(activeCall.getNumber(), activeCall.getCreationTimeMillis());
++      }
+     } else {
+-      // we can come down this branch to resume a call that was on hold
+-      CallRecording active = getActiveRecording();
+-      if (active != null) {
+-        DialerCall call =
+-            callList.getCallWithStateAndNumber(DialerCallState.ONHOLD, active.phoneNumber);
+-        if (call != null) {
+-          // The call associated with the active recording has been placed
+-          // on hold, so stop the recording.
+-          finishRecording();
++      String activePhoneNumber = getActiveRecordingPhoneNumber();
++      if (activeCall != null) {
++        if (!TextUtils.equals(activeCall.getNumber(), activePhoneNumber)) {
++          // the call is replaced by another one
++          if (activePhoneNumber != null) {
++            finishRecording();
++          }
++          if (isCallRecordAutostart()) {
++            startRecording(activeCall.getNumber(), activeCall.getCreationTimeMillis());
++          }
++        }
++      } else {
++        // the active call disappeared
++        if (activePhoneNumber != null) {
++          DialerCall call =
++                  callList.getCallWithStateAndNumber(DialerCallState.ONHOLD, activePhoneNumber);
++          if (call != null) {
++            // The call associated with the active recording has been placed
++            // on hold, so stop the recording.
++            finishRecording();
++          }
+         }
+       }
+     }
+   }
+ 
++  @Nullable
++  private String getActiveRecordingPhoneNumber() {
++    String activePhoneNumber = null;
++    CallRecording activeRecording = getActiveRecording();
++    if (activeRecording != null) {
++      activePhoneNumber = activeRecording.phoneNumber;
++    } else if (pendingRecordLaunch != null) {
++      activePhoneNumber = pendingRecordLaunch.first;
++    }
++    return activePhoneNumber;
++  }
++
+   @Override
+   public void onDisconnect(final DialerCall call) {
+-    CallRecording active = getActiveRecording();
+-    if (active != null && TextUtils.equals(call.getNumber(), active.phoneNumber)) {
++    String activePhoneNumber = getActiveRecordingPhoneNumber();
++    if (activePhoneNumber != null && TextUtils.equals(call.getNumber(), activePhoneNumber)) {
+       // finish the current recording if the call gets disconnected
+       finishRecording();
+     }
+@@ -331,4 +372,19 @@ public class CallRecorder implements CallList.Listener {
+         parser.close();
+     }
+   }
++
++  private boolean isCallRecordAutostart() {
++    if (!canRecordInCurrentCountry()) {
++      return false;
++    }
++
++    // This replicates PreferenceManager.getDefaultSharedPreferences, except
++    // that we need multi process preferences, as the pref is written in a separate
++    // process (com.android.dialer vs. com.android.incallui)
++    final String prefName = context.getPackageName() + "_preferences";
++    final SharedPreferences prefs = context.createDeviceProtectedStorageContext()
++            .getSharedPreferences(prefName, Context.MODE_MULTI_PROCESS);
++
++    return prefs.getBoolean(context.getString(R.string.call_recording_autostart_key), false);
++  }
+ }

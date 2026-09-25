@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Mon, 1 Jun 2020 00:13:13 +0530
+Subject: [PATCH 02/10] Dialer: Make recording names sortable
+
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ .../android/dialer/callrecord/impl/CallRecorderService.java   | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/java/com/android/dialer/callrecord/impl/CallRecorderService.java b/java/com/android/dialer/callrecord/impl/CallRecorderService.java
+index ac90d02..22a24e9 100644
+--- a/java/com/android/dialer/callrecord/impl/CallRecorderService.java
++++ b/java/com/android/dialer/callrecord/impl/CallRecorderService.java
+@@ -47,7 +47,7 @@ public class CallRecorderService extends Service {
+   private MediaRecorder mMediaRecorder = null;
+   private CallRecording mCurrentRecording = null;
+ 
+-  private final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyMMdd_HHmmssSSS");
++  private final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd-HHmmss");
+ 
+   private final ICallRecorderService.Stub mBinder = new ICallRecorderService.Stub() {
+     @Override
+@@ -212,7 +212,7 @@ public class CallRecorderService extends Service {
+ 
+     int formatChoice = getAudioFormatChoice();
+     String extension = formatChoice == 0 ? ".amr" : ".m4a";
+-    return number + "_" + timestamp + extension;
++    return "CallRecord_" + timestamp + "_" + number + extension;
+   }
+ 
+   public static boolean isEnabled(Context context) {

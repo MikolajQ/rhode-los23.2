@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander Koskovich <akoskovich@pm.me>
+Date: Sun, 29 Oct 2023 11:14:18 +0100
+Subject: [PATCH 3/9] rhode: Switch to /vendor_dlkm for kernel modules
+
+ * This lets us flash /vendor regardless of the kernel situation.
+
+ Change-Id: Ie1c18354b26006e416d06474f5844ceef3cfbaf3
+
+Change-Id: I53f2a129ee42e6be80b3c978d12328e96c35af17
+---
+ BoardConfig.mk  | 7 +++++++
+ init/fstab.qcom | 1 +
+ 2 files changed, 8 insertions(+)
+
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index 1f633c5..1abcea8 100644
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -21,6 +21,13 @@ ODM_MANIFEST_B_FILES := $(DEVICE_PATH)/sku/manifest_b.xml
+ # Kernel
+ TARGET_KERNEL_CONFIG += vendor/ext_config/rhode-default.config
+ 
++# Kernel Modules - vendor_dlkm partition
++BOARD_USES_VENDOR_DLKMIMAGE := true
++BOARD_MOTO_DYNAMIC_PARTITIONS_PARTITION_LIST += vendor_dlkm
++BOARD_VENDOR_DLKMIMAGE_FILE_SYSTEM_TYPE := ext4
++TARGET_COPY_OUT_VENDOR_DLKM := vendor_dlkm
++AB_OTA_PARTITIONS += vendor_dlkm
++
+ # Kernel Modules - Vendor Boot
+ BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD := $(strip $(shell cat $(DEVICE_PATH)/vendor_boot.modules.load))
+ BOOT_KERNEL_MODULES := $(BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD)
+diff --git a/init/fstab.qcom b/init/fstab.qcom
+index d56837e..8d1a751 100644
+--- a/init/fstab.qcom
++++ b/init/fstab.qcom
+@@ -10,6 +10,7 @@ system                                                  /system
+ system_ext                                              /system_ext              ext4    ro                                                   wait,slotselect,avb,logical,nofail,first_stage_mount
+ product                                                 /product                 ext4    ro                                                   wait,slotselect,avb,logical,nofail,first_stage_mount
+ vendor                                                  /vendor                  ext4    ro                                                   wait,slotselect,avb=vbmeta,logical,first_stage_mount
++vendor_dlkm                                             /vendor_dlkm             ext4    noatime,ro,barrier=1                                 wait,slotselect,avb,logical,first_stage_mount
+ /dev/block/by-name/metadata                             /metadata                ext4    noatime,nosuid,nodev,discard                         wait,formattable,first_stage_mount,check
+ /dev/block/bootdevice/by-name/userdata                  /data                    f2fs    noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,fsync_mode=nobarrier,inlinecrypt            latemount,wait,check,formattable,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,metadata_encryption=aes-256-xts:wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption,quota,reservedsize=128M,sysfs_path=/sys/devices/platform/soc/4804000.ufshc,checkpoint=fs
+ /devices/platform/soc/4784000.sdhci/mmc_host*           auto                     auto    defaults                                             wait,voldmanaged=sdcard1:auto

@@ -1,0 +1,353 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Wed, 16 Oct 2024 22:45:29 +0300
+Subject: [PATCH 1/3] add per-connection Wi-Fi MAC address randomization option
+
+---
+ res/layout/wifi_network_config.xml            |  2 +-
+ res/values/arrays.xml                         |  8 +++---
+ res/xml/wifi_network_details_fragment2.xml    |  4 +--
+ .../settings/wifi/WifiConfigController.java   | 20 +++++++-------
+ .../settings/wifi/WifiConfigController2.java  |  2 +-
+ .../WifiDetailPreferenceController2.java      |  2 +-
+ .../wifi/details2/WifiPrivacyPageProvider.kt  |  4 +--
+ .../WifiPrivacyPreferenceController2.java     | 26 ++++++++++++++-----
+ .../wifi/WifiConfigControllerTest.java        | 12 ++++-----
+ .../details2/WifiPrivacyPageProviderTest.kt   | 12 ++++-----
+ .../WifiPrivacyPreferenceController2Test.kt   |  6 ++---
+ 11 files changed, 56 insertions(+), 42 deletions(-)
+
+diff --git a/res/layout/wifi_network_config.xml b/res/layout/wifi_network_config.xml
+index 990f7599a..a76e203cb 100644
+--- a/res/layout/wifi_network_config.xml
++++ b/res/layout/wifi_network_config.xml
+@@ -789,7 +789,7 @@
+                 android:id="@+id/privacy_settings"
+                 style="@style/wifi_item_spinner"
+                 android:prompt="@string/wifi_privacy_settings"
+-                android:entries="@array/wifi_privacy_entries"/>
++                android:entries="@array/wifi_privacy_entries_ext"/>
+ 
+             <Spinner
+                 android:id="@+id/dhcp_settings"
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index f0fe2b5c2..040812813 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -1112,8 +1112,9 @@
+         <item>Treat as unmetered</item>
+     </string-array>
+ 
+-    <string-array name="wifi_privacy_entries">
+-        <item>Use randomized MAC</item>
++    <string-array name="wifi_privacy_entries_ext">
++        <item>Use per-connection randomized MAC (default)</item>
++        <item>Use per-network randomized MAC</item>
+         <item>Use device MAC</item>
+     </string-array>
+ 
+@@ -1133,7 +1134,8 @@
+         <item>2</item>
+     </string-array>
+ 
+-    <string-array name="wifi_privacy_values" translatable="false">
++    <string-array name="wifi_privacy_values_ext" translatable="false">
++        <item>100</item>
+         <item>1</item>
+         <item>0</item>
+     </string-array>
+diff --git a/res/xml/wifi_network_details_fragment2.xml b/res/xml/wifi_network_details_fragment2.xml
+index e41a76594..02bd47cf2 100644
+--- a/res/xml/wifi_network_details_fragment2.xml
++++ b/res/xml/wifi_network_details_fragment2.xml
+@@ -94,8 +94,8 @@
+             android:key="privacy"
+             android:icon="@drawable/ic_wifi_privacy_24dp"
+             android:title="@string/wifi_privacy_settings"
+-            android:entries="@array/wifi_privacy_entries"
+-            android:entryValues="@array/wifi_privacy_values"/>
++            android:entries="@array/wifi_privacy_entries_ext"
++            android:entryValues="@array/wifi_privacy_values_ext"/>
+ 
+       <SwitchPreferenceCompat
+           android:key="shared"
+diff --git a/src/com/android/settings/wifi/WifiConfigController.java b/src/com/android/settings/wifi/WifiConfigController.java
+index 5abd64d00..098b4b37b 100644
+--- a/src/com/android/settings/wifi/WifiConfigController.java
++++ b/src/com/android/settings/wifi/WifiConfigController.java
+@@ -70,6 +70,7 @@ import com.android.settings.network.SubscriptionUtil;
+ import com.android.settings.utils.AndroidKeystoreAliasLoader;
+ import com.android.settings.widget.EnhancedSettingsSpinnerAdapter;
+ import com.android.settings.wifi.details2.WifiPrivacyPreferenceController;
++import com.android.settings.wifi.details2.WifiPrivacyPreferenceController2;
+ import com.android.settings.wifi.dpp.WifiDppUtils;
+ import com.android.settings.wifi.utils.TextInputGroup;
+ import com.android.settings.wifi.utils.TextInputValidator;
+@@ -151,8 +152,9 @@ public class WifiConfigController implements TextWatcher,
+     };
+ 
+     // Should be the same index value as wifi_privacy_entries in arrays.xml
+-    @VisibleForTesting static final int PRIVACY_SPINNER_INDEX_RANDOMIZED_MAC = 0;
+-    @VisibleForTesting static final int PRIVACY_SPINNER_INDEX_DEVICE_MAC = 1;
++    public static final int PRIVACY_PREF_INDEX_PER_CONNECTION_RANDOMIZED_MAC = 0;
++    public static final int PRIVACY_PREF_INDEX_PER_NETWORK_RANDOMIZED_MAC = 1;
++    public static final int PRIVACY_PREF_INDEX_DEVICE_MAC = 2;
+ 
+     // Should be the same index value as wifi_dhcp_entries in arrays.xml
+     @VisibleForTesting static final int DHCP_SPINNER_INDEX_SEND_DHCP_HOST_NAME_ENABLE = 0;
+@@ -311,7 +313,7 @@ public class WifiConfigController implements TextWatcher,
+         mHiddenSettingsSpinner = mView.findViewById(R.id.hidden_settings);
+         mHiddenSettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_hidden_entries));
+         mPrivacySettingsSpinner = mView.findViewById(R.id.privacy_settings);
+-        mPrivacySettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_privacy_entries));
++        mPrivacySettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_privacy_entries_ext));
+         mDhcpSettingsSpinner = mView.findViewById(R.id.dhcp_settings);
+         mDhcpSettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_dhcp_entries));
+         if (mWifiManager.isConnectedMacRandomizationSupported()) {
+@@ -342,9 +344,9 @@ public class WifiConfigController implements TextWatcher,
+                         ? HIDDEN_NETWORK
+                         : NOT_HIDDEN_NETWORK);
+ 
+-                mPrivacySettingsSpinner.setSelection(
+-                        config.macRandomizationSetting == WifiConfiguration.RANDOMIZATION_PERSISTENT
+-                        ? PRIVACY_SPINNER_INDEX_RANDOMIZED_MAC : PRIVACY_SPINNER_INDEX_DEVICE_MAC);
++                int selection = WifiPrivacyPreferenceController2
++                        .translateWifiEntryPrivacyToPrefValue(config.macRandomizationSetting);
++                mPrivacySettingsSpinner.setSelection(selection);
+ 
+                 mDhcpSettingsSpinner.setSelection(
+                         config.isSendDhcpHostnameEnabled()
+@@ -813,10 +815,8 @@ public class WifiConfigController implements TextWatcher,
+         }
+ 
+         if (mPrivacySettingsSpinner != null) {
+-            config.macRandomizationSetting = mPrivacySettingsSpinner.getSelectedItemPosition()
+-                    == PRIVACY_SPINNER_INDEX_RANDOMIZED_MAC
+-                    ? WifiConfiguration.RANDOMIZATION_PERSISTENT
+-                    : WifiConfiguration.RANDOMIZATION_NONE;
++            config.macRandomizationSetting = WifiPrivacyPreferenceController2
++                    .translatePrefValueToWifiConfigSetting(mPrivacySettingsSpinner.getSelectedItemPosition());
+         }
+ 
+         if (mDhcpSettingsSpinner != null) {
+diff --git a/src/com/android/settings/wifi/WifiConfigController2.java b/src/com/android/settings/wifi/WifiConfigController2.java
+index 4e0ac008a..e4e62cd15 100644
+--- a/src/com/android/settings/wifi/WifiConfigController2.java
++++ b/src/com/android/settings/wifi/WifiConfigController2.java
+@@ -337,7 +337,7 @@ public class WifiConfigController2 implements TextWatcher,
+         mHiddenSettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_hidden_entries));
+         if (!mHideMeteredAndPrivacy && mWifiManager.isConnectedMacRandomizationSupported()) {
+             mPrivacySettingsSpinner = mView.findViewById(R.id.privacy_settings);
+-            mPrivacySettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_privacy_entries));
++            mPrivacySettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_privacy_entries_ext));
+             if (Flags.androidVWifiApi()) {
+                 mDhcpSettingsSpinner = mView.findViewById(R.id.dhcp_settings);
+                 mDhcpSettingsSpinner.setAdapter(getSpinnerAdapter(R.array.wifi_dhcp_entries));
+diff --git a/src/com/android/settings/wifi/details2/WifiDetailPreferenceController2.java b/src/com/android/settings/wifi/details2/WifiDetailPreferenceController2.java
+index 593ab0154..820e23b6b 100644
+--- a/src/com/android/settings/wifi/details2/WifiDetailPreferenceController2.java
++++ b/src/com/android/settings/wifi/details2/WifiDetailPreferenceController2.java
+@@ -724,7 +724,7 @@ public class WifiDetailPreferenceController2 extends AbstractPreferenceControlle
+     }
+ 
+     private int getMacAddressTitle() {
+-        if (mWifiEntry.getPrivacy() == WifiEntry.PRIVACY_RANDOMIZED_MAC) {
++        if (mWifiEntry.getPrivacy() != WifiEntry.PRIVACY_DEVICE_MAC) {
+             return mWifiEntry.getConnectedState() == WifiEntry.CONNECTED_STATE_CONNECTED
+                     ? R.string.wifi_advanced_randomized_mac_address_title
+                     : R.string.wifi_advanced_randomized_mac_address_disconnected_title;
+diff --git a/src/com/android/settings/wifi/details2/WifiPrivacyPageProvider.kt b/src/com/android/settings/wifi/details2/WifiPrivacyPageProvider.kt
+index 94a1168db..ca323f94a 100644
+--- a/src/com/android/settings/wifi/details2/WifiPrivacyPageProvider.kt
++++ b/src/com/android/settings/wifi/details2/WifiPrivacyPageProvider.kt
+@@ -90,8 +90,8 @@ fun WifiPrivacyPage(wifiEntry: WifiEntry) {
+     ) {
+         Column {
+             val title = stringResource(id = R.string.wifi_privacy_mac_settings)
+-            val wifiPrivacyEntries = stringArrayResource(R.array.wifi_privacy_entries)
+-            val wifiPrivacyValues = stringArrayResource(R.array.wifi_privacy_values)
++            val wifiPrivacyEntries = stringArrayResource(R.array.wifi_privacy_entries_ext)
++            val wifiPrivacyValues = stringArrayResource(R.array.wifi_privacy_values_ext)
+             val textsSelectedId = rememberSaveable { mutableIntStateOf(wifiEntry.privacy) }
+             val dataList = remember {
+                 wifiPrivacyEntries.mapIndexed { index, text ->
+diff --git a/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2.java b/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2.java
+index bd1b4caeb..ce89af079 100644
+--- a/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2.java
++++ b/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2.java
+@@ -19,6 +19,7 @@ package com.android.settings.wifi.details2;
+ import android.content.Context;
+ import android.net.wifi.WifiConfiguration;
+ import android.net.wifi.WifiManager;
++import android.util.Log;
+ 
+ import androidx.annotation.NonNull;
+ import androidx.annotation.VisibleForTesting;
+@@ -31,6 +32,10 @@ import com.android.settings.wifi.WifiUtils;
+ import com.android.wifi.flags.Flags;
+ import com.android.wifitrackerlib.WifiEntry;
+ 
++import static com.android.settings.wifi.WifiConfigController.PRIVACY_PREF_INDEX_DEVICE_MAC;
++import static com.android.settings.wifi.WifiConfigController.PRIVACY_PREF_INDEX_PER_CONNECTION_RANDOMIZED_MAC;
++import static com.android.settings.wifi.WifiConfigController.PRIVACY_PREF_INDEX_PER_NETWORK_RANDOMIZED_MAC;
++
+ /**
+  * A controller that controls whether the Wi-Fi network is mac randomized or not.
+  */
+@@ -97,9 +102,6 @@ public class WifiPrivacyPreferenceController2 extends BasePreferenceController i
+         return mWifiEntry.getPrivacy();
+     }
+ 
+-    private static final int PREF_RANDOMIZATION_PERSISTENT = 0;
+-    private static final int PREF_RANDOMIZATION_NONE = 1;
+-
+     /**
+      * Translates a WifiEntry.Privacy value to the matching preference index value.
+      *
+@@ -107,8 +109,13 @@ public class WifiPrivacyPreferenceController2 extends BasePreferenceController i
+      * @return index value of preference
+      */
+     public static int translateWifiEntryPrivacyToPrefValue(@WifiEntry.Privacy int privacy) {
+-        return (privacy == WifiEntry.PRIVACY_RANDOMIZED_MAC)
+-            ? PREF_RANDOMIZATION_PERSISTENT : PREF_RANDOMIZATION_NONE;
++        Log.d("WifiMacRnd", "translateMacRandomizedValueToPrefValue called from", new Throwable());
++        return switch (privacy) {
++            case WifiEntry.PRIVACY_RANDOMIZATION_ALWAYS -> PRIVACY_PREF_INDEX_PER_CONNECTION_RANDOMIZED_MAC;
++            case WifiEntry.PRIVACY_RANDOMIZED_MAC -> PRIVACY_PREF_INDEX_PER_NETWORK_RANDOMIZED_MAC;
++            case WifiEntry.PRIVACY_DEVICE_MAC -> PRIVACY_PREF_INDEX_DEVICE_MAC;
++            default -> PRIVACY_PREF_INDEX_DEVICE_MAC;
++        };
+     }
+ 
+     /**
+@@ -118,8 +125,13 @@ public class WifiPrivacyPreferenceController2 extends BasePreferenceController i
+      * @return WifiConfiguration.MacRandomizationSetting value
+      */
+     public static int translatePrefValueToWifiConfigSetting(int prefMacRandomized) {
+-        return (prefMacRandomized == PREF_RANDOMIZATION_PERSISTENT)
+-            ? WifiConfiguration.RANDOMIZATION_AUTO : WifiConfiguration.RANDOMIZATION_NONE;
++        Log.d("WifiMacRnd", "translatePrefValueToWifiConfigSetting called from", new Throwable());
++        return switch (prefMacRandomized) {
++            case PRIVACY_PREF_INDEX_DEVICE_MAC -> WifiConfiguration.RANDOMIZATION_NONE;
++            case PRIVACY_PREF_INDEX_PER_NETWORK_RANDOMIZED_MAC -> WifiConfiguration.RANDOMIZATION_PERSISTENT;
++            case PRIVACY_PREF_INDEX_PER_CONNECTION_RANDOMIZED_MAC -> WifiConfiguration.RANDOMIZATION_ALWAYS;
++            default -> WifiConfiguration.RANDOMIZATION_ALWAYS;
++        };
+     }
+ 
+     private void updateSummary(ListPreference preference, int macRandomized) {
+diff --git a/tests/robotests/src/com/android/settings/wifi/WifiConfigControllerTest.java b/tests/robotests/src/com/android/settings/wifi/WifiConfigControllerTest.java
+index e3c684fd0..88bc63d9f 100644
+--- a/tests/robotests/src/com/android/settings/wifi/WifiConfigControllerTest.java
++++ b/tests/robotests/src/com/android/settings/wifi/WifiConfigControllerTest.java
+@@ -16,11 +16,12 @@
+ 
+ package com.android.settings.wifi;
+ 
+-import static com.android.settings.wifi.WifiConfigController.PRIVACY_SPINNER_INDEX_DEVICE_MAC;
+-import static com.android.settings.wifi.WifiConfigController.PRIVACY_SPINNER_INDEX_RANDOMIZED_MAC;
++import static com.android.settings.wifi.WifiConfigController.PRIVACY_PREF_INDEX_DEVICE_MAC;
++import static com.android.settings.wifi.WifiConfigController.PRIVACY_PREF_INDEX_PER_CONNECTION_RANDOMIZED_MAC;
+ import static com.android.settings.wifi.WifiConfigController.DHCP_SPINNER_INDEX_SEND_DHCP_HOST_NAME_ENABLE;
+ import static com.android.settings.wifi.WifiConfigController.DHCP_SPINNER_INDEX_SEND_DHCP_HOST_NAME_DISABLE;
+ 
++import static com.android.settings.wifi.details2.WifiPrivacyPreferenceController2.translateWifiEntryPrivacyToPrefValue;
+ import static com.google.common.truth.Truth.assertThat;
+ 
+ import static org.mockito.Mockito.mock;
+@@ -358,7 +359,7 @@ public class WifiConfigControllerTest {
+ 
+         assertThat(privacySetting.getVisibility()).isEqualTo(View.VISIBLE);
+         assertThat(privacySetting.getSelectedItemPosition()).isEqualTo(
+-                PRIVACY_SPINNER_INDEX_RANDOMIZED_MAC);
++                PRIVACY_PREF_INDEX_PER_CONNECTION_RANDOMIZED_MAC);
+     }
+ 
+     @Test
+@@ -383,8 +384,7 @@ public class WifiConfigControllerTest {
+ 
+         assertThat(privacySetting.getVisibility()).isEqualTo(View.VISIBLE);
+         assertThat(privacySetting.getSelectedItemPosition()).isEqualTo(
+-                macRandomizedValue == WifiConfiguration.RANDOMIZATION_PERSISTENT
+-                ? PRIVACY_SPINNER_INDEX_RANDOMIZED_MAC : PRIVACY_SPINNER_INDEX_DEVICE_MAC);
++                translateWifiEntryPrivacyToPrefValue(macRandomizedValue));
+     }
+ 
+     @Test
+@@ -397,7 +397,7 @@ public class WifiConfigControllerTest {
+     @Test
+     public void saveMacRandomizedValue_ChangedToDeviceMac_shouldGetNone() {
+         final Spinner privacySetting = mView.findViewById(R.id.privacy_settings);
+-        privacySetting.setSelection(PRIVACY_SPINNER_INDEX_DEVICE_MAC);
++        privacySetting.setSelection(PRIVACY_PREF_INDEX_DEVICE_MAC);
+ 
+         WifiConfiguration config = mController.getConfig();
+         assertThat(config.macRandomizationSetting).isEqualTo(WifiConfiguration.RANDOMIZATION_NONE);
+diff --git a/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPageProviderTest.kt b/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPageProviderTest.kt
+index 5c9a1a4a9..a3893a85c 100644
+--- a/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPageProviderTest.kt
++++ b/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPageProviderTest.kt
+@@ -85,7 +85,7 @@ class WifiPrivacyPageProviderTest {
+         composeTestRule.setContent {
+             WifiPrivacyPage(mockWifiEntry)
+         }
+-        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries)
++        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries_ext)
+         for (entry in wifiPrivacyEntries) {
+             composeTestRule.onNodeWithText(
+                 entry
+@@ -98,7 +98,7 @@ class WifiPrivacyPageProviderTest {
+         composeTestRule.setContent {
+             WifiPrivacyPage(mockWifiEntry)
+         }
+-        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries)
++        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries_ext)
+         for (entry in wifiPrivacyEntries) {
+             composeTestRule.onNodeWithText(
+                 entry
+@@ -111,8 +111,8 @@ class WifiPrivacyPageProviderTest {
+         composeTestRule.setContent {
+             WifiPrivacyPage(mockWifiEntry)
+         }
+-        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries)
+-        val wifiPrivacyValues = context.resources.getStringArray(R.array.wifi_privacy_values)
++        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries_ext)
++        val wifiPrivacyValues = context.resources.getStringArray(R.array.wifi_privacy_values_ext)
+         composeTestRule.onNodeWithText(
+             wifiPrivacyEntries[wifiPrivacyValues.indexOf("0")]
+         ).assertIsSelected()
+@@ -126,7 +126,7 @@ class WifiPrivacyPageProviderTest {
+         composeTestRule.setContent {
+             WifiPrivacyPage(mockWifiEntry)
+         }
+-        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries)
++        val wifiPrivacyEntries = context.resources.getStringArray(R.array.wifi_privacy_entries_ext)
+         for (entry in wifiPrivacyEntries) {
+             composeTestRule.onNodeWithText(entry).assertIsNotEnabled()
+         }
+@@ -176,4 +176,4 @@ class WifiPrivacyPageProviderTest {
+             context.getString(R.string.wifi_privacy_send_device_name_toggle_title)
+         ).assertIsOff()
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2Test.kt b/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2Test.kt
+index 9b69e9def..3df37aeb8 100644
+--- a/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2Test.kt
++++ b/tests/spa_unit/src/com/android/settings/wifi/details2/WifiPrivacyPreferenceController2Test.kt
+@@ -69,11 +69,11 @@ class WifiPrivacyPreferenceController2Test {
+ 
+     private var preference =
+         ListPreference(context).apply {
+-            setEntries(R.array.wifi_privacy_entries)
+-            setEntryValues(R.array.wifi_privacy_values)
++            setEntries(R.array.wifi_privacy_entries_ext)
++            setEntryValues(R.array.wifi_privacy_values_ext)
+         }
+ 
+-    private var preferenceStrings = context.resources.getStringArray(R.array.wifi_privacy_entries)
++    private var preferenceStrings = context.resources.getStringArray(R.array.wifi_privacy_entries_ext)
+ 
+     @Test
+     fun updateState_wifiPrivacy_setCorrectValue() {

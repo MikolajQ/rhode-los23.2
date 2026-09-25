@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Tue, 30 Aug 2022 13:18:56 +0300
+Subject: [PATCH 2/8] use Cloudflare DNS for MTU detection in CLAT
+ initialization
+
+---
+ .../src/com/android/server/connectivity/ClatCoordinator.java  | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/service/src/com/android/server/connectivity/ClatCoordinator.java b/service/src/com/android/server/connectivity/ClatCoordinator.java
+index 8266a872..256840aa 100644
+--- a/service/src/com/android/server/connectivity/ClatCoordinator.java
++++ b/service/src/com/android/server/connectivity/ClatCoordinator.java
+@@ -90,7 +90,7 @@ public class ClatCoordinator {
+     static final String INIT_V4ADDR_STRING = "192.0.0.4";
+     @VisibleForTesting
+     static final int INIT_V4ADDR_PREFIX_LEN = 29;
+-    private static final InetAddress GOOGLE_DNS_4 = InetAddress.parseNumericAddress("8.8.8.8");
++    private static final InetAddress CLOUDFLARE_DNS_4 = InetAddress.parseNumericAddress("1.1.1.1");
+ 
+     private static final int INVALID_IFINDEX = 0;
+ 
+@@ -646,7 +646,7 @@ public class ClatCoordinator {
+             mNetd.interfaceSetEnableIPv6(tunIface, false /* enabled */);
+             // Detect ipv4 mtu.
+             final int detectedMtu = mDeps.detectMtu(pfx96Str,
+-                    ByteBuffer.wrap(GOOGLE_DNS_4.getAddress()).getInt(), fwmark);
++                    ByteBuffer.wrap(CLOUDFLARE_DNS_4.getAddress()).getInt(), fwmark);
+             final int mtu = adjustMtu(detectedMtu);
+             Log.i(TAG, "detected ipv4 mtu of " + detectedMtu + " adjusted to " + mtu);
+             // Config tun interface mtu, address and bring up.

@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Sun, 4 Feb 2024 19:38:32 +0100
+Subject: [PATCH 11/18] sm6225-common: Unlock 60fps video recording in Aperture
+
+Change-Id: Iefddf531588f5b395e3bb811ad5345541cbca2a0
+---
+ .../LineageApertureApp/res/values/config.xml  | 32 +++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/resource-overlay/common/LineageApertureApp/res/values/config.xml b/resource-overlay/common/LineageApertureApp/res/values/config.xml
+index c24c0b7..0b74038 100644
+--- a/resource-overlay/common/LineageApertureApp/res/values/config.xml
++++ b/resource-overlay/common/LineageApertureApp/res/values/config.xml
+@@ -6,4 +6,36 @@
+ <resources>
+     <!-- Enable auxiliary cameras selector. -->
+     <bool name="config_enableAuxCameras">true</bool>
++
++    <!-- An array of triplets made of (camera ID, qualities, frame rates).
++         These video modes will be added to the available
++         quality/frame rate combinations of a camera device.
++         Make sure the device is able to handle those configurations
++         and maintain a stable frame rate at any condition.
++         Note that you can't add video qualities that aren't
++         exposed by the camera, only new frame rates.
++         Valid values of resolution are:
++          - "sd" (480p)
++          - "hd" (720p)
++          - "fhd" (1080p)
++          - "uhd" (2160p)
++         Valid values of frame rate are:
++          - "24"
++          - "30"
++          - "60"
++          - "120"
++         Additionally you can prepend `-` to frame rate to mark it as unsupported.
++         Example:
++             <string-array name="config_additionalVideoConfigurations">
++                 <item>0</item> <item>sd|hd|fhd</item> <item>60|120</item>
++                 <item>0</item> <item>uhd</item> <item>-60</item>
++                 <item>1</item> <item>sd|hd|fhd</item> <item>60</item>
++             </string-array>
++    -->
++    <string-array name="config_additionalVideoConfigurations">
++        <item>0</item> <item>sd|hd|fhd</item> <item>60</item>
++        <item>1</item> <item>sd|hd|fhd</item> <item>60</item>
++        <item>2</item> <item>sd|hd|fhd</item> <item>60</item>
++        <item>3</item> <item>sd|hd|fhd</item> <item>60</item>
++    </string-array>
+ </resources>

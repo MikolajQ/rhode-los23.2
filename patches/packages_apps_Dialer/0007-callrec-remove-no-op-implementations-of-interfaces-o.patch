@@ -1,0 +1,125 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Muhomor <muhomor.dmitry@gmail.com>
+Date: Mon, 3 Apr 2023 15:39:28 +0300
+Subject: [PATCH 07/10] callrec: remove no-op implementations of interfaces of
+ call recording UI
+
+---
+ .../incallui/callpending/CallPendingActivity.java    |  3 ---
+ .../incallui/incall/protocol/InCallButtonUi.java     |  6 +++---
+ .../incall/protocol/InCallButtonUiDelegate.java      |  2 +-
+ .../android/incallui/rtt/impl/RttChatFragment.java   |  9 ---------
+ .../video/impl/SurfaceViewVideoCallFragment.java     | 12 ------------
+ .../incallui/video/impl/VideoCallFragment.java       | 12 ------------
+ 6 files changed, 4 insertions(+), 40 deletions(-)
+
+diff --git a/java/com/android/incallui/callpending/CallPendingActivity.java b/java/com/android/incallui/callpending/CallPendingActivity.java
+index 7fba003..7813cc6 100644
+--- a/java/com/android/incallui/callpending/CallPendingActivity.java
++++ b/java/com/android/incallui/callpending/CallPendingActivity.java
+@@ -266,9 +266,6 @@ public class CallPendingActivity extends FragmentActivity
+           @Override
+           public void swapSimClicked() {}
+ 
+-          @Override
+-          public void callRecordClicked(boolean checked) {}
+-
+           @Override
+           public Context getContext() {
+             return CallPendingActivity.this;
+diff --git a/java/com/android/incallui/incall/protocol/InCallButtonUi.java b/java/com/android/incallui/incall/protocol/InCallButtonUi.java
+index 19a55ee..04593c3 100644
+--- a/java/com/android/incallui/incall/protocol/InCallButtonUi.java
++++ b/java/com/android/incallui/incall/protocol/InCallButtonUi.java
+@@ -38,11 +38,11 @@ public interface InCallButtonUi {
+ 
+   void setAudioState(CallAudioState audioState);
+ 
+-  void setCallRecordingState(boolean isRecording);
++  default void setCallRecordingState(boolean isRecording) {}
+ 
+-  void setCallRecordingDuration(long durationMs);
++  default void setCallRecordingDuration(long durationMs) {}
+ 
+-  void requestCallRecordingPermissions(String[] permissions);
++  default void requestCallRecordingPermissions(String[] permissions) {}
+ 
+   /**
+    * Once showButton() has been called on each of the individual buttons in the UI, call this to
+diff --git a/java/com/android/incallui/incall/protocol/InCallButtonUiDelegate.java b/java/com/android/incallui/incall/protocol/InCallButtonUiDelegate.java
+index 341aacf..a2272cf 100644
+--- a/java/com/android/incallui/incall/protocol/InCallButtonUiDelegate.java
++++ b/java/com/android/incallui/incall/protocol/InCallButtonUiDelegate.java
+@@ -61,7 +61,7 @@ public interface InCallButtonUiDelegate {
+ 
+   void swapSimClicked();
+ 
+-  void callRecordClicked(boolean checked);
++  default void callRecordClicked(boolean checked) {}
+ 
+   Context getContext();
+ }
+diff --git a/java/com/android/incallui/rtt/impl/RttChatFragment.java b/java/com/android/incallui/rtt/impl/RttChatFragment.java
+index 5715c14..d17686a 100644
+--- a/java/com/android/incallui/rtt/impl/RttChatFragment.java
++++ b/java/com/android/incallui/rtt/impl/RttChatFragment.java
+@@ -588,13 +588,4 @@ public class RttChatFragment extends Fragment
+ 
+   @Override
+   public void onAudioRouteSelectorDismiss() {}
+-
+-  @Override
+-  public void requestCallRecordingPermissions(String[] permissions) {}
+-
+-  @Override
+-  public void setCallRecordingDuration(long duration) {}
+-
+-  @Override
+-  public void setCallRecordingState(boolean isRecording) {}
+ }
+diff --git a/java/com/android/incallui/video/impl/SurfaceViewVideoCallFragment.java b/java/com/android/incallui/video/impl/SurfaceViewVideoCallFragment.java
+index 3490dca..b641bfb 100644
+--- a/java/com/android/incallui/video/impl/SurfaceViewVideoCallFragment.java
++++ b/java/com/android/incallui/video/impl/SurfaceViewVideoCallFragment.java
+@@ -762,18 +762,6 @@ public class SurfaceViewVideoCallFragment extends Fragment
+     updateMutePreviewOverlayVisibility();
+   }
+ 
+-  @Override
+-  public void setCallRecordingState(boolean isRecording) {
+-  }
+-
+-  @Override
+-  public void setCallRecordingDuration(long durationMs) {
+-  }
+-
+-  @Override
+-  public void requestCallRecordingPermissions(String[] permissions) {
+-  }
+-
+   @Override
+   public void updateButtonStates() {
+     LogUtil.i("SurfaceViewVideoCallFragment.updateButtonState", null);
+diff --git a/java/com/android/incallui/video/impl/VideoCallFragment.java b/java/com/android/incallui/video/impl/VideoCallFragment.java
+index 3b11743..2d73a37 100644
+--- a/java/com/android/incallui/video/impl/VideoCallFragment.java
++++ b/java/com/android/incallui/video/impl/VideoCallFragment.java
+@@ -841,18 +841,6 @@ public class VideoCallFragment extends Fragment
+     updateMutePreviewOverlayVisibility();
+   }
+ 
+-  @Override
+-  public void setCallRecordingState(boolean isRecording) {
+-  }
+-
+-  @Override
+-  public void setCallRecordingDuration(long durationMs) {
+-  }
+-
+-  @Override
+-  public void requestCallRecordingPermissions(String[] permissions) {
+-  }
+-
+   @Override
+   public void updateButtonStates() {
+     LogUtil.i("VideoCallFragment.updateButtonState", null);

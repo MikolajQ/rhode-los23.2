@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Thu, 16 Feb 2023 15:04:24 +0100
+Subject: [PATCH] captive portal: Switch to Mike Kuketz's connectivity check
+ endpoint
+
+Change-Id: I60feb99b4cbccf1cf915e8c7950dd6b0c90c0dd2
+---
+ .../android/captiveportallogin/CaptivePortalLoginActivity.java  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/captiveportallogin/CaptivePortalLoginActivity.java b/src/com/android/captiveportallogin/CaptivePortalLoginActivity.java
+index 31b6729..ac15da1 100755
+--- a/src/com/android/captiveportallogin/CaptivePortalLoginActivity.java
++++ b/src/com/android/captiveportallogin/CaptivePortalLoginActivity.java
+@@ -172,7 +172,7 @@ public class CaptivePortalLoginActivity extends Activity {
+     private static final int SOCKET_TIMEOUT_MS = 10000;
+     public static final String HTTP_LOCATION_HEADER_NAME = "Location";
+     private static final String DEFAULT_CAPTIVE_PORTAL_HTTP_URL =
+-            "http://connectivitycheck.gstatic.com/generate_204";
++            "http://captiveportal.kuketz.de";
+     // This should match the FileProvider authority specified in the app manifest.
+     private static final String FILE_PROVIDER_AUTHORITY =
+             "com.android.captiveportallogin.fileprovider";

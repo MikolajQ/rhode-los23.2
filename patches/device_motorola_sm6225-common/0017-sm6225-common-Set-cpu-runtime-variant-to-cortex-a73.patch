@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anton Hansson <hansson@google.com>
+Date: Thu, 8 Aug 2024 19:31:45 +0200
+Subject: [PATCH 17/18] sm6225-common: Set cpu "runtime variant" to cortex-a73
+
+This makes bionic and various art tools that compile/runs cpu-specific
+code choose the kryo variant at runtime. It does not affect
+build-time compilation.
+
+Bug: 120773446
+Test: bionic benchmarks with and without this change
+Change-Id: I670c8acd094090135515688c5f057c2cc08a083f
+---
+ BoardConfigCommon.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
+index 5cf1653..5d7dad1 100644
+--- a/BoardConfigCommon.mk
++++ b/BoardConfigCommon.mk
+@@ -11,12 +11,14 @@ TARGET_ARCH_VARIANT := armv8-a
+ TARGET_CPU_ABI := arm64-v8a
+ TARGET_CPU_ABI2 :=
+ TARGET_CPU_VARIANT := generic
++TARGET_CPU_VARIANT_RUNTIME := cortex-a73
+ 
+ TARGET_2ND_ARCH := arm
+ TARGET_2ND_ARCH_VARIANT := armv8-a
+ TARGET_2ND_CPU_ABI := armeabi-v7a
+ TARGET_2ND_CPU_ABI2 := armeabi
+ TARGET_2ND_CPU_VARIANT := generic
++TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a73
+ 
+ # Audio
+ AUDIO_FEATURE_ENABLED_EXT_AMPLIFIER := true

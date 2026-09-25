@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tommaso Fonda <fondatommaso2@gmail.com>
+Date: Thu, 8 Aug 2024 17:09:19 +0200
+Subject: [PATCH 14/18] sm6225-common: rootdir: Apply some tweaks from KTweak
+ on init
+
+Change-Id: If0de5ad30f0b71e7a78d0694f38dfe739e55428c
+---
+ init/init.qcom.post_boot.sh | 16 ++++++++--------
+ init/init.target.rc         | 17 +++++++++++++++++
+ 2 files changed, 25 insertions(+), 8 deletions(-)
+
+diff --git a/init/init.qcom.post_boot.sh b/init/init.qcom.post_boot.sh
+index 5df4341..302d689 100755
+--- a/init/init.qcom.post_boot.sh
++++ b/init/init.qcom.post_boot.sh
+@@ -115,16 +115,16 @@ case "$target" in
+ 
+             # configure governor settings for little cluster
+             echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+-            echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
+-            echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
+             echo 1305600 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/hispeed_freq
+             echo 614400 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+             echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/rtg_boost_freq
+ 
+             # configure governor settings for big cluster
+             echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+-            echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
+-            echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/down_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/down_rate_limit_us
+             echo 1401600 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/hispeed_freq
+             echo 1056000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+             echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/rtg_boost_freq
+@@ -225,16 +225,16 @@ case "$target" in
+ 
+             # configure governor settings for little cluster
+             echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+-            echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
+-            echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
+             echo 1516800 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/hispeed_freq
+             echo 691200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+             echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/rtg_boost_freq
+ 
+             # configure governor settings for big cluster
+             echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+-            echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
+-            echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/down_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
++            #echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/down_rate_limit_us
+             echo 1344000 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/hispeed_freq
+             echo 1056000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+             echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/rtg_boost_freq
+diff --git a/init/init.target.rc b/init/init.target.rc
+index 5e0a620..5d49fa8 100755
+--- a/init/init.target.rc
++++ b/init/init.target.rc
+@@ -82,6 +82,23 @@ on boot
+     setprop vendor.usb.dpl.inst.name "dpl"
+     setprop vendor.usb.qdss.inst.name "qdss"
+     setprop vendor.usb.controller 4e00000.dwc3
++    # KTweak
++    write /proc/sys/kernel/perf_cpu_time_max_percent 5
++    #write /proc/sys/kernel/sched_autogroup_enabled 1
++    write /proc/sys/kernel/sched_child_runs_first 1
++    write /proc/sys/kernel/sched_tunable_scaling 0
++    write /proc/sys/kernel/sched_latency_ns 4000000
++    write /proc/sys/kernel/sched_min_granularity_ns 500000
++    #write /proc/sys/kernel/sched_wakeup_granularity_ns 2000000
++    #write /proc/sys/kernel/sched_migration_cost_ns 5000000 sultan says 0 is better
++    #write /proc/sys/kernel/sched_min_task_util_for_colocation 0
++    #write /proc/sys/kernel/sched_nr_migrate 32
++    #write /proc/sys/kernel/sched_schedstats 0 no node in my kernel
++    write /proc/sys/kernel/printk_devkmsg off
++    write /proc/sys/vm/dirty_writeback_centisecs 3000
++    write /proc/sys/net/ipv4/tcp_fastopen 3
++    write /proc/sys/net/ipv4/tcp_syncookies 0
++    write /proc/sys/vm/vfs_cache_pressure 100
+ 
+ #Load WLAN driver
+     insmod /vendor/lib/modules/qca_cld3_wlan.ko

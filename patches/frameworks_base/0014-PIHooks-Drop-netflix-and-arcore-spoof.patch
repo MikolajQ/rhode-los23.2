@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AdarshGrewal <adarshgrewal@gmail.com>
+Date: Thu, 26 Dec 2024 20:32:09 +0530
+Subject: [PATCH 14/31] PIHooks: Drop netflix and arcore spoof
+
+Change-Id: I80e636e2d9c3c40c75a8b024c38a4e95281c6c9e
+---
+ .../android/internal/util/PropImitationHooks.java   | 13 -------------
+ core/res/res/values/extra_config.xml                |  6 ------
+ core/res/res/values/extra_symbols.xml               |  3 +--
+ 3 files changed, 1 insertion(+), 21 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/PropImitationHooks.java b/core/java/com/android/internal/util/PropImitationHooks.java
+index 1182d3b234..967b80bd68 100644
+--- a/core/java/com/android/internal/util/PropImitationHooks.java
++++ b/core/java/com/android/internal/util/PropImitationHooks.java
+@@ -52,11 +52,9 @@ public class PropImitationHooks {
+     private static final Boolean sDisableKeyAttestationBlock = SystemProperties.getBoolean(
+             "persist.sys.pihooks.disable.gms_key_attestation_block", false);
+ 
+-    private static final String PACKAGE_ARCORE = "com.google.ar.core";
+     private static final String PACKAGE_FINSKY = "com.android.vending";
+     private static final String PACKAGE_GMS = "com.google.android.gms";
+     private static final String PROCESS_GMS_UNSTABLE = PACKAGE_GMS + ".unstable";
+-    private static final String PACKAGE_NETFLIX = "com.netflix.mediaclient";
+     private static final String PACKAGE_GPHOTOS = "com.google.android.apps.photos";
+ 
+     private static final ComponentName GMS_ADD_ACCOUNT_ACTIVITY = ComponentName.unflattenFromString(
+@@ -99,7 +97,6 @@ public class PropImitationHooks {
+     );
+ 
+     private static volatile String[] sCertifiedProps;
+-    private static volatile String sStockFp, sNetflixModel;
+ 
+     private static volatile String sProcessName;
+     private static volatile boolean sIsGms, sIsFinsky, sIsPhotos;
+@@ -120,8 +117,6 @@ public class PropImitationHooks {
+         }
+ 
+         sCertifiedProps = res.getStringArray(R.array.config_certifiedBuildProperties);
+-        sStockFp = res.getString(R.string.config_stockFingerprint);
+-        sNetflixModel = res.getString(R.string.config_netflixSpoofModel);
+ 
+         sProcessName = processName;
+         sIsGms = packageName.equals(PACKAGE_GMS) && processName.equals(PROCESS_GMS_UNSTABLE);
+@@ -129,21 +124,13 @@ public class PropImitationHooks {
+         sIsPhotos = packageName.equals(PACKAGE_GPHOTOS);
+ 
+         /* Set Certified Properties for GMSCore
+-         * Set Stock Fingerprint for ARCore
+-         * Set custom model for Netflix
+          * Set Pixel XL for Google Photos
+          */
+         if (sIsGms) {
+             setCertifiedPropsForGms();
+-        } else if (!sStockFp.isEmpty() && packageName.equals(PACKAGE_ARCORE)) {
+-            dlog("Setting stock fingerprint for: " + packageName);
+-            setPropValue("FINGERPRINT", sStockFp);
+         } else if (sIsPhotos) {
+             dlog("Spoofing Pixel 1 for Google Photos");
+             sPixelOneProps.forEach((PropImitationHooks::setPropValue));
+-        } else if (!sNetflixModel.isEmpty() && packageName.equals(PACKAGE_NETFLIX)) {
+-            dlog("Setting model to " + sNetflixModel + " for Netflix");
+-            setPropValue("MODEL", sNetflixModel);
+         }
+     }
+ 
+diff --git a/core/res/res/values/extra_config.xml b/core/res/res/values/extra_config.xml
+index a7038f072f..2d6708e7d1 100644
+--- a/core/res/res/values/extra_config.xml
++++ b/core/res/res/values/extra_config.xml
+@@ -13,10 +13,4 @@
+         <item>VERSION.RELEASE:1.0</item>
+       -->
+     </string-array>
+-
+-    <!-- Build fingerprint from stock ROM -->
+-    <string name="config_stockFingerprint" translatable="false"></string>
+-
+-    <!-- Device model (Build.MODEL) to spoof for netflix, if not empty -->
+-    <string name="config_netflixSpoofModel" translatable="false"></string>
+ </resources>
+diff --git a/core/res/res/values/extra_symbols.xml b/core/res/res/values/extra_symbols.xml
+index d7cb105b08..86f7bf1064 100644
+--- a/core/res/res/values/extra_symbols.xml
++++ b/core/res/res/values/extra_symbols.xml
+@@ -1,6 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
++<resources>
+     <!-- PropImitationHooks -->
+     <java-symbol type="array" name="config_certifiedBuildProperties" />
+-    <java-symbol type="string" name="config_stockFingerprint" />
+-    <java-symbol type="string" name="config_netflixSpoofModel" />
+ </resources>

@@ -1,12 +1,18 @@
 # rhode-los23.2 — przepis HAM
 
-Build LineageOS 23.2 (Android 16 QPR2) dla Motorola Moto G52 (`rhode`) na bazie manifestu
-[Tomoms 16.2](https://github.com/tomoms/android/tree/16.2), w chmurze Hetznera przez
+Build LineageOS 23.2 (Android 16 QPR2) dla Motorola Moto G52 (`rhode`) na bazie czystego manifestu
+[LineageOS lineage-23.2](https://github.com/LineageOS/android/tree/lineage-23.2) (od 0.2.0; wcześniej
+[Tomoms 16.2](https://github.com/tomoms/android/tree/16.2)), w chmurze Hetznera przez
 [HAM](https://github.com/antony-jr/ham). Plan i decyzje: strona „Plan builda rhode".
 
-Różnice względem buildów Tomoms:
+Różnice względem oficjalnego LineageOS:
 
-- **KernelSU-Next** (manual hooks) w [forku kernela](https://github.com/MikolajQ/android_kernel_motorola_sm6225/tree/16.2-ksun)
+- **Wybrane zmiany Tomoms jako patche** (`patches/`, przegląd ~1500 jego commitów i uzasadnienia: `docs/przeglad-tomoms.md`):
+  27 commitów drzew urządzenia (DT2W, MGLRU, readahead, `/vendor_dlkm`, 60 fps w Aperture, KTweak), PropImitationHooks
+  (Play Integrity), hartowanie sieci i bionic z GrapheneOS (VPN lockdown bez wycieku DNS, sprawdzanie łączności bez Google,
+  losowy MAC, strony ochronne stosu), wyłączanie Wi-Fi/Bluetooth po czasie, automatyczne nagrywanie rozmów
+- **Jądro Tomoms** (optymalizacje baterii/płynności) z **KernelSU-Next** (manual hooks) w
+  [forku](https://github.com/MikolajQ/android_kernel_motorola_sm6225/tree/16.2-ksun), przy każdym buildzie scalane z jądrem LineageOS
 - **GApps w obrazie**: MindTheGapps (`baklava`) przycięte do zestawu NikGapps core + pełny Android Auto
   + `GmsSupervision` jako priv-app w `product` (Family Link — patrz nikgapps/config#15760)
 - **Droid-ify** (zamiast F-Droida — ciężki, toporny) z repozytoriami IzzyOnDroid, NewPipe, IronFox; bez Privileged
@@ -24,7 +30,7 @@ Różnice względem buildów Tomoms:
 - **Play Integrity**: świeży, nie-beta fingerprint Pixela 10 Pro w `persist.sys.pihooks_*` (poprzedni, beta, przestał
   przechodzić nawet DEVICE integrity — patrz `android_vendor_extra` `product.mk`)
 - bez Bellis i LogViewer; własne OTA z [rhode_releases](https://github.com/MikolajQ/rhode_releases)
-- wersja `23.2-DATA-UNOFFICIAL-miq-rhode` (`TARGET_UNOFFICIAL_BUILD_ID` podmieniany w `ham.yml`; w drzewie Tomoms jest `Tom`)
+- wersja `23.2-DATA-UNOFFICIAL-miq-rhode` (`TARGET_UNOFFICIAL_BUILD_ID` podmieniany w `ham.yml`; patch drzewa rhode od Tomoms ustawia `Tom`)
 
 ## Instalacja na telefonie (Virtual A/B — kolejność ma znaczenie)
 
@@ -91,18 +97,19 @@ Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.
 ham.yml                      przepis
 rhode.xml                    .repo/local_manifests
 patches/vendor_gapps/        cięcia listy pakietów MTG (git apply)
-patches/vendor_lineage/      bez prywatnych Trichrome* z vendor/lineage Tomoms
+patches/<projekt>/           serie git format-patch (git am -3) — zmiany Tomoms przeniesione na LineageOS, patrz docs/przeglad-tomoms.md
 patches/hardware_qcom-caf_sm8250_media/  enkoder wideo: pełny zakres poziomów + clamp (wideo w GCam/LMC 8.4)
 scripts/fetch-hosts.sh       /system/etc/hosts: StevenBlack porn+social (przypięty commit) + lists/, minus WhatsApp/Signal
 scripts/fetch-droidify.sh    Droid-ify z release'u, przypięty tag + SHA-256
 lists/                       communicators-block.txt (Telegram, Discord, Viber…), allow.txt (WhatsApp, Signal)
-scripts/apply-patches.sh
+scripts/apply-patches.sh     patches/*: seria format-patch -> git am -3, zwykły diff -> git apply; pierwszy błąd = stop
+scripts/check-patches.sh     lokalnie przed ham get: czy patche wchodzą na aktualny LineageOS i czy jądro scala się bez konfliktu
 scripts/gapps-extras.sh      zip -> vendor/gapps-extras + Android.bp / splits/Android.mk / extras.mk (splity jako prebuilty ETC; .apk nie może iść przez PRODUCT_COPY_FILES)
 scripts/motocam-extras.sh    zip -> vendor/motocam-extras + Android.bp / extras.mk (Moto Camera stockowa, opcjonalne)
 scripts/check-privapp.py     allowlist vs. uprawnienia privileged z APK; brak = stop przed mka
 scripts/sign.sh              sign_target_files_apks + ota_from_target_files z /root/.android-certs (listy APEX z wiki); boot/dtbo/vendor_boot -> $OUT/signed-images
 scripts/upload.sh            post_build: release + rhode.json
-scripts/staleness.sh         lokalnie przed ham get: forki Tomoms vs LineageOS, KernelSU-Next (legacy) vs pin,
+scripts/staleness.sh         lokalnie przed ham get: check-patches.sh, KernelSU-Next (legacy) vs pin,
                               Droid-ify vs latest release, ham fork vs upstream — tylko raportuje, nic nie merguje
 scripts/inspect-zip.sh       lokalnie po pobraniu zipa: kontrola obrazu przed flashem (debugfs, bez roota)
 ```

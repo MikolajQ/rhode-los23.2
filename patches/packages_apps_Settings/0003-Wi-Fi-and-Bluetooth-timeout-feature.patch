@@ -1,0 +1,459 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oliver Scott <olivercscott@gmail.com>
+Date: Fri, 25 Sep 2026 12:28:17 +0200
+Subject: [PATCH 3/3] Wi-Fi and Bluetooth timeout feature
+
+Settings part of the CalyxOS feature, as carried in Tomoms/android_packages_apps_Settings@16.2:
+"Wi-Fi timeout feature", "Bluetooth timeout feature" (Oliver Scott) and "Settings: Add icon for
+'WiFi timeout'" (ShevT), plus the custom_timeout strings/arrays that Tomoms keeps in
+"Add strings for the advanced tethering settings". Rebuilt as one commit on LineageOS
+lineage-23.2; the BluetoothTimeoutReceiver manifest entry is dropped (the class does not exist
+in SettingsLib). Polish translations added.
+---
+ res/drawable/ic_wifi_off.xml                  |  25 ++++
+ res/values-pl/cm_strings.xml                  |  20 +++
+ res/values/cm_strings.xml                     |  28 ++++
+ res/values/lineage_arrays.xml                 |  37 ++++++
+ res/xml/connected_devices.xml                 |   8 ++
+ res/xml/wifi_configure_settings.xml           |   9 ++
+ .../BluetoothTimeoutPreferenceController.java | 121 ++++++++++++++++++
+ .../wifi/WifiTimeoutPreferenceController.java | 120 +++++++++++++++++
+ 8 files changed, 368 insertions(+)
+ create mode 100644 res/drawable/ic_wifi_off.xml
+ create mode 100644 res/values/lineage_arrays.xml
+ create mode 100644 src/com/android/settings/bluetooth/BluetoothTimeoutPreferenceController.java
+ create mode 100644 src/com/android/settings/wifi/WifiTimeoutPreferenceController.java
+
+diff --git a/res/drawable/ic_wifi_off.xml b/res/drawable/ic_wifi_off.xml
+new file mode 100644
+index 000000000..1480a59c3
+--- /dev/null
++++ b/res/drawable/ic_wifi_off.xml
+@@ -0,0 +1,25 @@
++<!--
++  ~ Copyright (C) 2020 The Android Open Source Project
++  ~
++  ~ Licensed under the Apache License, Version 2.0 (the "License");
++  ~ you may not use this file except in compliance with the License.
++  ~ You may obtain a copy of the License at
++  ~
++  ~      http://www.apache.org/licenses/LICENSE-2.0
++  ~
++  ~ Unless required by applicable law or agreed to in writing, software
++  ~ distributed under the License is distributed on an "AS IS" BASIS,
++  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++  ~ See the License for the specific language governing permissions and
++  ~ limitations under the License.
++  -->
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++        android:width="24dp"
++        android:height="24dp"
++        android:viewportWidth="24"
++        android:viewportHeight="24"
++        android:tint="?android:attr/colorControlNormal">
++    <path
++        android:fillColor="@android:color/white"
++        android:pathData="M23,9c-4.11,-4.11 -9.93,-5.43 -15.15,-3.98l9.57,9.57L23,9zM5.76,5.76L2.81,2.81 1.39,4.22l2.52,2.52C2.88,7.37 1.89,8.11 1,9l11,11 2.59,-2.59 5.19,5.19 1.41,-1.41L16,16 5.76,5.76z"/>
++</vector>
+\ No newline at end of file
+diff --git a/res/values-pl/cm_strings.xml b/res/values-pl/cm_strings.xml
+index a2850559f..734287e44 100644
+--- a/res/values-pl/cm_strings.xml
++++ b/res/values-pl/cm_strings.xml
+@@ -104,4 +104,24 @@
+     <string name="battery_design_capacity_summary">%1$d mAh</string>
+     <string name="battery_maximum_capacity">Maksymalna pojemność</string>
+     <string name="battery_maximum_capacity_summary">%1$d mAh (%2$d%%)</string>
++
++    <!-- Custom Timeouts -->
++    <string name="wifi_timeout">Wyłączanie Wi-Fi</string>
++    <string name="wifi_timeout_summary">Nie wyłączaj Wi-Fi automatycznie</string>
++    <string name="wifi_timeout_summary_auto">Wi-Fi wyłączy się po <xliff:g id="timeout_description">%1$s</xliff:g>, jeśli nie będzie połączone z żadną siecią</string>
++    <string name="bluetooth_timeout">Wyłączanie Bluetooth</string>
++    <string name="bluetooth_timeout_summary">Nie wyłączaj Bluetooth automatycznie</string>
++    <string name="bluetooth_timeout_summary_auto">Bluetooth wyłączy się po <xliff:g id="timeout_description">%1$s</xliff:g>, jeśli nie będzie połączone z żadnym urządzeniem</string>
++    <string name="custom_timeout_summary_never">Nigdy</string>
++    <string name="custom_timeout_summary_15secs">15 s</string>
++    <string name="custom_timeout_summary_30secs">30 s</string>
++    <string name="custom_timeout_summary_1min">1 min</string>
++    <string name="custom_timeout_summary_2mins">2 min</string>
++    <string name="custom_timeout_summary_5mins">5 min</string>
++    <string name="custom_timeout_summary_10mins">10 min</string>
++    <string name="custom_timeout_summary_30mins">30 min</string>
++    <string name="custom_timeout_summary_1hour">1 godz.</string>
++    <string name="custom_timeout_summary_2hours">2 godz.</string>
++    <string name="custom_timeout_summary_4hours">4 godz.</string>
++    <string name="custom_timeout_summary_8hours">8 godz.</string>
+ </resources>
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index 38966afd6..505385bcf 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -185,4 +185,32 @@
+     <string name="battery_maximum_capacity">Maximum capacity</string>
+     <string name="battery_maximum_capacity_summary">%1$d mAh (%2$d%%)</string>
+     <string name="battery_maximum_capacity_not_available" translatable="false">@string/battery_cycle_count_not_available</string>
++
++    <!-- Custom Timeouts -->
++    <string name="wifi_timeout">WiFi timeout</string>
++    <string name="wifi_timeout_summary">Do not automatically turn off WiFi</string>
++    <string name="wifi_timeout_summary_auto">WiFi will turn off after <xliff:g id="timeout_description">%1$s</xliff:g> if no network connected</string>
++    <string name="bluetooth_timeout">Bluetooth timeout</string>
++    <string name="bluetooth_timeout_summary">Do not automatically turn off Bluetooth</string>
++    <string name="bluetooth_timeout_summary_auto">Bluetooth will turn off after <xliff:g id="timeout_description">%1$s</xliff:g> if no devices connected</string>
++    <string name="custom_timeout_summary_never">Never</string>
++    <string name="custom_timeout_summary_5secs">5 seconds</string>
++    <string name="custom_timeout_summary_10secs">10 seconds</string>
++    <string name="custom_timeout_summary_15secs">15 seconds</string>
++    <string name="custom_timeout_summary_30secs">30 seconds</string>
++    <string name="custom_timeout_summary_1min">1 minute</string>
++    <string name="custom_timeout_summary_2mins">2 minutes</string>
++    <string name="custom_timeout_summary_5mins">5 minutes</string>
++    <string name="custom_timeout_summary_10mins">10 minutes</string>
++    <string name="custom_timeout_summary_20mins">20 minutes</string>
++    <string name="custom_timeout_summary_30mins">30 minutes</string>
++    <string name="custom_timeout_summary_1hour">1 hour</string>
++    <string name="custom_timeout_summary_2hours">2 hours</string>
++    <string name="custom_timeout_summary_4hours">4 hours</string>
++    <string name="custom_timeout_summary_8hours">8 hours</string>
++    <string name="custom_timeout_summary_12hours">12 hours</string>
++    <string name="custom_timeout_summary_24hours">24 hours</string>
++    <string name="custom_timeout_summary_36hours">36 hours</string>
++    <string name="custom_timeout_summary_48hours">48 hours</string>
++    <string name="custom_timeout_summary_72hours">72 hours</string>
+ </resources>
+diff --git a/res/values/lineage_arrays.xml b/res/values/lineage_arrays.xml
+new file mode 100644
+index 000000000..23fa35ac2
+--- /dev/null
++++ b/res/values/lineage_arrays.xml
+@@ -0,0 +1,37 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     SPDX-FileCopyrightText: The LineageOS Project
++     SPDX-License-Identifier: Apache-2.0
++-->
++<resources>
++    <!-- Custom timeout for Wifi/Bluetooth -->
++    <string-array name="custom_timeout_entries">
++        <item>@string/custom_timeout_summary_never</item>
++        <item>@string/custom_timeout_summary_15secs</item>
++        <item>@string/custom_timeout_summary_30secs</item>
++        <item>@string/custom_timeout_summary_1min</item>
++        <item>@string/custom_timeout_summary_2mins</item>
++        <item>@string/custom_timeout_summary_5mins</item>
++        <item>@string/custom_timeout_summary_10mins</item>
++        <item>@string/custom_timeout_summary_30mins</item>
++        <item>@string/custom_timeout_summary_1hour</item>
++        <item>@string/custom_timeout_summary_2hours</item>
++        <item>@string/custom_timeout_summary_4hours</item>
++        <item>@string/custom_timeout_summary_8hours</item>
++    </string-array>
++
++    <string-array name="custom_timeout_values" translatable="false">
++        <item>0</item>
++        <item>15000</item>
++        <item>30000</item>
++        <item>60000</item>
++        <item>120000</item>
++        <item>300000</item>
++        <item>600000</item>
++        <item>1800000</item>
++        <item>3600000</item>
++        <item>7200000</item>
++        <item>14400000</item>
++        <item>28800000</item>
++    </string-array>
++</resources>
+diff --git a/res/xml/connected_devices.xml b/res/xml/connected_devices.xml
+index ab09342e1..05de0d624 100644
+--- a/res/xml/connected_devices.xml
++++ b/res/xml/connected_devices.xml
+@@ -65,6 +65,14 @@
+           settings:userRestriction="no_config_bluetooth" />
+     </com.android.settingslib.widget.UntitledPreferenceCategory>
+ 
++    <androidx.preference.ListPreference
++        android:key="bluetooth_timeout"
++        android:title="@string/bluetooth_timeout"
++        android:summary="@string/summary_placeholder"
++        android:entries="@array/custom_timeout_entries"
++        android:entryValues="@array/custom_timeout_values"
++        settings:controller="com.android.settings.bluetooth.BluetoothTimeoutPreferenceController"/>
++
+     <PreferenceCategory
+         android:key="previously_connected_devices"
+         android:title="@string/connected_device_saved_title"
+diff --git a/res/xml/wifi_configure_settings.xml b/res/xml/wifi_configure_settings.xml
+index c78fb0989..274366b24 100644
+--- a/res/xml/wifi_configure_settings.xml
++++ b/res/xml/wifi_configure_settings.xml
+@@ -26,6 +26,15 @@
+         android:summary="@string/wifi_wakeup_summary"
+         settings:controller="com.android.settings.wifi.WifiWakeupPreferenceController"/>
+ 
++    <ListPreference
++        android:key="wifi_timeout"
++        android:title="@string/wifi_timeout"
++        android:summary="@string/wifi_timeout_summary"
++        android:icon="@drawable/ic_wifi_off"
++        android:entries="@array/custom_timeout_entries"
++        android:entryValues="@array/custom_timeout_values"
++        settings:controller="com.android.settings.wifi.WifiTimeoutPreferenceController"/>
++
+     <SwitchPreferenceCompat
+         android:key="notify_open_networks"
+         android:title="@string/wifi_notify_open_networks"
+diff --git a/src/com/android/settings/bluetooth/BluetoothTimeoutPreferenceController.java b/src/com/android/settings/bluetooth/BluetoothTimeoutPreferenceController.java
+new file mode 100644
+index 000000000..387390a95
+--- /dev/null
++++ b/src/com/android/settings/bluetooth/BluetoothTimeoutPreferenceController.java
+@@ -0,0 +1,121 @@
++/*
++ * Copyright (C) 2020-2021 The Calyx Institute
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.settings.bluetooth;
++
++import android.bluetooth.BluetoothAdapter;
++import android.content.Context;
++import android.os.UserManager;
++import android.provider.Settings;
++import android.util.Log;
++
++import androidx.preference.ListPreference;
++import androidx.preference.Preference;
++
++import com.android.settings.R;
++import com.android.settings.core.BasePreferenceController;
++import com.android.settings.core.PreferenceControllerMixin;
++
++public class BluetoothTimeoutPreferenceController extends BasePreferenceController implements
++        PreferenceControllerMixin, Preference.OnPreferenceChangeListener {
++    private static final String TAG = "BluetoothTimeoutPrefCtrl";
++
++    public static final int FALLBACK_BLUETOOTH_TIMEOUT_VALUE = 0;
++
++    private final String mBluetoothTimeoutKey;
++
++    protected BluetoothAdapter mBluetoothAdapter;
++
++    public BluetoothTimeoutPreferenceController(Context context, String key) {
++        super(context, key);
++        mBluetoothTimeoutKey = key;
++
++        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
++        if (mBluetoothAdapter == null) {
++            Log.e(TAG, "Bluetooth is not supported on this device");
++            return;
++        }
++    }
++
++    @Override
++    public int getAvailabilityStatus() {
++        if (mBluetoothAdapter != null) {
++            return UserManager.get(mContext).isAdminUser() ? AVAILABLE : DISABLED_FOR_USER;
++        }
++        return UNSUPPORTED_ON_DEVICE;
++    }
++
++    @Override
++    public String getPreferenceKey() {
++        return mBluetoothTimeoutKey;
++    }
++
++    @Override
++    public void updateState(Preference preference) {
++        final ListPreference timeoutListPreference = (ListPreference) preference;
++        final long currentTimeout = Settings.Global.getLong(mContext.getContentResolver(),
++                Settings.Global.BLUETOOTH_OFF_TIMEOUT, FALLBACK_BLUETOOTH_TIMEOUT_VALUE);
++        timeoutListPreference.setValue(String.valueOf(currentTimeout));
++        updateTimeoutPreferenceDescription(timeoutListPreference,
++                Long.parseLong(timeoutListPreference.getValue()));
++    }
++
++    @Override
++    public boolean onPreferenceChange(Preference preference, Object newValue) {
++        try {
++            long value = Long.parseLong((String) newValue);
++            Settings.Global.putLong(mContext.getContentResolver(),
++                    Settings.Global.BLUETOOTH_OFF_TIMEOUT, value);
++            updateTimeoutPreferenceDescription((ListPreference) preference, value);
++        } catch (NumberFormatException e) {
++            Log.e(TAG, "could not persist bluetooth timeout setting", e);
++        }
++        return true;
++    }
++
++    public static CharSequence getTimeoutDescription(
++            long currentTimeout, CharSequence[] entries, CharSequence[] values) {
++        if (currentTimeout < 0 || entries == null || values == null
++                || values.length != entries.length) {
++            return null;
++        }
++
++        for (int i = 0; i < values.length; i++) {
++            long timeout = Long.parseLong(values[i].toString());
++            if (currentTimeout == timeout) {
++                return entries[i];
++            }
++        }
++        return null;
++    }
++
++    private void updateTimeoutPreferenceDescription(ListPreference preference,
++                                                    long currentTimeout) {
++        final CharSequence[] entries = preference.getEntries();
++        final CharSequence[] values = preference.getEntryValues();
++        final CharSequence timeoutDescription = getTimeoutDescription(
++                currentTimeout, entries, values);
++        String summary = "";
++        if (timeoutDescription != null) {
++            if (currentTimeout != 0)
++                summary = mContext.getString(R.string.bluetooth_timeout_summary_auto,
++                        timeoutDescription);
++            else
++                summary = mContext.getString(R.string.bluetooth_timeout_summary);
++        }
++        preference.setSummary(summary);
++    }
++}
+diff --git a/src/com/android/settings/wifi/WifiTimeoutPreferenceController.java b/src/com/android/settings/wifi/WifiTimeoutPreferenceController.java
+new file mode 100644
+index 000000000..5368d78e4
+--- /dev/null
++++ b/src/com/android/settings/wifi/WifiTimeoutPreferenceController.java
+@@ -0,0 +1,120 @@
++/*
++ * Copyright (C) 2020 The Calyx Institute
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.settings.wifi;
++
++import android.content.Context;
++import android.os.UserManager;
++import android.net.wifi.WifiManager;
++import android.provider.Settings;
++import android.util.Log;
++
++import androidx.preference.ListPreference;
++import androidx.preference.Preference;
++
++import com.android.settings.R;
++import com.android.settings.core.BasePreferenceController;
++import com.android.settings.core.PreferenceControllerMixin;
++
++public class WifiTimeoutPreferenceController extends BasePreferenceController implements
++        PreferenceControllerMixin, Preference.OnPreferenceChangeListener {
++    private static final String TAG = "WifiTimeoutPrefCtrl";
++
++    public static final int FALLBACK_WIFI_TIMEOUT_VALUE = 0;
++
++    private final String mWifiTimeoutKey;
++
++    protected WifiManager mWifiManager;
++
++    public WifiTimeoutPreferenceController(Context context, String key) {
++        super(context, key);
++        mWifiTimeoutKey = key;
++
++        mWifiManager = context.getSystemService(WifiManager.class);
++        if (mWifiManager == null) {
++            Log.e(TAG, "Wifi is not supported on this device");
++            return;
++        }
++    }
++
++    @Override
++    public int getAvailabilityStatus() {
++        if (mWifiManager != null) {
++            return UserManager.get(mContext).isAdminUser() ? AVAILABLE : DISABLED_FOR_USER;
++        }
++        return UNSUPPORTED_ON_DEVICE;
++    }
++
++    @Override
++    public String getPreferenceKey() {
++        return mWifiTimeoutKey;
++    }
++
++    @Override
++    public void updateState(Preference preference) {
++        final ListPreference timeoutListPreference = (ListPreference) preference;
++        final long currentTimeout = Settings.Global.getLong(mContext.getContentResolver(),
++                Settings.Global.WIFI_OFF_TIMEOUT, FALLBACK_WIFI_TIMEOUT_VALUE);
++        timeoutListPreference.setValue(String.valueOf(currentTimeout));
++        updateTimeoutPreferenceDescription(timeoutListPreference,
++                Long.parseLong(timeoutListPreference.getValue()));
++    }
++
++    @Override
++    public boolean onPreferenceChange(Preference preference, Object newValue) {
++        try {
++            long value = Long.parseLong((String) newValue);
++            Settings.Global.putLong(mContext.getContentResolver(),
++                    Settings.Global.WIFI_OFF_TIMEOUT, value);
++            updateTimeoutPreferenceDescription((ListPreference) preference, value);
++        } catch (NumberFormatException e) {
++            Log.e(TAG, "could not persist wifi timeout setting", e);
++        }
++        return true;
++    }
++
++    public static CharSequence getTimeoutDescription(
++            long currentTimeout, CharSequence[] entries, CharSequence[] values) {
++        if (currentTimeout < 0 || entries == null || values == null
++                || values.length != entries.length) {
++            return null;
++        }
++
++        for (int i = 0; i < values.length; i++) {
++            long timeout = Long.parseLong(values[i].toString());
++            if (currentTimeout == timeout) {
++                return entries[i];
++            }
++        }
++        return null;
++    }
++
++    private void updateTimeoutPreferenceDescription(ListPreference preference,
++                                                    long currentTimeout) {
++        final CharSequence[] entries = preference.getEntries();
++        final CharSequence[] values = preference.getEntryValues();
++        final CharSequence timeoutDescription = getTimeoutDescription(
++                currentTimeout, entries, values);
++        String summary = "";
++        if (timeoutDescription != null) {
++            if (currentTimeout != 0)
++                summary = mContext.getString(R.string.wifi_timeout_summary_auto, timeoutDescription);
++            else
++                summary = mContext.getString(R.string.wifi_timeout_summary);
++        }
++        preference.setSummary(summary);
++    }
++}

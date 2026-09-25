@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Kevin F. Haggerty" <kevin.f.haggerty@gmail.com>
+Date: Sun, 5 Nov 2023 19:36:05 +0100
+Subject: [PATCH 5/9] rhode: Set TARGET_BOOTANIMATION_HALF_RES to true
+
+* No apparent resolution difference
+* Much smoother animation
+* Much faster boot
+* What's not to like?
+
+Change-Id: I2119fe826146a3103da50b4862ad88f5950a97ec
+---
+ device.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/device.mk b/device.mk
+index 6c76e0b..e3304c1 100644
+--- a/device.mk
++++ b/device.mk
+@@ -21,6 +21,7 @@ PRODUCT_COPY_FILES += \
+     $(LOCAL_PATH)/audio/mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths.xml
+ 
+ # Boot animation
++TARGET_BOOTANIMATION_HALF_RES := true
+ TARGET_SCREEN_HEIGHT := 2400
+ TARGET_SCREEN_WIDTH := 1080
+ 
