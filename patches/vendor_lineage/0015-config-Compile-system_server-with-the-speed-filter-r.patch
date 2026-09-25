@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MikolajQ <mikolaj.q@wp.pl>
+Date: Fri, 25 Sep 2026 14:23:39 +0200
+Subject: [PATCH] config: Compile system_server with the speed filter (rhode)
+
+Full AOT compilation of system_server and its services instead of speed-profile: faster system_server at the cost of some storage and RAM. rhode build priority is performance.
+---
+ config/common.mk | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index 2669bf1..112b42f 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -142,8 +142,8 @@ ifneq ($(TARGET_DISABLE_EPPE),true)
+ $(call enforce-product-packages-exist-internal,$(lastword $(_include_stack)),product_manifest.xml rild Calendar android.hidl.memory@1.0-impl.vendor vndk_apex_snapshot_package)
+ endif
+ 
+-# Speed profile services and wifi-service to reduce RAM and storage.
+-PRODUCT_SYSTEM_SERVER_COMPILER_FILTER := speed-profile
++# system_server w pełni kompilowany AOT (speed) — rhode: wydajność ważniejsza niż RAM i miejsce
++PRODUCT_SYSTEM_SERVER_COMPILER_FILTER := speed
+ 
+ # Use a profile based boot image for this device. Note that this is currently a
+ # generic profile and not Android Go optimized.
+@@ -301,8 +301,8 @@ endif
+ # Audio files
+ $(call inherit-product, vendor/lineage/audio/audio.mk)
+ 
+-# Speed profile services and wifi-service to reduce RAM and storage
+-PRODUCT_SYSTEM_SERVER_COMPILER_FILTER := speed-profile
++# system_server w pełni kompilowany AOT (speed) — rhode: wydajność ważniejsza niż RAM i miejsce
++PRODUCT_SYSTEM_SERVER_COMPILER_FILTER := speed
+ 
+ # SetupWizard
+ PRODUCT_PRODUCT_PROPERTIES += \

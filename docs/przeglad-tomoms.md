@@ -102,6 +102,12 @@ ryzykiem jest tylko utrzymanie (więcej patchy = więcej miejsc na konflikt przy
 | Launcher3 | mniej alokacji na klatkę, szybsza lista aplikacji, bez logów do pliku | `packages_apps_Launcher3` 13 |
 | Reszta | flagi SQLite, init.rc bez zbędnych usług statystyk, priorytety kamery/mediów | `external_sqlite` 3, `system_core` 9, `frameworks_av` 4 |
 
+Własne, ponad to, co ma Tomoms (decyzja 25.09):
+- `system_server` kompilowany `speed` zamiast `speed-profile` (`patches/vendor_lineage/0015`) — szybszy system kosztem
+  trochę RAM i miejsca;
+- jądro (fork `16.2-ksun`, `moto-bengal.config`): zram **lz4** zamiast zstd (jądro Tomoms ma lz4 w asm ARMv8) i
+  **CFI wyłączone** (kilka % na wywołaniach pośrednich, kosztem ochrony przed exploitami jądra).
+
 Świadomie pominięte mimo „wydajnościowych” nazw:
 - łańcuch `releaseMemory` (5 commitów: zabijanie procesów w tle przy wybudzeniu/wygaszeniu ekranu) — na słabym CPU
   oznacza więcej zimnych startów aplikacji, czyli wolniej przy przełączaniu; do tego konfliktowy;
