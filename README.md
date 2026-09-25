@@ -8,7 +8,7 @@ Build LineageOS 23.2 (Android 16 QPR2) dla Motorola Moto G52 (`rhode`) na bazie 
 Różnice względem oficjalnego LineageOS:
 
 - **Wybrane zmiany Tomoms jako patche** (`patches/`, przegląd ~1500 jego commitów i uzasadnienia: `docs/przeglad-tomoms.md`):
-  27 commitów drzew urządzenia (DT2W, MGLRU, readahead, `/vendor_dlkm`, 60 fps w Aperture, KTweak), PropImitationHooks
+  27 commitów drzew urządzenia (DT2W, readahead, `/vendor_dlkm`, 60 fps w Aperture, KTweak), PropImitationHooks
   (Play Integrity), hartowanie sieci i bionic z GrapheneOS (VPN lockdown bez wycieku DNS, sprawdzanie łączności bez Google,
   losowy MAC, strony ochronne stosu), wyłączanie Wi-Fi/Bluetooth po czasie, automatyczne nagrywanie rozmów
 - **Pakiet wydajnościowy** (cel tego builda): jemalloc, `-O3`/LTO, nowsze Arm Optimized Routines, strojenie ART

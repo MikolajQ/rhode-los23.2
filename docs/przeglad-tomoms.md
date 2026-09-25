@@ -26,11 +26,14 @@ Przenosimy **mały, samodzielny zestaw** jako patche w przepisie (`patches/<proj
   simple_lmk, szybsze memcpy/crc32/lz4, threaded NAPI, BBR), jądro telefonu działa na nim od miesięcy,
   a nasze hooki KSU-Next są pisane właśnie pod to drzewo. Przejście na jądro LOS oznaczałoby przeniesienie KSU
   i ryzyko, bez zysku w bezpieczeństwie (jądro jest i tak tylko ~1 tydzień za LOS).
-- **Wszystkie 27 commitów drzew urządzenia** (jako patche na drzewa LOS): MGLRU, readahead 128 KB, DT2W,
+- **Wszystkie 27 commitów drzew urządzenia** (jako patche na drzewa LOS): readahead 128 KB, DT2W,
   `/vendor_dlkm`, 60 fps w Aperture, strojenie Wi-Fi INI, KTweak (scheduler), `disable_backpressure`,
   SUPL GrapheneOS. Część jest sprzężona z jego jądrem (`PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false`
-  — jego defconfig wyłącza opcje, których wymaga VINTF; MGLRU; `/vendor_dlkm`), więc jądro i drzewa idą w parze.
+  — jego defconfig wyłącza opcje, których wymaga VINTF; `/vendor_dlkm`), więc jądro i drzewa idą w parze.
   „Custom build ID” zastępujemy wprost naszym `miq`.
+  Uwaga: patch „rhode: Enable Multi-gen LRU” tylko ustawia `persist.device_config.mglru_native.lru_gen_config=all`;
+  init.rc zapisuje wtedy `/sys/kernel/mm/lru_gen/enabled`, ale jądro 4.19 (LOS, Tomoms ani nasz fork) nie ma MGLRU
+  (0 wystąpień `lru_gen`) — zapis się nie udaje i nic się nie dzieje. Patch zostaje (nieszkodliwy), MGLRU w buildzie NIE MA.
 
 ### PRZENIEŚĆ — Play Integrity (warunek działania Play/banków)
 Nasz `vendor/extra/product.mk` ustawia `persist.sys.pihooks_*` i `PihooksGmsFp` — **to działa tylko dzięki
