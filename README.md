@@ -45,8 +45,13 @@ sgdisk-iem** (bootloader zgubił slot; ratunek: `fastboot flash partition gpt.bi
 terminala blokuje nawet ekran potwierdzenia ceny, zanim dojdzie do sprawdzenia flagi `-n`). Odpalać pod
 `script`: `script -qec "~/bin/rhode/ham get ..." log.txt`.
 
+**Serwer** (od ham `6cfefa4`): domyślnie **CPX62** — 16 vCPU współdzielonych, 32 GB RAM, `/ham-build` na lokalnym
+NVMe 640 GB, bez wolumenu (≈0,256 €/h brutto, 25.09.2026). Gdy Hetzner nie ma CPX62 w nbg1/fsn1/hel1, zapasowo
+**CCX33** (8 vCPU dedykowanych) z wolumenem 400 GB (≈0,273 + 0,039 €/h). Inny typ: `ham get ... -m ccx33`.
+Poprzednie buildy szły na CCX33 z wolumenem 400 GB i się w nim mieściły (źródła, `out/`, swap 48 GB).
+
 **Po udanym buildzie serwer sprząta sam** — `ham-build` z forka [MikolajQ/ham](https://github.com/MikolajQ/ham)
-(`ee6b924`) po `post_build` wyłącza swap na `/ham-build`, odmontowuje wolumen, odpina go i kasuje przez API
+(od `ee6b924`) po `post_build` — jeśli serwer ma wolumen — wyłącza swap na `/ham-build`, odmontowuje wolumen, odpina go i kasuje przez API
 (token z `/root/.ham.json`), a na końcu kasuje własny serwer. Robi to także z `--keep-server` (flaga dotyczy tylko
 porażki), więc nie zależy od tego komputera. Nieudany build zostaje żywy do debugowania (`-t`/`-b`).
 

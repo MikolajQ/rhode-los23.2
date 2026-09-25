@@ -1,11 +1,12 @@
 title: "LineageOS 23.2 rhode (Tomoms 16.2 + KernelSU-Next + GApps w obrazie)"
 version: "0.1.15"
 
-# Serwer: HAM tworzy CCX33 (8 vCPU / 32 GB) + wolumen 400 GB na /ham-build, Ubuntu 24.04,
+# Serwer: HAM tworzy CPX62 (16 vCPU shared / 32 GB, /ham-build na lokalnym dysku 640 GB), a gdy go brak — CCX33
+# (8 vCPU / 32 GB) z wolumenem 400 GB na /ham-build; Ubuntu 24.04, zram,
 # bez ccache (serwer zawsze świeży), repo i platform-tools zainstalowane. Katalog przepisu jest w /ham-recipe.
 # Uruchamiać (bezobsługowo): ~/bin/rhode/ham get MikolajQ@gh/rhode-los23.2 -t -b -n -a ~/.ham-answers-rhode.json
 # ham wgrywa ~/bin/rhode/ham-build (leży obok) i przerywa, gdy commit serwera ≠ klienta; budować oba: make local w ~/ham.
-# Po udanym buildzie serwer sam odpina i kasuje wolumen, potem kasuje siebie (ham-build z forka) — bez tego komputera.
+# Po udanym buildzie serwer sam odpina i kasuje wolumen (jeśli jest), potem kasuje siebie (ham-build z forka) — bez tego komputera.
 # HAM wpisuje linie do pty — każde interaktywne pytanie (np. repo init o kolory) zjada następną linię przepisu.
 
 args:
@@ -94,7 +95,7 @@ build:
   - name: "Weryfikacja allowlist priv-app"
     run: python3 /ham-recipe/scripts/check-privapp.py /ham-build vendor/gapps/common/proprietary vendor/gapps/arm64/proprietary vendor/gapps-extras vendor/motocam-extras
 
-  - name: "Swap 48 GB na wolumenie (soong_build bierze ~30 GB RAM przy analizie 993 projektów; CCX33 ma 32 GB)"
+  - name: "Swap 48 GB w /ham-build (soong_build bierze ~30 GB RAM przy analizie 993 projektów; serwer ma 32 GB)"
     run: |
       if ! swapon --show | grep -q /ham-build/swapfile; then
         fallocate -l 48G /ham-build/swapfile && chmod 600 /ham-build/swapfile && mkswap -q /ham-build/swapfile && swapon /ham-build/swapfile
