@@ -25,6 +25,11 @@ args:
     type: file
 
 build:
+  # Obcy ham-build (np. z release'u upstreamu) nie skasuje po sukcesie serwera z wolumenem i nie ma poprawek
+  # prebuildu. Napis istnieje tylko w ham-build z forka MikolajQ/ham (od ee6b924) — sprawdzone na obu binarkach.
+  - name: "ham-build z forka MikolajQ/ham"
+    run: grep -aq 'Self Destroy Failed' /usr/bin/ham || { echo "/usr/bin/ham to nie ham-build z forka MikolajQ/ham — uruchamiaj ~/bin/rhode/ham"; false; }
+
   - name: "Python domyślny"
     run: apt-get install -y -qq python-is-python3 gh git-lfs && git lfs install --skip-repo
 
