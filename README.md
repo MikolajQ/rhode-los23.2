@@ -53,7 +53,10 @@ Poprzednie buildy szły na CCX33 z wolumenem 400 GB i się w nim mieściły (źr
 **Po udanym buildzie serwer sprząta sam** — `ham-build` z forka [MikolajQ/ham](https://github.com/MikolajQ/ham)
 (od `ee6b924`) po `post_build` — jeśli serwer ma wolumen — wyłącza swap na `/ham-build`, odmontowuje wolumen, odpina go i kasuje przez API
 (token z `/root/.ham.json`), a na końcu kasuje własny serwer. Robi to także z `--keep-server` (flaga dotyczy tylko
-porażki), więc nie zależy od tego komputera. Nieudany build zostaje żywy do debugowania (`-t`/`-b`).
+porażki), więc nie zależy od tego komputera. Nieudany build zostaje żywy do debugowania (`-t`/`-b`), ale najwyżej **6 h**: timer systemd `ham-ttl` na serwerze
+(od ham `cff6f1f`) woła potem `ham destroy-self` i kasuje wolumen i serwer — bez tego komputera. Dłużej:
+`touch /tmp/ham-keep` albo `systemctl stop ham-ttl.timer` na serwerze. Pojedynczy krok przepisu ma limit 12 h.
+zram: gdy jądro nie ma modułu (`linux-modules-extra`), build idzie bez zram, tylko na swapie 48 GB.
 
 `ham get` wgrywa `ham-build` leżący obok `ham` (`~/bin/rhode/`) i przerywa, jeśli jego commit różni się od
 klienta — oba budować razem: `make local` w `~/ham`. Osierocone wolumeny `build-*-vol` (bez serwera, >30 min)
