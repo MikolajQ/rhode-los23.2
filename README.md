@@ -15,6 +15,11 @@ Różnice względem oficjalnego LineageOS:
   (`bg-dexopt=speed`), SurfaceFlinger, ~190 optymalizacji system_server/SystemUI, Launcher3 — `docs/przeglad-tomoms.md`
 - **Jądro Tomoms** (optymalizacje baterii/płynności) z **KernelSU-Next** (manual hooks) w
   [forku](https://github.com/MikolajQ/android_kernel_motorola_sm6225/tree/16.2-ksun), przy każdym buildzie scalane z jądrem LineageOS
+- **Podwójne stuknięcie budzi ekran (DT2W)** — sam przełącznik z patcha Tomoms nic nie robił: dotyk GT9916S traci
+  zasilanie z panelem, a jego firmware nie ma gestu double tap. Jądro (fork, commit „DT2W”) trzyma w trybie gestów
+  szynę IO panelu, składa double tap z dwóch pojedynczych stuknięć (≤400 ms) i budzi ekran `KEY_WAKEUP`; drzewo rhode
+  (`patches/device_motorola_rhode/0010`) podpina przełącznik w Ustawieniach przez power HAL (`tap_to_wake_node`).
+  Moduły dotyku ładują się z `vendor_boot` (nie z `vendor_dlkm`). Przed OTA usunąć moduł KSU `rhode_dt2w` (test z 29.09)
 - **GApps w obrazie**: MindTheGapps (`baklava`) przycięte do zestawu NikGapps core + pełny Android Auto
   + `GmsSupervision` jako priv-app w `product` (Family Link — patrz nikgapps/config#15760)
 - **Droid-ify** (zamiast F-Droida — ciężki, toporny) z repozytoriami IzzyOnDroid, NewPipe, IronFox; bez Privileged

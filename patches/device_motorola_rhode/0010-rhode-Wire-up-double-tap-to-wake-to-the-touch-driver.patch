@@ -1,0 +1,49 @@
+From 1ad797071fbdb8b9fe1aaef112573d6127cb55ea Mon Sep 17 00:00:00 2001
+From: MikolajQ <mikolaj.q@wp.pl>
+Date: Tue, 29 Sep 2026 13:57:47 +0200
+Subject: [PATCH] rhode: Wire up double tap to wake to the touch driver
+
+The kernel (MikolajQ/android_kernel_motorola_sm6225@16.2-ksun) builds
+touchscreen_mmi with CONFIG_BOARD_USES_DOUBLE_TAP_CTRL and exposes
+/sys/class/touchscreen/primary/gesture, which accepts the power HAL's
+1/0. Point the QTI power HAL at it so the "Double tap to wake" toggle
+(config_supportDoubleTapWake, patch 0002) actually switches the touch
+IC's gesture mode, and let the system-uid HAL write the node.
+---
+ device.mk                | 3 +++
+ init/init.mmi.overlay.rc | 5 +++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/device.mk b/device.mk
+index e3304c1..12ebf6a 100644
+--- a/device.mk
++++ b/device.mk
+@@ -36,6 +36,9 @@ PRODUCT_PACKAGES += \
+ PRODUCT_PACKAGES += \
+     android.hardware.nfc-service.sec
+ 
++# Power: Settings "Double tap to wake" -> power HAL -> touch driver gesture node
++$(call soong_config_set,qtipower,tap_to_wake_node,/sys/class/touchscreen/primary/gesture)
++
+ # Overlay
+ PRODUCT_PACKAGES += \
+     FrameworksResDevice \
+diff --git a/init/init.mmi.overlay.rc b/init/init.mmi.overlay.rc
+index 70ff2c6..867ae06 100644
+--- a/init/init.mmi.overlay.rc
++++ b/init/init.mmi.overlay.rc
+@@ -51,6 +51,11 @@ on charger
+ on post-fs-data
+     mkdir /data/vendor/focaltech 0770 system system
+ 
++on boot
++    # DT2W: power HAL (system) writes 1/0 here (touch modules load from vendor_boot)
++    chown system system /sys/class/touchscreen/primary/gesture
++    chmod 0660 /sys/class/touchscreen/primary/gesture
++
+ service capsense_reset /system/vendor/bin/capsense_reset
+     class core
+     user system
+-- 
+2.55.0
+
