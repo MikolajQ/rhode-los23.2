@@ -1,0 +1,54 @@
+From 07ac9e2aeb0a7ac4beb5be69357dc2596bf6c45a Mon Sep 17 00:00:00 2001
+From: MikolajQ <1713112+MikolajQ@users.noreply.github.com>
+Date: Thu, 1 Oct 2026 18:59:35 +0200
+Subject: [PATCH] audio: battery_listener: don't join a thread that was never
+ started
+
+BatteryListenerImpl::init() starts the status thread only when a HIDL
+health@2.0 service is found. Devices with an AIDL-only health HAL
+(rhode: android.hardware.health-service.qti) never get one, so
+mThread stays null and the destructor - reached from adev_close() via
+battery_properties_listener_deinit() whenever audioserver drops the
+device - crashes the audio HAL with SIGSEGV in std::thread::join().
+
+serviceDied() had the same unchecked join, never woke the thread it
+was waiting for and kept the stale mHealth, so init() refused to run
+again. Wake the thread, drop the old handles, then re-init.
+---
+ hal/audio_extn/battery_listener.cpp | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/hal/audio_extn/battery_listener.cpp b/hal/audio_extn/battery_listener.cpp
+index 604f81c..dce00ee 100644
+--- a/hal/audio_extn/battery_listener.cpp
++++ b/hal/audio_extn/battery_listener.cpp
+@@ -165,7 +165,10 @@ BatteryListenerImpl::BatteryListenerImpl(cb_fn_t cb) :
+ 
+ BatteryListenerImpl::~BatteryListenerImpl()
+ {
+-    mThread->join();
++    // init() starts the thread only when a HIDL health service was found;
++    // AIDL-only devices end up here with mThread == nullptr.
++    if (mThread && mThread->joinable())
++        mThread->join();
+ }
+ 
+ void BatteryListenerImpl::reset(){
+@@ -189,9 +192,13 @@ void BatteryListenerImpl::serviceDied(uint64_t cookie __unused,
+         }
+         ALOGI("health service died, reinit");
+         mDone = true;
++        mCond.notify_one();
+     }
+-    mThread->join();
++    if (mThread && mThread->joinable())
++        mThread->join();
++    mThread.reset();
+     std::lock_guard<std::mutex> _l(mLock);
++    mHealth = nullptr;
+     init();
+ }
+ 
+-- 
+2.56.0
+
