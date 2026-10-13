@@ -115,6 +115,21 @@ build:
       fi
       free -g
 
+  - name: "Szybki test kompilacji: moduły zmieniane przez łatki + sepolicy (wszystkie błędy naraz)"
+    run: |
+      # 12-13.10 (a50s): 5 awarii po 1-3 h pełnego builda — łatki wchodziły czysto, ale się nie kompilowały
+      # (brak łatki-pary w innym projekcie, zmienione API). Tu wychodzą wszystkie od razu; out/ zostaje dla Build.
+      cd /ham-build
+      export TMPDIR=/ham-build/tmp && mkdir -p "$TMPDIR"
+      export WITH_GMS=true
+      unset USE_CCACHE CCACHE_EXEC
+      export USE_DEX2OAT_DEBUG=false
+      source build/envsetup.sh
+      breakfast rhode
+      m module-info
+      python3 /ham-recipe/scripts/patched-modules.py /ham-build /ham-recipe "$ANDROID_PRODUCT_OUT/module-info.json" > /ham-build/precheck-modules.txt
+      NINJA_ARGS="-k 0" m selinux_policy $(cat /ham-build/precheck-modules.txt)
+
   - name: "Build"
     run: |
       cd /ham-build
@@ -129,9 +144,14 @@ build:
       breakfast rhode
       if [ -s /root/.android-certs/releasekey.pk8 ]; then
         mka target-files-package otatools
-        /ham-recipe/scripts/sign.sh /ham-build /root/.android-certs
       else
         mka bacon
+      fi
+
+  - name: "Podpis (osobny krok: wznowienie po błędzie podpisu nie powtarza builda — ham-resume.sh -s auto)"
+    run: |
+      if [ -s /root/.android-certs/releasekey.pk8 ]; then
+        /ham-recipe/scripts/sign.sh /ham-build /root/.android-certs
       fi
 
 post_build:

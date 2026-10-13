@@ -2,6 +2,7 @@
 # post_build: release na GitHubie + JSON dla Updatera.
 # Serwer HAM kasuje się po sukcesie, więc to jedyna droga, którą wynik opuszcza chmurę.
 set -euo pipefail
+source "$(dirname "$0")/device.env"
 ROOT=${1:?korzeń drzewa}
 REL_REPO=MikolajQ/rhode_releases
 OUT="$ROOT/out/target/product/rhode"
@@ -17,7 +18,7 @@ UTC=$(grep -m1 '^ro.build.date.utc=' "$OUT/system/build.prop" | cut -d= -f2)
 assets=("$ZIP")
 # Build podpisany (sign.sh): obrazy z $OUT/signed-images - spójne z payload.bin. Build test-keys (mka bacon):
 # $OUT/*.img. NIGDY z target_files_intermediates - to obrazy sprzed podpisu (stare otacerts, patrz sign.sh).
-for img in boot dtbo vendor_boot; do
+for img in $RELEASE_IMAGES; do
   if [ -s "$OUT/signed-images/$img.img" ]; then
     assets+=("$OUT/signed-images/$img.img")
   elif [ -s "$OUT/$img.img" ] && [ ! -s "$OUT/signed-target_files.zip" ]; then

@@ -4,6 +4,7 @@
 # Klucze: /root/.android-certs (rozpakowane z keys_zip przez ham.yml): <nazwa>.pk8 + .x509.pem dla APK,
 # <apex>.pk8 + .x509.pem (RSA 4096) + <apex>.pem (PKCS8) dla APEX-ów. Listy apexapks/apexes = wiki, stan 2026-09-17.
 set -eo pipefail
+source "$(dirname "$0")/device.env"
 ROOT=${1:?korzeń drzewa}
 CERTS=${2:-/root/.android-certs}
 cd "$ROOT"
@@ -38,8 +39,24 @@ ls -la "$ZIP" | awk '{print $5" B", $9}'
 # właśnie te obrazy. Wersje z target_files_intermediates (sprzed podpisu) mają stare otacerts -
 # recovery z takiego boot.img odrzuca nasz zip ("signature verification failed"), tak było w 20260918.
 rm -rf "$OUT/signed-images"; mkdir -p "$OUT/signed-images"
-unzip -q -o -j "$OUT/signed-target_files.zip" IMAGES/boot.img IMAGES/dtbo.img IMAGES/vendor_boot.img -d "$OUT/signed-images"
-for img in boot dtbo vendor_boot; do
+unzip -q -o -j "$OUT/signed-target_files.zip" $(for i in $RELEASE_IMAGES; do echo IMAGES/$i.img; done) -d "$OUT/signed-images"
+for img in $RELEASE_IMAGES; do
   [ -s "$OUT/signed-images/$img.img" ] || { echo "brak IMAGES/$img.img w signed-target_files.zip"; exit 1; }
   echo "  signed-images/$img.img: $(stat -c %s "$OUT/signed-images/$img.img") B"
+done
+
+# Kontrola po podpisie (13.10: sign.sh z innego urządzenia padł dopiero na samym końcu): obrazy w zipie
+# (OTA bez A/B trzyma je wprost; A/B ma payload.bin — wtedy tylko obecność) = te, które pójdą do release'u.
+LIST=$(unzip -Z1 "$ZIP")
+for img in $RELEASE_IMAGES $EXTRA_IMAGES; do
+  src="$OUT/signed-images/$img.img"; [ -s "$src" ] || src="$OUT/$img.img"
+  [ -s "$src" ] || { echo "brak $img.img do release'u"; exit 1; }
+  if echo "$LIST" | grep -qx "$img.img"; then
+    unzip -p "$ZIP" "$img.img" | cmp -s - "$src" || { echo "$img.img w zipie != $src"; exit 1; }
+    echo "  $img.img: zgodny z zipem"
+  elif echo "$LIST" | grep -qx payload.bin; then
+    echo "  $img.img: zip A/B (payload.bin), bez porównania"
+  else
+    echo "  UWAGA: $img.img nie ma w zipie"
+  fi
 done

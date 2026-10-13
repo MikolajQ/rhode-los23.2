@@ -142,3 +142,17 @@ w `frameworks_base` i `packages_apps_Settings`.
 Zmiana frameworka z Tomoms na LOS przy zachowaniu danych (bez „Format data”) zwykle działa, bo to ta sama
 wersja Androida i te same klucze, ale nie jest gwarantowana — ustawienia funkcji Tomoms, których nie przenieśliśmy,
 zostaną osierocone. Przed pierwszą instalacją: kopia zapasowa; pierwszą instalację robić ręcznie (sideload), nie przez OTA.
+
+## Łatki z GrapheneOS i innych ROM-ów: zasady (po buildzie a50s 12–13.10)
+
+Łatka może wejść czysto (`check-patches.sh` OK), a nie skompilować się, bo jej druga połowa leży w innym projekcie.
+12–13.10 tak padły: Settings 0001 (MAC per sieć — wymaga łatki WifiTrackerLib), bionic 0007 (`explicit_bzero` —
+w GrapheneOS idzie z łatką openssh), Connectivity 0006 i frameworks_base 0164 (API, którego LineageOS nie ma).
+- Łatkę bierzemy razem z jej parą albo wcale: przed dodaniem przejrzyj w źródłowym ROM-ie sąsiednie commity tego
+  samego autora/tematu w innych repozytoriach (te same słowa w tytule, ta sama data).
+- Nowe symbole (stałe, metody, typy sepolicy), których łatka używa, a nie definiuje, muszą istnieć w drzewie.
+- Krok „Szybki test kompilacji” w ham.yml buduje moduły zmieniane przez łatki (`scripts/patched-modules.py`)
+  z `-k 0`, więc wszystkie takie błędy wychodzą naraz po kilkudziesięciu minutach zamiast po kilku godzinach.
+- Łatkę usuniętą z przepisu na zachowanym serwerze trzeba cofnąć ręcznie (`git revert` w projekcie) — apply-patches.sh
+  tylko pomija już nałożone. Wznowienie: `~/bin/rhode/ham-resume.sh -r <przepis> -s <krok>`; NIE od 0, bo ponowny
+  `repo sync` ściąga nowsze źródła i ninja przebudowuje prawie wszystko.
