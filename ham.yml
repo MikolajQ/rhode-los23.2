@@ -26,12 +26,15 @@ args:
   - id: keys_zip
     prompt: "Klucze podpisu: ~/.android-certs-rhode.zip (pk8 + pem); puste = test-keys"
     type: file
+  - id: ntfy_topic
+    prompt: "Temat ntfy.sh dla powiadomień na telefon (awaria/sukces builda); puste = bez powiadomień"
+    type: secret
 
 build:
   # Obcy ham-build (np. z release'u upstreamu) nie skasuje po sukcesie serwera z wolumenem i nie ma poprawek
   # prebuildu. Napis istnieje tylko w ham-build z forka MikolajQ/ham (od ee6b924) — sprawdzone na obu binarkach.
   - name: "ham-build z forka MikolajQ/ham"
-    run: grep -aq 'Self Destroy Failed' /usr/bin/ham || { echo "/usr/bin/ham to nie ham-build z forka MikolajQ/ham — uruchamiaj ~/bin/rhode/ham"; false; }
+    run: grep -aq 'accept-recipe-change' /usr/bin/ham || { echo "/usr/bin/ham to nie ham-build z forka MikolajQ/ham >= fc31f30 (on_failure, --from-step) — uruchamiaj ~/bin/rhode/ham po make local"; false; }
 
   # Pamięć i CPU co minutę przez cały build (CPX62: 16 zadań na 32 GB RAM — ile swapu, czy mieli). Po sukcesie
   # upload.sh dokłada log do release'u (serwer się kasuje); po porażce zostaje na zachowanym serwerze.
@@ -56,6 +59,8 @@ build:
       repo sync -c -j2 --no-clone-bundle --no-tags --force-sync
       test -f external/chromium-webview/Android.bp   # linkfile z prebuiltu LOS (moduł "webview") ma istnieć
       test -f vendor/gapps/arm64/arm64-vendor.mk
+      # obiekty Git LFS (GApps, WebView) naprawdę pobrane, nie same wskaźniki — inaczej błąd po godzinach albo zepsuty obraz
+      /ham-recipe/scripts/check-lfs.sh /ham-build
 
   # Jądro = fork jądra Tomoms z KernelSU-Next (MikolajQ/android_kernel_motorola_sm6225@16.2-ksun). Tomoms scala
   # LineageOS co kilka dni, więc konfliktów prawie nie ma; tu dociągamy to, czego jeszcze nie scalił (łatki
@@ -126,8 +131,11 @@ build:
       export USE_DEX2OAT_DEBUG=false
       source build/envsetup.sh
       breakfast rhode
-      m module-info
-      python3 /ham-recipe/scripts/patched-modules.py /ham-build /ham-recipe "$ANDROID_PRODUCT_OUT/module-info.json" > /ham-build/precheck-modules.txt
+      # wybór modułów nie może sam zatrzymać builda: bez module-info albo przy błędzie skryptu test obejmuje samo sepolicy
+      # (prawdziwy błąd soong i tak wyjdzie w poleceniu m poniżej)
+      m module-info || echo "UWAGA: m module-info nie wyszedł — test tylko sepolicy"
+      python3 /ham-recipe/scripts/patched-modules.py /ham-build /ham-recipe "$ANDROID_PRODUCT_OUT/module-info.json" > /ham-build/precheck-modules.txt \
+        || { echo "UWAGA: patched-modules.py zawiódł — test tylko sepolicy"; : > /ham-build/precheck-modules.txt; }
       NINJA_ARGS="-k 0" m selinux_policy $(cat /ham-build/precheck-modules.txt)
 
   - name: "Build"
@@ -156,3 +164,8 @@ build:
 
 post_build:
   - /ham-recipe/scripts/upload.sh /ham-build
+
+# Po awarii (fork HAM fc31f30+): powiadomienie na telefon; serwer zostaje 12 h (ham-ttl), wznowienie:
+# ~/bin/rhode/ham-resume.sh -r <przepis> (od kroku, który padł).
+on_failure:
+  - /ham-recipe/scripts/notify.sh "Build padł" "Krok $HAM_FAILED_STEP ($HAM_FAILED_TITLE), serwer $(hostname) zostaje 12 h." high

@@ -10,8 +10,8 @@ CERTS=${2:-/root/.android-certs}
 cd "$ROOT"
 [ -s "$CERTS/releasekey.pk8" ] || { echo "brak $CERTS/releasekey.pk8"; exit 1; }
 source build/envsetup.sh >/dev/null
-breakfast rhode >/dev/null
-OUT=${OUT:-out/target/product/rhode}
+breakfast "$DEVICE" >/dev/null
+OUT=${OUT:-out/target/product/$DEVICE}
 TF=$(ls -t "$OUT"/obj/PACKAGING/target_files_intermediates/*-target_files*.zip | head -1)
 [ -s "$TF" ] || { echo "brak target_files zip — najpierw mka target-files-package otatools"; exit 1; }
 
@@ -29,12 +29,14 @@ echo "== sign_target_files_apks ($(basename "$TF"))"
 sign_target_files_apks -o -d "$CERTS" "${args[@]}" "$TF" "$OUT/signed-target_files.zip"
 
 DATE=$(date -u +%Y%m%d)
-ZIP="$OUT/lineage-23.2-${DATE}-UNOFFICIAL-rhode-signed.zip"   # ro.lineage.version nie istnieje w tym drzewie - wlasna nazwa
+ZIP="$OUT/lineage-23.2-${DATE}-UNOFFICIAL-${DEVICE}-signed.zip"   # ro.lineage.version nie istnieje w tym drzewie - wlasna nazwa
 echo "== ota_from_target_files -> $(basename "$ZIP")"
 ota_from_target_files -k "$CERTS/releasekey" --block --backup=true "$OUT/signed-target_files.zip" "$ZIP"
 ls -la "$ZIP" | awk '{print $5" B", $9}'
+# GitHub przyjmuje do wydania tylko pliki < 2 GiB — lepiej wiedzieć teraz niż przy uploadzie
+[ "$(stat -c %s "$ZIP")" -le 2147483647 ] || { echo "zip ma ponad 2 GiB — GitHub nie przyjmie go do wydania"; exit 1; }
 
-# boot/dtbo/vendor_boot do release'u WYŁĄCZNIE z podpisanego target-files: sign_target_files_apks
+# Obrazy do release'u (RELEASE_IMAGES z device.env) WYŁĄCZNIE z podpisanego target-files: sign_target_files_apks
 # podmienia otacerts w ramdisku i przebudowuje IMAGES/, a ota_from_target_files pakuje do payload.bin
 # właśnie te obrazy. Wersje z target_files_intermediates (sprzed podpisu) mają stare otacerts -
 # recovery z takiego boot.img odrzuca nasz zip ("signature verification failed"), tak było w 20260918.

@@ -87,6 +87,9 @@ ham init                       # raz: token Hetznera, klucz ham-ssh-key
 ```
 
 Procedura (od 13.10, po doświadczeniach z buildu a50s):
+0. **Preflight** — `~/bin/rhode/preflight.py`: lint przepisu (bash -n, Python, struktura ham.yml jak w HAM,
+   +x skryptów wołanych bezpośrednio), odpowiedzi, token (odczyt repo, zapis wydań i JSON-a, wygaśnięcie),
+   klucze wymagane przez sign.sh, Hetzner, wersja ham-build. ~1 min.
 1. **Jądro lokalnie** — `~/bin/rhode/kernel-precheck.sh`: świeży fork `16.2-ksun` + merge LineageOS `lineage-23.2`
    (dokładnie jak krok w ham.yml), kompilacja `~/build/kernel-work/build-like-los.sh` (clang r563880c = clang 21,
    config jak vendor/lineage); przerywa też, gdy lokalna `16.2-ksun` ma niewypchnięte commity. Zmiana w jądrze:
@@ -95,9 +98,11 @@ Procedura (od 13.10, po doświadczeniach z buildu a50s):
 3. **Chmura** — `ham get MikolajQ@gh/rhode-los23.2 -k -t -b -n -a ~/.ham-answers-rhode.json` pod `script`;
    na serwerze krok „Szybki test kompilacji” (moduły zmieniane przez łatki, `-k 0`) przed pełnym buildem.
 4. **Nadzór** — `ham-nadzor.timer` (co 15 min, powiadomienia na pulpit, `~/ham-logs/nadzor.log`).
-5. **Awaria** — poprawka w przepisie (+ ręczny revert/nałożenie na serwerze), potem `~/bin/rhode/ham-resume.sh -r
-   <przepis>` — domyślnie od kroku, który padł; od 0 nie, bo ponowny `repo sync` ściąga nowsze źródła i ninja
-   przebudowuje prawie wszystko.
+5. **Awaria** — powiadomienie na telefon (ntfy, `on_failure` w ham.yml) i pulpit; nadzór od razu ściąga logi do
+   `~/ham-logs/awaria-*`; serwer czeka 12 h. Poprawka w przepisie, potem `~/bin/rhode/ham-resume.sh -r <przepis>`
+   — od kroku, który padł (od 0 nie: ponowny `repo sync` ściąga nowsze źródła i ninja przebudowuje prawie
+   wszystko); łatki usunięte/zmienione cofa i nakłada sam (stan w `/ham-build/.ham-patches`). Zmiana ham.yml:
+   `-r <przepis> -y -s N`. Upload idempotentny, z weryfikacją sum SHA-256 po stronie GitHuba.
 
 Flagi `-k -t -b` zostawiają serwer po błędzie / zerwanym śledzeniu / nieudanym buildzie.
 Po debugowaniu: `ham clean`. Limit HAM: serwer starszy niż 24 h jest kasowany.

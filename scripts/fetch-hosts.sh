@@ -11,8 +11,8 @@ RECIPE=$(cd "$(dirname "$0")/.." && pwd)
 SB_COMMIT="b681eceec05a747aa409377d1b3aac0327916cff"   # StevenBlack/hosts, przypięty; podbijać razem z buildem
 BASE="https://raw.githubusercontent.com/StevenBlack/hosts/$SB_COMMIT"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-curl -fsSL --retry 3 "$BASE/alternates/porn-only/hosts"   > "$tmp/porn"
-curl -fsSL --retry 3 "$BASE/alternates/social-only/hosts" > "$tmp/social"
+curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 "$BASE/alternates/porn-only/hosts"   > "$tmp/porn"
+curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 "$BASE/alternates/social-only/hosts" > "$tmp/social"
 {
   echo "# hosts wygenerowany przez rhode-los23.2/scripts/fetch-hosts.sh"
   echo "# StevenBlack/hosts @$SB_COMMIT (porn-only + social-only) + lists/communicators-block.txt - lists/allow.txt"
